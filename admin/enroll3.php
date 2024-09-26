@@ -182,89 +182,28 @@
       <li class="nav-heading">TEST REGISTRAR</li>
 
       <li class="nav-item">
-        <a class="nav-link collapsed" data-bs-target="#department-nav" data-bs-toggle="collapse" href="#">
-          <i class="bi bi-layout-text-window-reverse"></i><span>Department</span><i class="bi bi-chevron-down ms-auto"></i>
+        <a class="nav-link " href="manage_departments.php">
+          <i class="bi bi-grid"></i>
+          <span>Department</span>
         </a>
-        <ul id="department-nav" class="nav-content collapse " data-bs-parent="#sidebar-nav">
-          <li>
-            <a href="modules.html">
-              <i class="bi bi-circle"></i><span>Add Department</span>
-            </a>
-          </li>
-          <li>
-            <a href="modules.html">
-              <i class="bi bi-circle"></i><span>View Department</span>
-            </a>
-          </li>
-        </ul>
       </li>
       <li class="nav-item">
-        <a class="nav-link collapsed" data-bs-target="#subject-nav" data-bs-toggle="collapse" href="#">
-          <i class="bi bi-layout-text-window-reverse"></i><span>Subject</span><i class="bi bi-chevron-down ms-auto"></i>
+        <a class="nav-link " href="manage_subjects.php">
+          <i class="bi bi-grid"></i>
+          <span>Subjects</span>
         </a>
-        <ul id="subject-nav" class="nav-content collapse " data-bs-parent="#sidebar-nav">
-          <li>
-            <a href="modules.html">
-              <i class="bi bi-circle"></i><span>Add Subject</span>
-            </a>
-          </li>
-          <li>
-            <a href="modules.html">
-              <i class="bi bi-circle"></i><span>View Subject</span>
-            </a>
-          </li>
-        </ul>
       </li>
       <li class="nav-item">
-        <a class="nav-link collapsed" data-bs-target="#timetable-nav" data-bs-toggle="collapse" href="#">
-          <i class="bi bi-layout-text-window-reverse"></i><span>Timetable</span><i class="bi bi-chevron-down ms-auto"></i>
+        <a class="nav-link " href="manage_timetable.php">
+          <i class="bi bi-grid"></i>
+          <span>Timetable</span>
         </a>
-        <ul id="timetable-nav" class="nav-content collapse " data-bs-parent="#sidebar-nav">
-          <li>
-            <a href="modules.html">
-              <i class="bi bi-circle"></i><span>Add Timetable</span>
-            </a>
-          </li>
-          <li>
-            <a href="modules.html">
-              <i class="bi bi-circle"></i><span>View Timetable</span>
-            </a>
-          </li>
-        </ul>
       </li>
       <li class="nav-item">
-        <a class="nav-link collapsed" data-bs-target="#verification-nav" data-bs-toggle="collapse" href="#">
-          <i class="bi bi-layout-text-window-reverse"></i><span>Verification</span><i class="bi bi-chevron-down ms-auto"></i>
+        <a class="nav-link " href="manage_rooms.php">
+          <i class="bi bi-grid"></i>
+          <span>Rooms</span>
         </a>
-        <ul id="verification-nav" class="nav-content collapse " data-bs-parent="#sidebar-nav">
-          <li>
-            <a href="modules.html">
-              <i class="bi bi-circle"></i><span>Add Verification</span>
-            </a>
-          </li>
-          <li>
-            <a href="modules.html">
-              <i class="bi bi-circle"></i><span>View Verification</span>
-            </a>
-          </li>
-        </ul>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link collapsed" data-bs-target="#room-nav" data-bs-toggle="collapse" href="#">
-          <i class="bi bi-layout-text-window-reverse"></i><span>Room</span><i class="bi bi-chevron-down ms-auto"></i>
-        </a>
-        <ul id="room-nav" class="nav-content collapse " data-bs-parent="#sidebar-nav">
-          <li>
-            <a href="modules.html">
-              <i class="bi bi-circle"></i><span>Add Room</span>
-            </a>
-          </li>
-          <li>
-            <a href="modules.html">
-              <i class="bi bi-circle"></i><span>View Room</span>
-            </a>
-          </li>
-        </ul>
       </li>
       <!-- End System Nav -->
 

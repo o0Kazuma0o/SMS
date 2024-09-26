@@ -182,89 +182,28 @@
       <li class="nav-heading">TEST REGISTRAR</li>
 
       <li class="nav-item">
-        <a class="nav-link collapsed" data-bs-target="#department-nav" data-bs-toggle="collapse" href="#">
-          <i class="bi bi-layout-text-window-reverse"></i><span>Department</span><i class="bi bi-chevron-down ms-auto"></i>
+        <a class="nav-link " href="manage_departments.php">
+          <i class="bi bi-grid"></i>
+          <span>Department</span>
         </a>
-        <ul id="department-nav" class="nav-content collapse " data-bs-parent="#sidebar-nav">
-          <li>
-            <a href="modules.html">
-              <i class="bi bi-circle"></i><span>Add Department</span>
-            </a>
-          </li>
-          <li>
-            <a href="modules.html">
-              <i class="bi bi-circle"></i><span>View Department</span>
-            </a>
-          </li>
-        </ul>
       </li>
       <li class="nav-item">
-        <a class="nav-link collapsed" data-bs-target="#subject-nav" data-bs-toggle="collapse" href="#">
-          <i class="bi bi-layout-text-window-reverse"></i><span>Subject</span><i class="bi bi-chevron-down ms-auto"></i>
+        <a class="nav-link " href="manage_subjects.php">
+          <i class="bi bi-grid"></i>
+          <span>Subjects</span>
         </a>
-        <ul id="subject-nav" class="nav-content collapse " data-bs-parent="#sidebar-nav">
-          <li>
-            <a href="modules.html">
-              <i class="bi bi-circle"></i><span>Add Subject</span>
-            </a>
-          </li>
-          <li>
-            <a href="modules.html">
-              <i class="bi bi-circle"></i><span>View Subject</span>
-            </a>
-          </li>
-        </ul>
       </li>
       <li class="nav-item">
-        <a class="nav-link collapsed" data-bs-target="#timetable-nav" data-bs-toggle="collapse" href="#">
-          <i class="bi bi-layout-text-window-reverse"></i><span>Timetable</span><i class="bi bi-chevron-down ms-auto"></i>
+        <a class="nav-link " href="manage_timetable.php">
+          <i class="bi bi-grid"></i>
+          <span>Timetable</span>
         </a>
-        <ul id="timetable-nav" class="nav-content collapse " data-bs-parent="#sidebar-nav">
-          <li>
-            <a href="modules.html">
-              <i class="bi bi-circle"></i><span>Add Timetable</span>
-            </a>
-          </li>
-          <li>
-            <a href="modules.html">
-              <i class="bi bi-circle"></i><span>View Timetable</span>
-            </a>
-          </li>
-        </ul>
       </li>
       <li class="nav-item">
-        <a class="nav-link collapsed" data-bs-target="#verification-nav" data-bs-toggle="collapse" href="#">
-          <i class="bi bi-layout-text-window-reverse"></i><span>Verification</span><i class="bi bi-chevron-down ms-auto"></i>
+        <a class="nav-link " href="manage_rooms.php">
+          <i class="bi bi-grid"></i>
+          <span>Rooms</span>
         </a>
-        <ul id="verification-nav" class="nav-content collapse " data-bs-parent="#sidebar-nav">
-          <li>
-            <a href="modules.html">
-              <i class="bi bi-circle"></i><span>Add Verification</span>
-            </a>
-          </li>
-          <li>
-            <a href="modules.html">
-              <i class="bi bi-circle"></i><span>View Verification</span>
-            </a>
-          </li>
-        </ul>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link collapsed" data-bs-target="#room-nav" data-bs-toggle="collapse" href="#">
-          <i class="bi bi-layout-text-window-reverse"></i><span>Room</span><i class="bi bi-chevron-down ms-auto"></i>
-        </a>
-        <ul id="room-nav" class="nav-content collapse " data-bs-parent="#sidebar-nav">
-          <li>
-            <a href="modules.html">
-              <i class="bi bi-circle"></i><span>Add Room</span>
-            </a>
-          </li>
-          <li>
-            <a href="modules.html">
-              <i class="bi bi-circle"></i><span>View Room</span>
-            </a>
-          </li>
-        </ul>
       </li>
       <!-- End System Nav -->
 
@@ -308,6 +247,55 @@
                   </tr>
                 </thead>
                 <tbody>
+                  <tr>
+                    <td>24121232</td>
+                    <td>Ken Nat</td>
+                    <td>2024/08/07</td>
+                    <td>2024-2025</td>
+                    <td>BSIT</td>
+                    <td>1101</td>
+                    <td>1st Year</td>
+                    <td><!-- Modal Here -->
+                      <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#viewsub">
+                      View
+                      </button>
+                      <div class="modal fade" id="viewsub" tabindex="-1">
+                        <div class="modal-dialog modal-dialog-centered modal-lg">
+                          <div class="modal-content">
+                            <div class="modal-header">
+                              <h5 class="modal-title">Subjects</h5>
+                              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                              <table class="table">
+                                <thead>
+                                  <tr>
+                                    <th>Subject Code</th>
+                                    <th>Subject Name</th>
+                                    <th>Room</th>
+                                    <th>Schedule</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  <tr>
+                                    <td>ITSP 1</td>
+                                    <td>Software Engineering</td>
+                                    <td>Lab 1</td>
+                                    <td>Monday, 8:00 AM - 10:00 AM</td>
+                                  </tr>
+                                </tbody>
+                              </table>
+                            </div>
+                            <div class="modal-footer">
+                              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                              <button type="button" class="btn btn-primary">Save changes</button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td><span class="badge bg-success">Enrolled</span></td>
+                  </tr>
                   <tr>
                     <td>24121232</td>
                     <td>Ken Nat</td>
