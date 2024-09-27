@@ -277,7 +277,7 @@
                     <td><?= $room['capacity']; ?></td>
                     <td><?= $room['location']; ?></td>
                     <td>
-                        <a href="manage_rooms.php?delete_id=<?= $room['id']; ?>" 
+                        <a href="manage_rooms.php?delete_room_id=<?= $room['id']; ?>" 
                            class="btn btn-danger btn-sm"
                            onclick="return confirm('Are you sure you want to delete this room?')">Delete</a>
                     </td>

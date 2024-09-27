@@ -287,7 +287,7 @@
                   <td><?= $subject['subject_name']; ?></td>
                   <td><?= $subject['department_code']; ?></td>
                   <td>
-                      <a href="manage_subjects.php?delete_id=<?= $subject['id']; ?>" 
+                      <a href="manage_subjects.php?delete_subject_id=<?= $subject['id']; ?>" 
                           class="btn btn-danger btn-sm"
                           onclick="return confirm('Are you sure you want to delete this subject?')">Delete</a>
                   </td>

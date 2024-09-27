@@ -16,15 +16,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_department'])) {
     $stmt->bind_param("ss", $department_code, $department_name);
     $stmt->execute();
     $stmt->close();
+
+    // Redirect to manage_departments.php
+    header('Location: manage_departments.php');
+    exit;
 }
 
 // Delete department
-if (isset($_GET['delete_id'])) {
-    $delete_id = $_GET['delete_id'];
+if (isset($_GET['delete_department_id'])) {
+    $delete_id = $_GET['delete_department_id'];
     $stmt = $conn->prepare("DELETE FROM departments WHERE id = ?");
     $stmt->bind_param("i", $delete_id);
     $stmt->execute();
     $stmt->close();
+
+    // Redirect to manage_departments.php
+    header('Location: manage_departments.php');
+    exit;
 }
 
 // Fetch all departments
@@ -42,15 +50,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_room'])) {
     $stmt->bind_param("sis", $room_name, $capacity, $location);
     $stmt->execute();
     $stmt->close();
+
+    // Redirect to manage_rooms.php
+    header('Location: manage_rooms.php');
+    exit;
 }
 
 // Delete room
-if (isset($_GET['delete_id'])) {
-    $delete_id = $_GET['delete_id'];
+if (isset($_GET['delete_room_id'])) {
+    $delete_id = $_GET['delete_room_id'];
     $stmt = $conn->prepare("DELETE FROM rooms WHERE id = ?");
     $stmt->bind_param("i", $delete_id);
     $stmt->execute();
     $stmt->close();
+
+    // Redirect to manage_rooms.php
+    header('Location: manage_rooms.php');
+    exit;
 }
 
 // Fetch all rooms
@@ -68,40 +84,62 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_section'])) {
     $stmt->bind_param("iisi", $section_number, $year_level, $semester, $department_id);
     $stmt->execute();
     $stmt->close();
+
+    // After form submission, redirect to the same page using GET method to prevent form resubmission
+    header("Location: manage_sections.php");
+    exit;
 }
 
-// Toggle semester and section number
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['toggle_semester'])) {
-    $section_id = $_POST['section_id'];
+// Delete section
+if (isset($_GET['delete_section_id'])) {
+    $delete_id = $_GET['delete_section_id'];
 
-    // Get the current semester and section number
-    $stmt = $conn->prepare("SELECT semester, section_number FROM sections WHERE id = ?");
-    $stmt->bind_param("i", $section_id);
+    // Delete the section from the database
+    $stmt = $conn->prepare("DELETE FROM sections WHERE id = ?");
+    $stmt->bind_param("i", $delete_id);
     $stmt->execute();
-    $stmt->bind_result($current_semester, $current_section_number);
-    $stmt->fetch();
     $stmt->close();
 
-    // Toggle the semester and update the section number by 100
-    $new_semester = ($current_semester == '1st') ? '2nd' : '1st';
-    $new_section_number = ($new_semester == '1st') ? $current_section_number - 100 : $current_section_number + 100;
+    // Redirect back to avoid re-submission
+    header("Location: manage_sections.php");
+    exit;
+}
 
-    // Update the section with new semester and section number
-    $update_stmt = $conn->prepare("UPDATE sections SET semester = ?, section_number = ? WHERE id = ?");
-    $update_stmt->bind_param("sii", $new_semester, $new_section_number, $section_id);
-    $update_stmt->execute();
-    $update_stmt->close();
+// Function to update all sections in DB
+function toggleAllSections($conn) {
+    // Fetch all sections
+    $result = $conn->query("SELECT id, section_number, semester FROM sections");
+    
+    while ($section = $result->fetch_assoc()) {
+        $current_section_number = $section['section_number'];
+        $current_semester = $section['semester'];
+
+        // Toggle the semester and update the section number by 100
+        if ($current_semester == '1st') {
+            $new_semester = '2nd';
+            $new_section_number = $current_section_number + 100; // Increment by 100 for 2nd semester
+        } else {
+            $new_semester = '1st';
+            $new_section_number = $current_section_number - 100; // Decrement by 100 for 1st semester
+        }
+
+        // Update the section in the database
+        $stmt = $conn->prepare("UPDATE sections SET section_number = ?, semester = ? WHERE id = ?");
+        $stmt->bind_param("isi", $new_section_number, $new_semester, $section['id']);
+        $stmt->execute();
+        $stmt->close();
+    }
+}
+
+// Toggle semester using AJAX
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax_toggle_semester'])) {
+    toggleAllSections($conn);
+    exit; // Important: Prevent further output for the AJAX response
 }
 
 // Fetch all sections
 $sections = $conn->query("SELECT s.*, d.department_code FROM sections s JOIN departments d ON s.department_id = d.id");
 
-$conn = new mysqli('localhost', 'root', '', 'admission_db');
-
-// Check connection
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
 
 // Add subject
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_subject'])) {
@@ -114,15 +152,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_subject'])) {
     $stmt->bind_param("ssi", $subject_code, $subject_name, $department_id);
     $stmt->execute();
     $stmt->close();
+
+    // Redirect to manage_subjects.php
+    header('Location: manage_subjects.php');
+    exit;
 }
 
 // Delete subject
-if (isset($_GET['delete_id'])) {
-    $delete_id = $_GET['delete_id'];
+if (isset($_GET['delete_subject_id'])) {
+    $delete_id = $_GET['delete_subject_id'];
     $stmt = $conn->prepare("DELETE FROM subjects WHERE id = ?");
     $stmt->bind_param("i", $delete_id);
     $stmt->execute();
     $stmt->close();
+
+    // Redirect to manage_subjects.php
+    header('Location: manage_subjects.php');
+    exit;
 }
 
 // Fetch all subjects
@@ -142,6 +188,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_timetable'])) {
     $stmt->bind_param("iiisss", $subject_id, $section_id, $room_id, $day_of_week, $start_time, $end_time);
     $stmt->execute();
     $stmt->close();
+
+    // Redirect to manage_timetable.php
+    header('Location: manage_timetable.php');
+    exit;
+}
+
+// Delete timetable
+if (isset($_GET['delete_timetable_id'])) {
+    $delete_id = $_GET['delete_timetable_id'];
+    
+    // Prepare the delete statement for timetable
+    $stmt = $conn->prepare("DELETE FROM timetable WHERE id = ?");
+    $stmt->bind_param("i", $delete_id);
+    $stmt->execute();
+    $stmt->close();
+
+    // Redirect back to manage_timetable.php after deletion
+    header('Location: manage_timetable.php');
+    exit;
 }
 
 // Fetch all timetables

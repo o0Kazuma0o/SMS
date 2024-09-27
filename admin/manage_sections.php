@@ -1,4 +1,5 @@
 <?php require('../database.php');
+session_start();
 ?>
 
 <!DOCTYPE html>
@@ -31,6 +32,20 @@
 
   <!-- Template Main CSS File -->
   <link href="/SMS/assets/css/style.css" rel="stylesheet">
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script>
+    $(document).ready(function() {
+        // AJAX for toggling semester without page reload
+        $('#toggle-semester-btn').click(function(e) {
+            e.preventDefault(); // Prevent form submission
+
+            $.post("manage_sections.php", { ajax_toggle_semester: true }, function() {
+                location.reload(); // Reload page content after toggling
+            });
+        });
+    });
+  </script>
 
 </head>
 
@@ -274,9 +289,6 @@
                 </select>
             </div>
             <button type="submit" name="add_section" class="btn btn-primary mt-3">Add Section</button>
-
-            <input type="hidden" name="section_id" value="1"> <!-- Dynamic Section ID -->
-            <button type="submit" name="toggle_semester" class="btn btn-warning mt-3">Toggle Semester</button>
           </form>
 
         </div>
@@ -285,7 +297,7 @@
       <div class="card">
         <div class="card-body">
         <h5 class="card-title">Section List</h5>
-        <table class="table table-bordered">
+          <table class="table table-bordered">
             <thead>
                 <tr>
                     <th>Section Number</th>
@@ -303,14 +315,15 @@
                     <td><?= $section['semester']; ?></td>
                     <td><?= $section['department_code']; ?></td>
                     <td>
-                        <a href="manage_sections.php?delete_id=<?= $section['id']; ?>" 
+                        <a href="manage_sections.php?delete_section_id=<?= $section['id']; ?>" 
                            class="btn btn-danger btn-sm"
                            onclick="return confirm('Are you sure you want to delete this section?')">Delete</a>
                     </td>
                 </tr>
                 <?php endwhile; ?>
             </tbody>
-        </table>
+          </table>
+          <button id="toggle-semester-btn" class="btn btn-warning mt-3">Toggle All Semesters</button>
         </div>
       </div>
 

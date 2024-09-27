@@ -272,7 +272,7 @@
                   <td><?= $department['department_code']; ?></td>
                   <td><?= $department['department_name']; ?></td>
                   <td>
-                      <a href="manage_departments.php?delete_id=<?= $department['id']; ?>" 
+                      <a href="manage_departments.php?delete_department_id=<?= $department['id']; ?>" 
                           class="btn btn-danger btn-sm"
                           onclick="return confirm('Are you sure you want to delete this department?')">Delete</a>
                   </td>

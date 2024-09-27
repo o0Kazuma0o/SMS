@@ -324,7 +324,7 @@
                     <td><?= $timetable['start_time']; ?></td>
                     <td><?= $timetable['end_time']; ?></td>
                     <td>
-                        <a href="manage_timetable.php?delete_id=<?= $timetable['id']; ?>" 
+                        <a href="manage_timetable.php?delete_timetable_id=<?= $timetable['id']; ?>" 
                           class="btn btn-danger btn-sm"
                           onclick="return confirm('Are you sure you want to delete this timetable?')">Delete</a>
                     </td>
