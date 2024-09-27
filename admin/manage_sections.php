@@ -1,3 +1,6 @@
+<?php require('/SMS/database.php');
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 

@@ -1,3 +1,6 @@
+<?php require('/SMS/database.php');
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -237,7 +240,7 @@
       <div class="card">
         <div class="card-body">
         <h5 class="card-title">Add Timetable</h5>
-          <form action="assign_timetable_section.php" method="POST" class="mb-4">
+          <form action="manage_timetable.php" method="POST" class="mb-4">
             <!-- Section Selection -->
             <div class="form-group">
                 <label for="section_id">Select Section:</label>
