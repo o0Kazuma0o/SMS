@@ -1,4 +1,4 @@
-<?php require('/SMS/database.php');
+<?php require('../database.php');
 ?>
 
 <!DOCTYPE html>
@@ -8,7 +8,7 @@
   <meta charset="utf-8">
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
 
-  <title>Dashboard - Title</title>
+  <title>Department</title>
   <meta content="" name="description">
   <meta content="" name="keywords">
 
@@ -191,6 +191,12 @@
         </a>
       </li>
       <li class="nav-item">
+        <a class="nav-link " href="manage_rooms.php">
+          <i class="bi bi-grid"></i>
+          <span>Rooms</span>
+        </a>
+      </li>
+      <li class="nav-item">
         <a class="nav-link " href="manage_sections.php">
           <i class="bi bi-grid"></i>
           <span>Sections</span>
@@ -208,12 +214,6 @@
           <span>Timetable</span>
         </a>
       </li>
-      <li class="nav-item">
-        <a class="nav-link " href="manage_rooms.php">
-          <i class="bi bi-grid"></i>
-          <span>Rooms</span>
-        </a>
-      </li>
       <!-- End System Nav -->
 
       <hr class="sidebar-divider">
@@ -225,11 +225,11 @@
   <main id="main" class="main">
 
     <div class="pagetitle">
-      <h1>Dashboard</h1>
+      <h1>Department</h1>
       <nav>
         <ol class="breadcrumb">
           <li class="breadcrumb-item"><a href="index.html">Home</a></li>
-          <li class="breadcrumb-item active">Dashboard</li>
+          <li class="breadcrumb-item active">Department</li>
         </ol>
       </nav>
     </div><!-- End Page Title -->
@@ -248,7 +248,7 @@
 
               <div class="form-group mt-2">
                   <label for="department_name">Department Code:</label>
-                  <input type="text" class="form-control" name="department_name" id="department_name" required>
+                  <input type="text" class="form-control" name="department_code" id="department_code" required>
               </div>
               <button type="submit" name="add_department" class="btn btn-primary mt-3">Add Department</button>
           </form>
@@ -261,33 +261,23 @@
           <table class="table table-bordered">
             <thead>
                 <tr>
+                    <th>Department Code</th>
                     <th>Department Name</th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
-                <!-- Dynamic Rows will be added here by PHP -->
-                <tr>
-                    <td>Computer Science</td>
-                    <td>
-                        <a href="#" class="btn btn-primary btn-sm">Edit</a>
-                        <a href="#" class="btn btn-danger btn-sm">Delete</a>
-                    </td>
-                </tr>
-                <tr>
-                    <td>Computer Science</td>
-                    <td>
-                        <a href="#" class="btn btn-primary btn-sm">Edit</a>
-                        <a href="#" class="btn btn-danger btn-sm">Delete</a>
-                    </td>
-                </tr>
-                <tr>
-                    <td>Computer Science</td>
-                    <td>
-                        <a href="#" class="btn btn-primary btn-sm">Edit</a>
-                        <a href="#" class="btn btn-danger btn-sm">Delete</a>
-                    </td>
-                </tr>
+              <?php while ($department = $departments->fetch_assoc()): ?>
+              <tr>
+                  <td><?= $department['department_code']; ?></td>
+                  <td><?= $department['department_name']; ?></td>
+                  <td>
+                      <a href="manage_departments.php?delete_id=<?= $department['id']; ?>" 
+                          class="btn btn-danger btn-sm"
+                          onclick="return confirm('Are you sure you want to delete this department?')">Delete</a>
+                  </td>
+              </tr>
+              <?php endwhile; ?>
             </tbody>
           </table>
         </div>

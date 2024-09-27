@@ -188,6 +188,12 @@
         </a>
       </li>
       <li class="nav-item">
+        <a class="nav-link " href="manage_rooms.php">
+          <i class="bi bi-grid"></i>
+          <span>Rooms</span>
+        </a>
+      </li>
+      <li class="nav-item">
         <a class="nav-link " href="manage_sections.php">
           <i class="bi bi-grid"></i>
           <span>Sections</span>
@@ -205,12 +211,7 @@
           <span>Timetable</span>
         </a>
       </li>
-      <li class="nav-item">
-        <a class="nav-link " href="manage_rooms.php">
-          <i class="bi bi-grid"></i>
-          <span>Rooms</span>
-        </a>
-      </li>
+
       <!-- End System Nav -->
 
       <hr class="sidebar-divider">

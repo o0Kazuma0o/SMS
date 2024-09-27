@@ -1,4 +1,4 @@
-<?php require('/SMS/database.php');
+<?php require('../database.php');
 ?>
 
 <!DOCTYPE html>
@@ -8,7 +8,7 @@
   <meta charset="utf-8">
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
 
-  <title>Dashboard - Title</title>
+  <title>Timetable</title>
   <meta content="" name="description">
   <meta content="" name="keywords">
 
@@ -191,6 +191,12 @@
         </a>
       </li>
       <li class="nav-item">
+        <a class="nav-link " href="manage_rooms.php">
+          <i class="bi bi-grid"></i>
+          <span>Rooms</span>
+        </a>
+      </li>
+      <li class="nav-item">
         <a class="nav-link " href="manage_sections.php">
           <i class="bi bi-grid"></i>
           <span>Sections</span>
@@ -208,12 +214,6 @@
           <span>Timetable</span>
         </a>
       </li>
-      <li class="nav-item">
-        <a class="nav-link " href="manage_rooms.php">
-          <i class="bi bi-grid"></i>
-          <span>Rooms</span>
-        </a>
-      </li>
       <!-- End System Nav -->
 
       <hr class="sidebar-divider">
@@ -225,11 +225,11 @@
   <main id="main" class="main">
 
     <div class="pagetitle">
-      <h1>Dashboard</h1>
+      <h1>Timetable</h1>
       <nav>
         <ol class="breadcrumb">
           <li class="breadcrumb-item"><a href="index.html">Home</a></li>
-          <li class="breadcrumb-item active">Dashboard</li>
+          <li class="breadcrumb-item active">Timetable</li>
         </ol>
       </nav>
     </div><!-- End Page Title -->
@@ -241,64 +241,61 @@
         <div class="card-body">
         <h5 class="card-title">Add Timetable</h5>
           <form action="manage_timetable.php" method="POST" class="mb-4">
-            <!-- Section Selection -->
-            <div class="form-group">
-                <label for="section_id">Select Section:</label>
-                <select class="form-control" name="section_id" id="section_id" required>
-                    <!-- Dynamic Section Options -->
-                    <option value="1">BSCS-A (2nd Year, 1st Semester)</option>
-                    <option value="2">BSIT-B (1st Year, 2nd Semester)</option>
-                </select>
-            </div>
-
-            <!-- Subject Selection -->
-            <div class="form-group mt-2">
-                <label for="subject_id">Select Subject:</label>
-                <select class="form-control" name="subject_id" id="subject_id" required>
-                    <!-- Dynamic Subject Options -->
-                    <option value="1">CS101 - Data Structures</option>
-                    <option value="2">IT102 - Database Systems</option>
-                </select>
-            </div>
-
-            <!-- Day Selection -->
-            <div class="form-group mt-2">
-                <label for="day_of_week">Select Day:</label>
-                <select class="form-control" name="day_of_week" id="day_of_week" required>
-                    <option value="Monday">Monday</option>
-                    <option value="Tuesday">Tuesday</option>
-                    <option value="Wednesday">Wednesday</option>
-                    <option value="Thursday">Thursday</option>
-                    <option value="Friday">Friday</option>
-                    <option value="Saturday">Saturday</option>
-                    <option value="Sunday">Sunday</option>
-                </select>
-            </div>
-
-            <!-- Manual Start Time Input -->
-            <div class="form-group mt-2">
-                <label for="start_time">Start Time:</label>
-                <input type="time" class="form-control" name="start_time" id="start_time" required>
-            </div>
-
-            <!-- Manual End Time Input -->
-            <div class="form-group mt-2">
-                <label for="end_time">End Time:</label>
-                <input type="time" class="form-control" name="end_time" id="end_time" required>
-            </div>
-
-            <!-- Room Selection -->
-            <div class="form-group mt-2">
-                <label for="room_id">Select Room:</label>
-                <select class="form-control" name="room_id" id="room_id" required>
-                    <!-- Dynamic Room Options -->
-                    <option value="1">Room 101</option>
-                    <option value="2">Room 102</option>
-                </select>
-            </div>
-
-            <button type="submit" name="assign_timetable" class="btn btn-primary mt-3">Assign Timetable</button>
+              <div class="form-group">
+                  <label for="subject_id">Select Subject:</label>
+                  <select class="form-control" name="subject_id" id="subject_id" required>
+                      <!-- Dynamic Subject Options -->
+                      <?php
+                      $subjects = $conn->query("SELECT * FROM subjects");
+                      while ($subject = $subjects->fetch_assoc()): ?>
+                          <option value="<?= $subject['id']; ?>"><?= $subject['subject_code']; ?></option>
+                      <?php endwhile; ?>
+                  </select>
+              </div>
+              <div class="form-group mt-2">
+                  <label for="section_id">Select Section:</label>
+                  <select class="form-control" name="section_id" id="section_id" required>
+                      <!-- Dynamic Section Options -->
+                      <?php
+                      $sections = $conn->query("SELECT * FROM sections");
+                      while ($section = $sections->fetch_assoc()): ?>
+                          <option value="<?= $section['id']; ?>"><?= $section['section_number']; ?></option>
+                      <?php endwhile; ?>
+                  </select>
+              </div>
+              <div class="form-group mt-2">
+                  <label for="room_id">Select Room:</label>
+                  <select class="form-control" name="room_id" id="room_id" required>
+                      <!-- Dynamic Room Options -->
+                      <?php
+                      $rooms = $conn->query("SELECT * FROM rooms");
+                      while ($room = $rooms->fetch_assoc()): ?>
+                          <option value="<?= $room['id']; ?>"><?= $room['room_name']; ?></option>
+                      <?php endwhile; ?>
+                  </select>
+              </div>
+              <div class="form-group mt-2">
+                  <label for="day_of_week">Day of the Week:</label>
+                  <select class="form-control" name="day_of_week" id="day_of_week" required>
+                      <option value="Monday">Monday</option>
+                      <option value="Tuesday">Tuesday</option>
+                      <option value="Wednesday">Wednesday</option>
+                      <option value="Thursday">Thursday</option>
+                      <option value="Friday">Friday</option>
+                      <option value="Saturday">Saturday</option>
+                  </select>
+              </div>
+              <div class="form-group mt-2">
+                  <label for="start_time">Start Time:</label>
+                  <input type="time" class="form-control" name="start_time" id="start_time" required>
+              </div>
+              <div class="form-group mt-2">
+                  <label for="end_time">End Time:</label>
+                  <input type="time" class="form-control" name="end_time" id="end_time" required>
+              </div>
+              <button type="submit" name="add_timetable" class="btn btn-primary mt-3">Add Timetable</button>
           </form>
+
         </div>
       </div>
 
@@ -308,29 +305,31 @@
           <table class="table table-bordered">
             <thead>
                 <tr>
-                    <th>Section</th>
-                    <th>Subject</th>
+                    <th>Subject Code</th>
+                    <th>Section Number</th>
+                    <th>Room</th>
                     <th>Day</th>
                     <th>Start Time</th>
                     <th>End Time</th>
-                    <th>Room</th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
-                <!-- Dynamic Rows will be added here by PHP -->
+                <?php while ($timetable = $timetables->fetch_assoc()): ?>
                 <tr>
-                    <td>BSCS-A (2nd Year, 1st Semester)</td>
-                    <td>CS101 - Data Structures</td>
-                    <td>Monday</td>
-                    <td>08:00 AM</td>
-                    <td>10:00 AM</td>
-                    <td>Room 101</td>
+                    <td><?= $timetable['subject_code']; ?></td>
+                    <td><?= $timetable['section_number']; ?></td>
+                    <td><?= $timetable['room_name']; ?></td>
+                    <td><?= $timetable['day_of_week']; ?></td>
+                    <td><?= $timetable['start_time']; ?></td>
+                    <td><?= $timetable['end_time']; ?></td>
                     <td>
-                        <a href="#" class="btn btn-primary btn-sm">Edit</a>
-                        <a href="#" class="btn btn-danger btn-sm">Delete</a>
+                        <a href="manage_timetable.php?delete_id=<?= $timetable['id']; ?>" 
+                          class="btn btn-danger btn-sm"
+                          onclick="return confirm('Are you sure you want to delete this timetable?')">Delete</a>
                     </td>
                 </tr>
+                <?php endwhile; ?>
             </tbody>
           </table>
         </div>

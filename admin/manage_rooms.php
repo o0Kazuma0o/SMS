@@ -1,4 +1,4 @@
-<?php require('/SMS/database.php');
+<?php require('../database.php');
 ?>
 
 <!DOCTYPE html>
@@ -8,7 +8,7 @@
   <meta charset="utf-8">
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
 
-  <title>Dashboard - Title</title>
+  <title>Rooms</title>
   <meta content="" name="description">
   <meta content="" name="keywords">
 
@@ -191,6 +191,12 @@
         </a>
       </li>
       <li class="nav-item">
+        <a class="nav-link " href="manage_rooms.php">
+          <i class="bi bi-grid"></i>
+          <span>Rooms</span>
+        </a>
+      </li>
+      <li class="nav-item">
         <a class="nav-link " href="manage_sections.php">
           <i class="bi bi-grid"></i>
           <span>Sections</span>
@@ -208,12 +214,6 @@
           <span>Timetable</span>
         </a>
       </li>
-      <li class="nav-item">
-        <a class="nav-link " href="manage_rooms.php">
-          <i class="bi bi-grid"></i>
-          <span>Rooms</span>
-        </a>
-      </li>
       <!-- End System Nav -->
 
       <hr class="sidebar-divider">
@@ -225,11 +225,11 @@
   <main id="main" class="main">
 
     <div class="pagetitle">
-      <h1>Dashboard</h1>
+      <h1>Rooms</h1>
       <nav>
         <ol class="breadcrumb">
           <li class="breadcrumb-item"><a href="index.html">Home</a></li>
-          <li class="breadcrumb-item active">Dashboard</li>
+          <li class="breadcrumb-item active">Rooms</li>
         </ol>
       </nav>
     </div><!-- End Page Title -->
@@ -271,16 +271,18 @@
                 </tr>
             </thead>
             <tbody>
-                <!-- Dynamic Rows will be added here by PHP -->
+              <?php while ($room = $rooms->fetch_assoc()): ?>
                 <tr>
-                    <td>Room 101</td>
-                    <td>50</td>
-                    <td>First Floor</td>
+                    <td><?= $room['room_name']; ?></td>
+                    <td><?= $room['capacity']; ?></td>
+                    <td><?= $room['location']; ?></td>
                     <td>
-                        <a href="#" class="btn btn-primary btn-sm">Edit</a>
-                        <a href="#" class="btn btn-danger btn-sm">Delete</a>
+                        <a href="manage_rooms.php?delete_id=<?= $room['id']; ?>" 
+                           class="btn btn-danger btn-sm"
+                           onclick="return confirm('Are you sure you want to delete this room?')">Delete</a>
                     </td>
                 </tr>
+              <?php endwhile; ?>
             </tbody>
           </table>
         </div>

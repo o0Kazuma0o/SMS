@@ -1,4 +1,4 @@
-<?php require('/SMS/database.php');
+<?php require('../database.php');
 ?>
 
 <!DOCTYPE html>
@@ -8,7 +8,7 @@
   <meta charset="utf-8">
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
 
-  <title>Dashboard - Title</title>
+  <title>Sections</title>
   <meta content="" name="description">
   <meta content="" name="keywords">
 
@@ -191,6 +191,12 @@
         </a>
       </li>
       <li class="nav-item">
+        <a class="nav-link " href="manage_rooms.php">
+          <i class="bi bi-grid"></i>
+          <span>Rooms</span>
+        </a>
+      </li>
+      <li class="nav-item">
         <a class="nav-link " href="manage_sections.php">
           <i class="bi bi-grid"></i>
           <span>Sections</span>
@@ -208,12 +214,6 @@
           <span>Timetable</span>
         </a>
       </li>
-      <li class="nav-item">
-        <a class="nav-link " href="manage_rooms.php">
-          <i class="bi bi-grid"></i>
-          <span>Rooms</span>
-        </a>
-      </li>
       <!-- End System Nav -->
 
       <hr class="sidebar-divider">
@@ -225,11 +225,11 @@
   <main id="main" class="main">
 
     <div class="pagetitle">
-      <h1>Dashboard</h1>
+      <h1>Section</h1>
       <nav>
         <ol class="breadcrumb">
           <li class="breadcrumb-item"><a href="index.html">Home</a></li>
-          <li class="breadcrumb-item active">Dashboard</li>
+          <li class="breadcrumb-item active">Section</li>
         </ol>
       </nav>
     </div><!-- End Page Title -->
@@ -240,21 +240,12 @@
       <div class="card">
         <div class="card-body">
         <h5 class="card-title">Add Section</h5>
+          <!-- Add Section Form -->
           <form action="manage_sections.php" method="POST" class="mb-4">
             <div class="form-group">
-                <label for="section_name">Section Number:</label>
-                <input type="text" class="form-control" name="section_name" id="section_name" required>
+                <label for="section_number">Section Number:</label>
+                <input type="number" class="form-control" name="section_number" id="section_number" required>
             </div>
-
-            <div class="form-group mt-2">
-                <label for="department_id">Assign to Department:</label>
-                <select class="form-control" name="department_id" id="department_id" required>
-                    <!-- Dynamic Department Options -->
-                    <option value="1">Computer Science</option>
-                    <option value="2">Information Technology</option>
-                </select>
-            </div>
-
             <div class="form-group mt-2">
                 <label for="year_level">Year Level:</label>
                 <select class="form-control" name="year_level" id="year_level" required>
@@ -264,47 +255,62 @@
                     <option value="4">4th Year</option>
                 </select>
             </div>
-
             <div class="form-group mt-2">
                 <label for="semester">Semester:</label>
                 <select class="form-control" name="semester" id="semester" required>
-                    <option value="1">1st Semester</option>
-                    <option value="2">2nd Semester</option>
+                    <option value="1st">1st Semester</option>
+                    <option value="2nd">2nd Semester</option>
                 </select>
             </div>
-
+            <div class="form-group mt-2">
+                <label for="department_id">Assign to Department:</label>
+                <select class="form-control" name="department_id" id="department_id" required>
+                    <!-- Dynamic Department Options -->
+                    <?php
+                    $departments = $conn->query("SELECT * FROM departments");
+                    while ($department = $departments->fetch_assoc()): ?>
+                        <option value="<?= $department['id']; ?>"><?= $department['department_code']; ?></option>
+                    <?php endwhile; ?>
+                </select>
+            </div>
             <button type="submit" name="add_section" class="btn btn-primary mt-3">Add Section</button>
+
+            <input type="hidden" name="section_id" value="1"> <!-- Dynamic Section ID -->
+            <button type="submit" name="toggle_semester" class="btn btn-warning mt-3">Toggle Semester</button>
           </form>
+
         </div>
       </div>
 
       <div class="card">
         <div class="card-body">
         <h5 class="card-title">Section List</h5>
-          <table class="table table-bordered">
+        <table class="table table-bordered">
             <thead>
                 <tr>
-                    <th>Section Name</th>
-                    <th>Department</th>
+                    <th>Section Number</th>
                     <th>Year Level</th>
                     <th>Semester</th>
+                    <th>Department</th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
-                <!-- Dynamic Rows will be added here by PHP -->
+                <?php while ($section = $sections->fetch_assoc()): ?>
                 <tr>
-                    <td>BSCS-A</td>
-                    <td>Computer Science</td>
-                    <td>2nd Year</td>
-                    <td>1st Semester</td>
+                    <td><?= $section['section_number']; ?></td>
+                    <td><?= $section['year_level']; ?></td>
+                    <td><?= $section['semester']; ?></td>
+                    <td><?= $section['department_code']; ?></td>
                     <td>
-                        <a href="#" class="btn btn-primary btn-sm">Edit</a>
-                        <a href="#" class="btn btn-danger btn-sm">Delete</a>
+                        <a href="manage_sections.php?delete_id=<?= $section['id']; ?>" 
+                           class="btn btn-danger btn-sm"
+                           onclick="return confirm('Are you sure you want to delete this section?')">Delete</a>
                     </td>
                 </tr>
+                <?php endwhile; ?>
             </tbody>
-          </table>
+        </table>
         </div>
       </div>
 

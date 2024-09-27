@@ -1,4 +1,4 @@
-<?php require('/SMS/database.php');
+<?php require('../database.php');
 ?>
 
 <!DOCTYPE html>
@@ -8,7 +8,7 @@
   <meta charset="utf-8">
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
 
-  <title>Dashboard - Title</title>
+  <title>Subjects</title>
   <meta content="" name="description">
   <meta content="" name="keywords">
 
@@ -191,6 +191,12 @@
         </a>
       </li>
       <li class="nav-item">
+        <a class="nav-link " href="manage_rooms.php">
+          <i class="bi bi-grid"></i>
+          <span>Rooms</span>
+        </a>
+      </li>
+      <li class="nav-item">
         <a class="nav-link " href="manage_sections.php">
           <i class="bi bi-grid"></i>
           <span>Sections</span>
@@ -208,12 +214,6 @@
           <span>Timetable</span>
         </a>
       </li>
-      <li class="nav-item">
-        <a class="nav-link " href="manage_rooms.php">
-          <i class="bi bi-grid"></i>
-          <span>Rooms</span>
-        </a>
-      </li>
       <!-- End System Nav -->
 
       <hr class="sidebar-divider">
@@ -225,11 +225,11 @@
   <main id="main" class="main">
 
     <div class="pagetitle">
-      <h1>Dashboard</h1>
+      <h1>Subjects</h1>
       <nav>
         <ol class="breadcrumb">
           <li class="breadcrumb-item"><a href="index.html">Home</a></li>
-          <li class="breadcrumb-item active">Dashboard</li>
+          <li class="breadcrumb-item active">Subjects</li>
         </ol>
       </nav>
     </div><!-- End Page Title -->
@@ -242,55 +242,60 @@
 
           <!-- Add Subject Form -->
           <form action="manage_subjects.php" method="POST" class="mb-4">
-          <div class="form-group">
-              <label for="subject_code">Subject Code:</label>
-              <input type="text" class="form-control" name="subject_code" id="subject_code" required>
-          </div>
-          <div class="form-group mt-2">
-              <label for="subject_name">Subject Name:</label>
-              <input type="text" class="form-control" name="subject_name" id="subject_name" required>
-          </div>
-          <div class="form-group mt-2">
-              <label for="department_id">Assign to Department:</label>
-              <select class="form-control" name="department_id" id="department_id" required>
-                  <!-- Dynamic Department Options -->
-                  <option value="1">Computer Science</option>
-                  <option value="2">Information Technology</option>
-              </select>
-          </div>
-          <button type="submit" name="add_subject" class="btn btn-primary mt-3">Add Subject</button>
-          </form>
+            <div class="form-group">
+                <label for="subject_code">Subject Code:</label>
+                <input type="text" class="form-control" name="subject_code" id="subject_code" required>
+            </div>
+            <div class="form-group mt-2">
+                <label for="subject_name">Subject Name:</label>
+                <input type="text" class="form-control" name="subject_name" id="subject_name" required>
+            </div>
+            <div class="form-group mt-2">
+                <label for="department_id">Assign to Department:</label>
+                <select class="form-control" name="department_id" id="department_id" required>
+                    <!-- Dynamic Department Options -->
+                    <?php
+                    $departments = $conn->query("SELECT * FROM departments");
+                    while ($department = $departments->fetch_assoc()): ?>
+                        <option value="<?= $department['id']; ?>"><?= $department['department_code']; ?></option>
+                    <?php endwhile; ?>
+                </select>
+            </div>
+            <button type="submit" name="add_subject" class="btn btn-primary mt-3">Add Subject</button>
+        </form>
       </div>
     </div>
 
     <div class="card">
       <div class="card-body">
-        <h5 class="card-title">List of Subject</h5>
-          <div class="row">
-            <!-- List of Subjects -->
-            <table class="table table-bordered">
-              <thead>
-                  <tr>
-                      <th>Subject Code</th>
-                      <th>Subject Name</th>
-                      <th>Department</th>
-                      <th>Actions</th>
-                  </tr>
-              </thead>
-              <tbody>
-                  <!-- Dynamic Rows will be added here by PHP -->
-                  <tr>
-                      <td>CS101</td>
-                      <td>Data Structures</td>
-                      <td>Computer Science</td>
-                      <td>
-                          <a href="#" class="btn btn-primary btn-sm">Edit</a>
-                          <a href="#" class="btn btn-danger btn-sm">Delete</a>
-                      </td>
-                  </tr>
-              </tbody>
-            </table>
-          </div>
+      <h5 class="card-title">List of Subject</h5>
+        <div class="row">
+          <!-- List of Subjects -->
+          <table class="table table-bordered">
+            <thead>
+              <tr>
+                  <th>Subject Code</th>
+                  <th>Subject Name</th>
+                  <th>Department</th>
+                  <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <?php while ($subject = $subjects->fetch_assoc()): ?>
+              <tr>
+                  <td><?= $subject['subject_code']; ?></td>
+                  <td><?= $subject['subject_name']; ?></td>
+                  <td><?= $subject['department_code']; ?></td>
+                  <td>
+                      <a href="manage_subjects.php?delete_id=<?= $subject['id']; ?>" 
+                          class="btn btn-danger btn-sm"
+                          onclick="return confirm('Are you sure you want to delete this subject?')">Delete</a>
+                  </td>
+              </tr>
+              <?php endwhile; ?>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
 
