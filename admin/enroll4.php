@@ -188,6 +188,12 @@
         </a>
       </li>
       <li class="nav-item">
+        <a class="nav-link " href="manage_sections.php">
+          <i class="bi bi-grid"></i>
+          <span>Sections</span>
+        </a>
+      </li>
+      <li class="nav-item">
         <a class="nav-link " href="manage_subjects.php">
           <i class="bi bi-grid"></i>
           <span>Subjects</span>

@@ -188,6 +188,12 @@
         </a>
       </li>
       <li class="nav-item">
+        <a class="nav-link " href="manage_sections.php">
+          <i class="bi bi-grid"></i>
+          <span>Sections</span>
+        </a>
+      </li>
+      <li class="nav-item">
         <a class="nav-link " href="manage_subjects.php">
           <i class="bi bi-grid"></i>
           <span>Subjects</span>
@@ -228,41 +234,106 @@
     <section class="section dashboard">
     <div class="row">
 
-          <div class="card">
-            <div class="card-body">
-              <h5 class="card-title">Add Timetable</h5>
-              <div class="form-group">
-                <label for="subject_code">Subject Code:</label>
-                <input type="text" class="form-control" name="subject_code" id="subject_code" required>
-              </div>
-              <div class="form-group mt-2">
-                <label for="subject_name">Subject Name:</label>
-                <input type="text" class="form-control" name="subject_name" id="subject_name" required>
-              </div>
-              <div class="form-group mt-2">
-                <label for="day_of_week">Day of Week:</label>
-                <select class="form-control" name="day_of_week" id="day_of_week" required>
-                  <option value="Monday">Monday</option>
-                  <option value="Tuesday">Tuesday</option>
-                  <option value="Wednesday">Wednesday</option>
-                  <option value="Thursday">Thursday</option>
-                  <option value="Friday">Friday</option>
-                  <option value="Saturday">Saturday</option>
-                  <option value="Sunday">Sunday</option>
+      <div class="card">
+        <div class="card-body">
+        <h5 class="card-title">Add Timetable</h5>
+          <form action="assign_timetable_section.php" method="POST" class="mb-4">
+            <!-- Section Selection -->
+            <div class="form-group">
+                <label for="section_id">Select Section:</label>
+                <select class="form-control" name="section_id" id="section_id" required>
+                    <!-- Dynamic Section Options -->
+                    <option value="1">BSCS-A (2nd Year, 1st Semester)</option>
+                    <option value="2">BSIT-B (1st Year, 2nd Semester)</option>
                 </select>
-              </div>
-              <div class="form-group mt-2">
-                <label for="start_time">Start Time:</label>
-                <input type="time" class="form-control" name="start_time" id="start_time" min="06:00" max="21:00" required>
-              </div>
-              <div class="form-group mt-2">
-                <label for="end_time">End Time:</label>
-                <input type="time" class="form-control" name="end_time" id="end_time" min="06:00" max="21:00" required>
-              </div>
-              <button type="submit" class="btn btn-primary mt-3">Add to Timetable</button>
             </div>
-          </div>
-       </div>
+
+            <!-- Subject Selection -->
+            <div class="form-group mt-2">
+                <label for="subject_id">Select Subject:</label>
+                <select class="form-control" name="subject_id" id="subject_id" required>
+                    <!-- Dynamic Subject Options -->
+                    <option value="1">CS101 - Data Structures</option>
+                    <option value="2">IT102 - Database Systems</option>
+                </select>
+            </div>
+
+            <!-- Day Selection -->
+            <div class="form-group mt-2">
+                <label for="day_of_week">Select Day:</label>
+                <select class="form-control" name="day_of_week" id="day_of_week" required>
+                    <option value="Monday">Monday</option>
+                    <option value="Tuesday">Tuesday</option>
+                    <option value="Wednesday">Wednesday</option>
+                    <option value="Thursday">Thursday</option>
+                    <option value="Friday">Friday</option>
+                    <option value="Saturday">Saturday</option>
+                    <option value="Sunday">Sunday</option>
+                </select>
+            </div>
+
+            <!-- Manual Start Time Input -->
+            <div class="form-group mt-2">
+                <label for="start_time">Start Time:</label>
+                <input type="time" class="form-control" name="start_time" id="start_time" required>
+            </div>
+
+            <!-- Manual End Time Input -->
+            <div class="form-group mt-2">
+                <label for="end_time">End Time:</label>
+                <input type="time" class="form-control" name="end_time" id="end_time" required>
+            </div>
+
+            <!-- Room Selection -->
+            <div class="form-group mt-2">
+                <label for="room_id">Select Room:</label>
+                <select class="form-control" name="room_id" id="room_id" required>
+                    <!-- Dynamic Room Options -->
+                    <option value="1">Room 101</option>
+                    <option value="2">Room 102</option>
+                </select>
+            </div>
+
+            <button type="submit" name="assign_timetable" class="btn btn-primary mt-3">Assign Timetable</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-body">
+        <h5 class="card-title">List of Timetables</h5>
+          <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Section</th>
+                    <th>Subject</th>
+                    <th>Day</th>
+                    <th>Start Time</th>
+                    <th>End Time</th>
+                    <th>Room</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Dynamic Rows will be added here by PHP -->
+                <tr>
+                    <td>BSCS-A (2nd Year, 1st Semester)</td>
+                    <td>CS101 - Data Structures</td>
+                    <td>Monday</td>
+                    <td>08:00 AM</td>
+                    <td>10:00 AM</td>
+                    <td>Room 101</td>
+                    <td>
+                        <a href="#" class="btn btn-primary btn-sm">Edit</a>
+                        <a href="#" class="btn btn-danger btn-sm">Delete</a>
+                    </td>
+                </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
     </section>
 
   </main><!-- End #main -->

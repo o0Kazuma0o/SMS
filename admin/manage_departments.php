@@ -188,6 +188,12 @@
         </a>
       </li>
       <li class="nav-item">
+        <a class="nav-link " href="manage_sections.php">
+          <i class="bi bi-grid"></i>
+          <span>Sections</span>
+        </a>
+      </li>
+      <li class="nav-item">
         <a class="nav-link " href="manage_subjects.php">
           <i class="bi bi-grid"></i>
           <span>Subjects</span>
@@ -236,13 +242,18 @@
                   <label for="department_name">Department Name:</label>
                   <input type="text" class="form-control" name="department_name" id="department_name" required>
               </div>
+
+              <div class="form-group mt-2">
+                  <label for="department_name">Department Code:</label>
+                  <input type="text" class="form-control" name="department_name" id="department_name" required>
+              </div>
               <button type="submit" name="add_department" class="btn btn-primary mt-3">Add Department</button>
           </form>
         </div>
       </div>
       <div class="card">
         <div class="card-body">
-        <h5 class="card-title">Add Department</h5>
+        <h5 class="card-title">Department List</h5>
           <!-- List of Departments -->
           <table class="table table-bordered">
             <thead>

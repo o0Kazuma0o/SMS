@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
 
-  <title>Admission</title>
+  <title>Dashboard - Title</title>
   <meta content="" name="description">
   <meta content="" name="keywords">
 
@@ -147,20 +147,20 @@
           <i class="bi bi-grid"></i>
           <span>Admission</span>
         </a>
-      </li><!-- End System Nav -->
+      </li>
 
       <li class="nav-item">
-        <a class="nav-link " data-bs-target="#enrollment-nav" data-bs-toggle="collapse" href="#">
+        <a class="nav-link collapsed" data-bs-target="#enrollment-nav" data-bs-toggle="collapse" href="#">
           <i class="bi bi-layout-text-window-reverse"></i><span>Enrolled BSIT</span><i class="bi bi-chevron-down ms-auto"></i>
         </a>
-        <ul id="enrollment-nav" class="nav-content collapse show" data-bs-parent="#sidebar-nav">
+        <ul id="enrollment-nav" class="nav-content collapse " data-bs-parent="#sidebar-nav">
           <li>
             <a href="enroll1.php">
               <i class="bi bi-circle"></i><span>1st Year</span>
             </a>
           </li>
           <li>
-            <a href="enroll2.php" class="active">
+            <a href="enroll2.php">
               <i class="bi bi-circle"></i><span>2nd Year</span>
             </a>
           </li>
@@ -222,92 +222,33 @@
   <main id="main" class="main">
 
     <div class="pagetitle">
-      <h1>Admission</h1>
+      <h1>Dashboard</h1>
       <nav>
         <ol class="breadcrumb">
-          <li class="breadcrumb-item"><a href="Adashboard.php">Dashboard</a></li>
-          <li class="breadcrumb-item">Enrolled BSIT</li>
-          <li class="breadcrumb-item active">1st Year</li>
+          <li class="breadcrumb-item"><a href="index.html">Home</a></li>
+          <li class="breadcrumb-item active">Dashboard</li>
         </ol>
       </nav>
     </div><!-- End Page Title -->
 
-    <section class="section">
-      <div class="col-lg-12">
-          <div class="card">
-            <div class="card-body">
-              <h5 class="card-title">List of Student</h5>
-              <!-- Table with stripped rows -->
-              <table class="table datatable">
-                <thead>
-                  <tr>
-                    <th>Student ID</th>
-                    <th>Name</th>
-                    <th data-type="date" data-format="YYYY/DD/MM">Date Enrolled</th>
-                    <th>Academic Year</th>
-                    <th>Department</th>
-                    <th>Section</th>
-                    <th>Year Level</th>
-                    <th>Subjects</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>24121232</td>
-                    <td>Ken Nat</td>
-                    <td>2024/08/07</td>
-                    <td>2024-2025</td>
-                    <td>BSIT</td>
-                    <td>2101</td>
-                    <td>2nd Year</td>
-                    <td><!-- Modal Here -->
-                      <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#viewsub">
-                      View
-                      </button>
-                      <div class="modal fade" id="viewsub" tabindex="-1">
-                        <div class="modal-dialog modal-dialog-centered modal-lg">
-                          <div class="modal-content">
-                            <div class="modal-header">
-                              <h5 class="modal-title">Subjects</h5>
-                              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                            </div>
-                            <div class="modal-body">
-                              <table class="table">
-                                <thead>
-                                  <tr>
-                                    <th>Subject Code</th>
-                                    <th>Subject Name</th>
-                                    <th>Room</th>
-                                    <th>Schedule</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  <tr>
-                                    <td>ITSP 1</td>
-                                    <td>Software Engineering</td>
-                                    <td>Lab 1</td>
-                                    <td>Monday, 8:00 AM - 10:00 AM</td>
-                                  </tr>
-                                </tbody>
-                              </table>
-                            </div>
-                            <div class="modal-footer">
-                              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                              <button type="button" class="btn btn-primary">Save changes</button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td><span class="badge bg-success">Enrolled</span></td>
-                  </tr>
-                </tbody>
-              </table>
-              <!-- End Table with stripped rows -->
-            </div>
-          </div>
+    <section class="section dashboard">
+    <div class="row">
+
+      <div class="card">
+        <div class="card-body">
+        <h5 class="card-title">??</h5>
+          
+        </div>
       </div>
+
+      <div class="card">
+        <div class="card-body">
+        <h5 class="card-title">??</h5>
+          
+        </div>
+      </div>
+
+    </div>
     </section>
 
   </main><!-- End #main -->
