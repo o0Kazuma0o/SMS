@@ -239,18 +239,25 @@
         <div class="card-body">
           <h5 class="card-title">Add Department</h5>
 
-          <!-- Add Department Form -->
+          <!-- Add/Edit Department Form -->
           <form action="manage_departments.php" method="POST" class="mb-4">
               <div class="form-group">
                   <label for="department_name">Department Name:</label>
-                  <input type="text" class="form-control" name="department_name" id="department_name" required>
+                  <input type="text" class="form-control" name="department_name" id="department_name" required
+                  value="<?= isset($edit_department) ? $edit_department['department_name'] : ''; ?>">
               </div>
 
               <div class="form-group mt-2">
                   <label for="department_name">Department Code:</label>
-                  <input type="text" class="form-control" name="department_code" id="department_code" required>
+                  <input type="text" class="form-control" name="department_code" id="department_code" required
+                  value="<?= isset($edit_department) ? $edit_department['department_code'] : ''; ?>">
               </div>
+              <?php if (isset($edit_department)): ?>
+              <input type="hidden" name="department_id" value="<?= $edit_department['id']; ?>">
+              <button type="submit" name="update_department" class="btn btn-warning mt-3">Update Department</button>
+                <?php else: ?>
               <button type="submit" name="add_department" class="btn btn-primary mt-3">Add Department</button>
+                <?php endif; ?>
           </form>
         </div>
       </div>
@@ -272,9 +279,11 @@
                   <td><?= $department['department_code']; ?></td>
                   <td><?= $department['department_name']; ?></td>
                   <td>
-                      <a href="manage_departments.php?delete_department_id=<?= $department['id']; ?>" 
-                          class="btn btn-danger btn-sm"
-                          onclick="return confirm('Are you sure you want to delete this department?')">Delete</a>
+                  <a href="manage_departments.php?edit_department_id=<?= $department['id']; ?>" 
+                  class="btn btn-info btn-sm">Edit</a>
+                  <a href="manage_departments.php?delete_department_id=<?= $department['id']; ?>" 
+                  class="btn btn-danger btn-sm"
+                  onclick="return confirm('Are you sure you want to delete this department?')">Delete</a>
                   </td>
               </tr>
               <?php endwhile; ?>

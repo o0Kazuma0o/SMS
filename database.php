@@ -6,6 +6,20 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
+// Edit department
+$edit_department = null;
+if (isset($_GET['edit_department_id'])) {
+    $edit_department_id = $_GET['edit_department_id'];
+
+    // Fetch the department details to pre-fill the form for editing
+    $stmt = $conn->prepare("SELECT * FROM departments WHERE id = ?");
+    $stmt->bind_param("i", $edit_department_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $edit_department = $result->fetch_assoc();
+    $stmt->close();
+}
+
 // Add department
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_department'])) {
     $department_code = $_POST['department_code'];
@@ -18,6 +32,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_department'])) {
     $stmt->close();
 
     // Redirect to manage_departments.php
+    header('Location: manage_departments.php');
+    exit;
+}
+
+// Update department
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_department'])) {
+    $department_id = $_POST['department_id'];  // The ID of the department being updated
+    $department_code = $_POST['department_code'];
+    $department_name = $_POST['department_name'];
+
+    // Update the department in the database
+    $stmt = $conn->prepare("UPDATE departments SET department_code = ?, department_name = ? WHERE id = ?");
+    $stmt->bind_param("ssi", $department_code, $department_name, $department_id);
+    $stmt->execute();
+    $stmt->close();
+
+    // Redirect to manage_departments.php after updating
     header('Location: manage_departments.php');
     exit;
 }
