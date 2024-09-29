@@ -254,41 +254,55 @@ session_start();
 
       <div class="card">
         <div class="card-body">
-        <h5 class="card-title">Add Section</h5>
+        <h5 class="card-title">
+        <?php if (isset($_GET['edit_section_id'])): ?>
+          Edit Section
+        <?php else: ?>
+          Add Section
+        <?php endif; ?>
+        </h5>
           <!-- Add Section Form -->
           <form action="manage_sections.php" method="POST" class="mb-4">
             <div class="form-group">
                 <label for="section_number">Section Number:</label>
-                <input type="number" class="form-control" name="section_number" id="section_number" required>
+                <input type="number" class="form-control" name="section_number" id="section_number" required
+                value="<?= isset($edit_section) ? $edit_section['section_number'] : ''; ?>">
             </div>
             <div class="form-group mt-2">
                 <label for="year_level">Year Level:</label>
                 <select class="form-control" name="year_level" id="year_level" required>
-                    <option value="1">1st Year</option>
-                    <option value="2">2nd Year</option>
-                    <option value="3">3rd Year</option>
-                    <option value="4">4th Year</option>
-                </select>
+                  <option value="1" <?= isset($edit_section) && $edit_section['year_level'] == '1' ? 'selected' : ''; ?>>1st Year</option>
+                  <option value="2" <?= isset($edit_section) && $edit_section['year_level'] == '2' ? 'selected' : ''; ?>>2nd Year</option>
+                  <option value="3" <?= isset($edit_section) && $edit_section['year_level'] == '3' ? 'selected' : ''; ?>>3rd Year</option>
+                  <option value="4" <?= isset($edit_section) && $edit_section['year_level'] == '4' ? 'selected' : ''; ?>>4th Year</option>
+              </select>
             </div>
             <div class="form-group mt-2">
-                <label for="semester">Semester:</label>
-                <select class="form-control" name="semester" id="semester" required>
-                    <option value="1st">1st Semester</option>
-                    <option value="2nd">2nd Semester</option>
-                </select>
+            <label for="semester">Semester:</label>
+              <select class="form-control" name="semester" id="semester" required>
+                <option value="1st" <?= isset($edit_section) && $edit_section['semester'] == '1st' ? 'selected' : ''; ?>>1st Semester</option>
+                <option value="2nd" <?= isset($edit_section) && $edit_section['semester'] == '2nd' ? 'selected' : ''; ?>>2nd Semester</option>
+              </select>
             </div>
             <div class="form-group mt-2">
-                <label for="department_id">Assign to Department:</label>
-                <select class="form-control" name="department_id" id="department_id" required>
-                    <!-- Dynamic Department Options -->
-                    <?php
-                    $departments = $conn->query("SELECT * FROM departments");
-                    while ($department = $departments->fetch_assoc()): ?>
-                        <option value="<?= $department['id']; ?>"><?= $department['department_code']; ?></option>
-                    <?php endwhile; ?>
-                </select>
+              <label for="department_id">Assign to Department:</label>
+              <select class="form-control" name="department_id" id="department_id" required>
+                  <!-- Fetch Departments -->
+                  <?php
+                  $departments = $conn->query("SELECT * FROM departments");
+                  while ($department = $departments->fetch_assoc()): ?>
+                      <option value="<?= $department['id']; ?>" <?= isset($edit_section) && $edit_section['department_id'] == $department['id'] ? 'selected' : ''; ?>>
+                        <?= $department['department_code']; ?>
+                      </option>
+                  <?php endwhile; ?>
+              </select>
             </div>
-            <button type="submit" name="add_section" class="btn btn-primary mt-3">Add Section</button>
+            <?php if (isset($edit_section)): ?>
+              <input type="hidden" name="section_id" value="<?= $edit_section['id']; ?>">
+              <button type="submit" name="update_section" class="btn btn-warning mt-3">Update Section</button>
+            <?php else: ?>
+                <button type="submit" name="add_section" class="btn btn-primary mt-3">Add Section</button>
+            <?php endif; ?>
           </form>
 
         </div>

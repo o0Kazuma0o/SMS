@@ -239,44 +239,56 @@
 
       <div class="card">
         <div class="card-body">
-        <h5 class="card-title">Add Timetable</h5>
-          <form action="manage_timetable.php" method="POST" class="mb-4">
-              <div class="form-group">
-                  <label for="subject_id">Select Subject:</label>
-                  <select class="form-control" name="subject_id" id="subject_id" required>
-                      <!-- Dynamic Subject Options -->
-                      <?php
-                      $subjects = $conn->query("SELECT * FROM subjects");
-                      while ($subject = $subjects->fetch_assoc()): ?>
-                          <option value="<?= $subject['id']; ?>"><?= $subject['subject_code']; ?></option>
-                      <?php endwhile; ?>
-                  </select>
-              </div>
-              <div class="form-group mt-2">
-                  <label for="section_id">Select Section:</label>
-                  <select class="form-control" name="section_id" id="section_id" required>
-                      <!-- Dynamic Section Options -->
-                      <?php
-                      $sections = $conn->query("SELECT * FROM sections");
-                      while ($section = $sections->fetch_assoc()): ?>
-                          <option value="<?= $section['id']; ?>"><?= $section['section_number']; ?></option>
-                      <?php endwhile; ?>
-                  </select>
-              </div>
-              <div class="form-group mt-2">
-                  <label for="room_id">Select Room:</label>
-                  <select class="form-control" name="room_id" id="room_id" required>
-                      <!-- Dynamic Room Options -->
-                      <?php
-                      $rooms = $conn->query("SELECT * FROM rooms");
-                      while ($room = $rooms->fetch_assoc()): ?>
-                          <option value="<?= $room['id']; ?>"><?= $room['room_name']; ?></option>
-                      <?php endwhile; ?>
-                  </select>
-              </div>
+        <h5 class="card-title">
+          <?php if (isset($_GET['edit_timetable_id'])): ?>
+          Edit Timetable
+        <?php else: ?>
+          Add Timetable
+        <?php endif; ?>
+        </h5>
+        <form action="manage_timetable.php" method="POST" class="mb-4">
+          <div class="form-group">
+            <label for="subject_id">Subject:</label>
+            <select class="form-control" name="subject_id" id="subject_id" required>
+              <!-- Fetch Subjects -->
+              <?php
+                  $subjects = $conn->query("SELECT * FROM subjects");
+                  while ($subject = $subjects->fetch_assoc()): ?>
+                    <option value="<?= $subject['id']; ?>" <?= isset($edit_timetable) && $edit_timetable['subject_id'] == $subject['id'] ? 'selected' : ''; ?>>
+                      <?= $subject['subject_code']; ?>
+                    </option>
+                <?php endwhile; ?>
+            </select>
+          </div>
+          <div class="form-group mt-2">
+            <label for="section_id">Section:</label>
+            <select class="form-control" name="section_id" id="section_id" required>
+              <!-- Sections will be populated based on the selected subject using AJAX -->
+              <?php if (isset($edit_timetable)): ?>
+                  <!-- Pre-fill if editing -->
+                  <option value="<?= $edit_timetable['section_id']; ?>"><?= $edit_timetable['section_number']; ?></option>
+              <?php else: ?>
+                  <option value="">Select a section</option>
+              <?php endif; ?>
+            </select>
+          </div>
+          <div class="form-group mt-2">
+            <label for="room_id">Room:</label>
+            <select class="form-control" name="room_id" id="room_id" required>
+              <!-- Fetch Rooms -->
+              <?php
+              $rooms = $conn->query("SELECT * FROM rooms");
+              while ($room = $rooms->fetch_assoc()): ?>
+                  <option value="<?= $room['id']; ?>" <?= isset($edit_timetable) && $edit_timetable['room_id'] == $room['id'] ? 'selected' : ''; ?>>
+                    <?= $room['room_name']; ?>
+                  </option>
+              <?php endwhile; ?>
+            </select>
+          </div>
               <div class="form-group mt-2">
                   <label for="day_of_week">Day of the Week:</label>
-                  <select class="form-control" name="day_of_week" id="day_of_week" required>
+                  <select class="form-control" name="day_of_week" id="day_of_week" required
+                  value="<?= isset($edit_timetable) ? $edit_timetable['day_of_week'] : ''; ?>">
                       <option value="Monday">Monday</option>
                       <option value="Tuesday">Tuesday</option>
                       <option value="Wednesday">Wednesday</option>
@@ -286,14 +298,21 @@
                   </select>
               </div>
               <div class="form-group mt-2">
-                  <label for="start_time">Start Time:</label>
-                  <input type="time" class="form-control" name="start_time" id="start_time" required>
+              <label for="start_time">Start Time:</label>
+                <input type="time" class="form-control" name="start_time" id="start_time" required
+                value="<?= isset($edit_timetable) ? $edit_timetable['start_time'] : ''; ?>">
               </div>
               <div class="form-group mt-2">
-                  <label for="end_time">End Time:</label>
-                  <input type="time" class="form-control" name="end_time" id="end_time" required>
+                <label for="end_time">End Time:</label>
+                <input type="time" class="form-control" name="end_time" id="end_time" required
+                value="<?= isset($edit_timetable) ? $edit_timetable['end_time'] : ''; ?>">
               </div>
-              <button type="submit" name="add_timetable" class="btn btn-primary mt-3">Add Timetable</button>
+              <?php if (isset($edit_timetable)): ?>
+              <input type="hidden" name="timetable_id" value="<?= $edit_timetable['id']; ?>">
+              <button type="submit" name="update_timetable" class="btn btn-warning mt-3">Update Timetable</button>
+              <?php else: ?>
+                  <button type="submit" name="add_timetable" class="btn btn-primary mt-3">Add Timetable</button>
+              <?php endif; ?>
           </form>
 
         </div>
@@ -309,8 +328,7 @@
                     <th>Section Number</th>
                     <th>Room</th>
                     <th>Day</th>
-                    <th>Start Time</th>
-                    <th>End Time</th>
+                    <th>Time</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -321,12 +339,13 @@
                     <td><?= $timetable['section_number']; ?></td>
                     <td><?= $timetable['room_name']; ?></td>
                     <td><?= $timetable['day_of_week']; ?></td>
-                    <td><?= $timetable['start_time']; ?></td>
-                    <td><?= $timetable['end_time']; ?></td>
+                    <td><?= $timetable['start_time'] . ' - ' . $timetable['end_time']; ?></td>
                     <td>
-                        <a href="manage_timetable.php?delete_timetable_id=<?= $timetable['id']; ?>" 
-                          class="btn btn-danger btn-sm"
-                          onclick="return confirm('Are you sure you want to delete this timetable?')">Delete</a>
+                    <a href="manage_timetable.php?edit_timetable_id=<?= $timetable['id']; ?>" 
+                      class="btn btn-info btn-sm">Edit</a>
+                    <a href="manage_timetable.php?delete_timetable_id=<?= $timetable['id']; ?>" 
+                      class="btn btn-danger btn-sm"
+                      onclick="return confirm('Are you sure you want to delete this timetable?')">Delete</a>
                     </td>
                 </tr>
                 <?php endwhile; ?>
@@ -337,6 +356,23 @@
 
     </div>
     </section>
+
+    <!-- JavaScript for AJAX -->
+    <script>
+    function fetchSections() {
+        var subjectId = document.getElementById('subject_id').value;
+
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', 'fetch_sections.php?subject_id=' + subjectId, true);
+        xhr.onload = function () {
+            if (xhr.status === 200) {
+                // Update the sections dropdown
+                document.getElementById('section_id').innerHTML = xhr.responseText;
+            }
+        };
+        xhr.send();
+    }
+    </script>
 
   </main><!-- End #main -->
 

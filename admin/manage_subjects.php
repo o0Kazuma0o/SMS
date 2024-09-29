@@ -238,30 +238,44 @@
     
     <div class="card">
       <div class="card-body">
-        <h5 class="card-title">Add Subjects</h5>
+        <h5 class="card-title">
+        <?php if (isset($_GET['edit_subject_id'])): ?>
+          Edit Subject
+        <?php else: ?>
+          Add Subject
+        <?php endif; ?></h5>
 
           <!-- Add Subject Form -->
           <form action="manage_subjects.php" method="POST" class="mb-4">
             <div class="form-group">
-                <label for="subject_code">Subject Code:</label>
-                <input type="text" class="form-control" name="subject_code" id="subject_code" required>
+              <label for="subject_code">Subject Code:</label>
+              <input type="text" class="form-control" name="subject_code" id="subject_code" required
+              value="<?= isset($edit_subject) ? $edit_subject['subject_code'] : ''; ?>">
             </div>
             <div class="form-group mt-2">
-                <label for="subject_name">Subject Name:</label>
-                <input type="text" class="form-control" name="subject_name" id="subject_name" required>
+              <label for="subject_name">Subject Name:</label>
+              <input type="text" class="form-control" name="subject_name" id="subject_name" required
+              value="<?= isset($edit_subject) ? $edit_subject['subject_name'] : ''; ?>">
             </div>
             <div class="form-group mt-2">
-                <label for="department_id">Assign to Department:</label>
-                <select class="form-control" name="department_id" id="department_id" required>
-                    <!-- Dynamic Department Options -->
-                    <?php
-                    $departments = $conn->query("SELECT * FROM departments");
-                    while ($department = $departments->fetch_assoc()): ?>
-                        <option value="<?= $department['id']; ?>"><?= $department['department_code']; ?></option>
-                    <?php endwhile; ?>
-                </select>
+              <label for="department_id">Assign to Department:</label>
+              <select class="form-control" name="department_id" id="department_id" required>
+                <!-- Fetch Departments -->
+                <?php
+                $departments = $conn->query("SELECT * FROM departments");
+                while ($department = $departments->fetch_assoc()): ?>
+                    <option value="<?= $department['id']; ?>" <?= isset($edit_subject) && $edit_subject['department_id'] == $department['id'] ? 'selected' : ''; ?>>
+                      <?= $department['department_code']; ?>
+                    </option>
+                <?php endwhile; ?>
+              </select>
             </div>
-            <button type="submit" name="add_subject" class="btn btn-primary mt-3">Add Subject</button>
+            <?php if (isset($edit_subject)): ?>
+              <input type="hidden" name="subject_id" value="<?= $edit_subject['id']; ?>">
+              <button type="submit" name="update_subject" class="btn btn-warning mt-3">Update Subject</button>
+              <?php else: ?>
+              <button type="submit" name="add_subject" class="btn btn-primary mt-3">Add Subject</button>
+              <?php endif; ?>
         </form>
       </div>
     </div>
@@ -283,14 +297,16 @@
             <tbody>
               <?php while ($subject = $subjects->fetch_assoc()): ?>
               <tr>
-                  <td><?= $subject['subject_code']; ?></td>
-                  <td><?= $subject['subject_name']; ?></td>
-                  <td><?= $subject['department_code']; ?></td>
-                  <td>
-                      <a href="manage_subjects.php?delete_subject_id=<?= $subject['id']; ?>" 
-                          class="btn btn-danger btn-sm"
-                          onclick="return confirm('Are you sure you want to delete this subject?')">Delete</a>
-                  </td>
+                <td><?= $subject['subject_code']; ?></td>
+                <td><?= $subject['subject_name']; ?></td>
+                <td><?= $subject['department_code']; ?></td>
+                <td>
+                <a href="manage_subjects.php?edit_subject_id=<?= $subject['id']; ?>" 
+                    class="btn btn-info btn-sm">Edit</a>
+                <a href="manage_subjects.php?delete_subject_id=<?= $subject['id']; ?>" 
+                    class="btn btn-danger btn-sm"
+                    onclick="return confirm('Are you sure you want to delete this subject?')">Delete</a>
+                </td>
               </tr>
               <?php endwhile; ?>
             </tbody>

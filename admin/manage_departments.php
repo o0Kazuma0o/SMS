@@ -234,6 +234,19 @@
       </nav>
     </div><!-- End Page Title -->
 
+      <!-- Display JavaScript popup if an error or success message is set -->
+  <script>
+    window.onload = function() {
+      <?php if (isset($_SESSION['error_message'])): ?>
+        alert('<?= $_SESSION['error_message']; ?>');
+        <?php unset($_SESSION['error_message']); ?>
+      <?php elseif (isset($_SESSION['success_message'])): ?>
+        alert('<?= $_SESSION['success_message']; ?>');
+        <?php unset($_SESSION['success_message']); ?>
+      <?php endif; ?>
+    };
+  </script>
+
     <section class="section dashboard">
       <div class="card">
         <div class="card-body">
