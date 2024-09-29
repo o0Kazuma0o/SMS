@@ -69,6 +69,20 @@ if (isset($_GET['delete_department_id'])) {
 // Fetch all departments
 $departments = $conn->query("SELECT * FROM departments");
 
+// Edit room
+$edit_room = null;
+if (isset($_GET['edit_room_id'])) {
+    $edit_room_id = $_GET['edit_room_id'];
+
+    // Fetch the room details to pre-fill the form for editing
+    $stmt = $conn->prepare("SELECT * FROM rooms WHERE id = ?");
+    $stmt->bind_param("i", $edit_room_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $edit_room = $result->fetch_assoc();
+    $stmt->close();
+}
+
 
 // Add room
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_room'])) {
@@ -83,6 +97,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_room'])) {
     $stmt->close();
 
     // Redirect to manage_rooms.php
+    header('Location: manage_rooms.php');
+    exit;
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_room'])) {
+    $room_id = $_POST['room_id'];  // The ID of the room being updated
+    $room_name = $_POST['room_name'];
+    $capacity = $_POST['capacity'];
+    $location = $_POST['location'];
+
+    // Update the room in the database
+    $stmt = $conn->prepare("UPDATE rooms SET room_name = ?, capacity = ?, location = ? WHERE id = ?");
+    $stmt->bind_param("sisi", $room_name, $capacity, $location, $room_id);
+    $stmt->execute();
+    $stmt->close();
+
+    // Redirect to manage_rooms.php after updating
     header('Location: manage_rooms.php');
     exit;
 }

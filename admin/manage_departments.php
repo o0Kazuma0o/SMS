@@ -237,7 +237,12 @@
     <section class="section dashboard">
       <div class="card">
         <div class="card-body">
-          <h5 class="card-title">Add Department</h5>
+          <h5 class="card-title"><?php if (isset($_GET['edit_department_id'])): ?>
+          Edit Department
+          <?php else: ?>
+          Add Department
+          <?php endif; ?>
+          </h5>
 
           <!-- Add/Edit Department Form -->
           <form action="manage_departments.php" method="POST" class="mb-4">

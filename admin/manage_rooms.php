@@ -239,21 +239,36 @@
 
       <div class="card">
         <div class="card-body">
-        <h5 class="card-title">Add Rooms</h5>
+        <h5 class="card-title"><?php if (isset($_GET['edit_room_id'])): ?>
+          Edit Room
+        <?php else: ?>
+          Add Room
+        <?php endif; ?>
+        </h5>
           <form action="manage_rooms.php" method="POST" class="mb-4">
             <div class="form-group">
-                <label for="room_name">Room Name:</label>
-                <input type="text" class="form-control" name="room_name" id="room_name" required>
+              <label for="room_name">Room Name:</label>
+              <input type="text" class="form-control" name="room_name" id="room_name" required
+                    value="<?= isset($edit_room) ? $edit_room['room_name'] : ''; ?>">
             </div>
+
             <div class="form-group mt-2">
-                <label for="capacity">Capacity:</label>
-                <input type="number" class="form-control" name="capacity" id="capacity" required>
+              <label for="capacity">Capacity:</label>
+              <input type="number" class="form-control" name="capacity" id="capacity" required
+                    value="<?= isset($edit_room) ? $edit_room['capacity'] : ''; ?>">
             </div>
+
             <div class="form-group mt-2">
-                <label for="location">Location:</label>
-                <input type="text" class="form-control" name="location" id="location" required>
+              <label for="location">Location:</label>
+              <input type="text" class="form-control" name="location" id="location" required
+                    value="<?= isset($edit_room) ? $edit_room['location'] : ''; ?>">
             </div>
-            <button type="submit" name="add_room" class="btn btn-primary mt-3">Add Room</button>
+            <?php if (isset($edit_room)): ?>
+              <input type="hidden" name="room_id" value="<?= $edit_room['id']; ?>">
+              <button type="submit" name="update_room" class="btn btn-warning mt-3">Update Room</button>
+            <?php else: ?>
+              <button type="submit" name="add_room" class="btn btn-primary mt-3">Add Room</button>
+            <?php endif; ?>
           </form>
         </div>
       </div>
@@ -277,9 +292,11 @@
                     <td><?= $room['capacity']; ?></td>
                     <td><?= $room['location']; ?></td>
                     <td>
-                        <a href="manage_rooms.php?delete_room_id=<?= $room['id']; ?>" 
-                           class="btn btn-danger btn-sm"
-                           onclick="return confirm('Are you sure you want to delete this room?')">Delete</a>
+                      <a href="manage_rooms.php?edit_room_id=<?= $room['id']; ?>" 
+                        class="btn btn-info btn-sm">Edit</a>
+                      <a href="manage_rooms.php?delete_room_id=<?= $room['id']; ?>" 
+                        class="btn btn-danger btn-sm"
+                        onclick="return confirm('Are you sure you want to delete this room?')">Delete</a>
                     </td>
                 </tr>
               <?php endwhile; ?>
