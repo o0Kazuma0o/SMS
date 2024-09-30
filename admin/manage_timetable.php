@@ -234,6 +234,19 @@
       </nav>
     </div><!-- End Page Title -->
 
+    <script>
+    window.onload = function() {
+      <?php if (isset($_SESSION['error_message'])): ?>
+        alert('<?= $_SESSION['error_message']; ?>');
+        <?php unset($_SESSION['error_message']); ?>
+      <?php elseif (isset($_SESSION['success_message'])): ?>
+        alert('<?= $_SESSION['success_message']; ?>');
+        <?php unset($_SESSION['success_message']); ?>
+      <?php endif; ?>
+    };
+    </script>
+
+
     <section class="section dashboard">
     <div class="row">
 
@@ -247,28 +260,29 @@
         <?php endif; ?>
         </h5>
         <form action="manage_timetable.php" method="POST" class="mb-4">
-          <div class="form-group">
+        <div class="form-group">
             <label for="subject_id">Subject:</label>
-            <select class="form-control" name="subject_id" id="subject_id" required>
+            <select class="form-control" name="subject_id" id="subject_id" required onchange="fetchSections()">
               <!-- Fetch Subjects -->
               <?php
-                  $subjects = $conn->query("SELECT * FROM subjects");
-                  while ($subject = $subjects->fetch_assoc()): ?>
-                    <option value="<?= $subject['id']; ?>" <?= isset($edit_timetable) && $edit_timetable['subject_id'] == $subject['id'] ? 'selected' : ''; ?>>
-                      <?= $subject['subject_code']; ?>
-                    </option>
-                <?php endwhile; ?>
+                $subjects = $conn->query("SELECT * FROM subjects");
+                while ($subject = $subjects->fetch_assoc()): ?>
+                  <option value="<?= $subject['id']; ?>" <?= isset($edit_timetable) && $edit_timetable['subject_id'] == $subject['id'] ? 'selected' : ''; ?>>
+                    <?= $subject['subject_code']; ?>
+                  </option>
+              <?php endwhile; ?>
             </select>
           </div>
+
           <div class="form-group mt-2">
             <label for="section_id">Section:</label>
             <select class="form-control" name="section_id" id="section_id" required>
               <!-- Sections will be populated based on the selected subject using AJAX -->
               <?php if (isset($edit_timetable)): ?>
-                  <!-- Pre-fill if editing -->
-                  <option value="<?= $edit_timetable['section_id']; ?>"><?= $edit_timetable['section_number']; ?></option>
+                <!-- Pre-fill if editing -->
+                <option value="<?= $edit_timetable['section_id']; ?>"><?= $edit_timetable['section_number']; ?></option>
               <?php else: ?>
-                  <option value="">Select a section</option>
+                <option value="">Select a section</option>
               <?php endif; ?>
             </select>
           </div>

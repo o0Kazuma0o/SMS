@@ -1,5 +1,4 @@
 <?php require('../database.php');
-session_start();
 ?>
 
 <!DOCTYPE html>
@@ -249,9 +248,20 @@ session_start();
       </nav>
     </div><!-- End Page Title -->
 
-    <section class="section dashboard">
-    <div class="row">
+    <script>
+    window.onload = function() {
+      <?php if (isset($_SESSION['error_message'])): ?>
+        alert('<?= $_SESSION['error_message']; ?>');
+        <?php unset($_SESSION['error_message']); ?>
+      <?php elseif (isset($_SESSION['success_message'])): ?>
+        alert('<?= $_SESSION['success_message']; ?>');
+        <?php unset($_SESSION['success_message']); ?>
+      <?php endif; ?>
+    };
+    </script>
 
+
+    <section class="section dashboard">
       <div class="card">
         <div class="card-body">
         <h5 class="card-title">
@@ -329,6 +339,8 @@ session_start();
                     <td><?= $section['semester']; ?></td>
                     <td><?= $section['department_code']; ?></td>
                     <td>
+                        <a href="manage_sections.php?edit_section_id=<?= $section['id']; ?>" 
+                        class="btn btn-info btn-sm">Edit</a>
                         <a href="manage_sections.php?delete_section_id=<?= $section['id']; ?>" 
                            class="btn btn-danger btn-sm"
                            onclick="return confirm('Are you sure you want to delete this section?')">Delete</a>
@@ -341,7 +353,6 @@ session_start();
         </div>
       </div>
 
-    </div>
     </section>
 
   </main><!-- End #main -->
