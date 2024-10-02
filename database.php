@@ -450,12 +450,16 @@ $edit_timetable = null;
 if (isset($_GET['edit_timetable_id'])) {
     $edit_timetable_id = $_GET['edit_timetable_id'];
 
-    // Fetch the timetable details to pre-fill the form for editing (adjust to fetch multiple entries)
-    $stmt = $conn->prepare("SELECT * FROM timetable WHERE section_id = ?");
+    // Fetch the timetable details for editing (fetch multiple entries based on timetable id)
+    $stmt = $conn->prepare("
+        SELECT t.id, t.subject_id, s.subject_code, t.day_of_week, t.start_time, t.end_time 
+        FROM timetable t 
+        JOIN subjects s ON t.subject_id = s.id 
+        WHERE t.id = ?");
     $stmt->bind_param("i", $edit_timetable_id);
     $stmt->execute();
     $result = $stmt->get_result();
-    $edit_timetable = $result->fetch_all(MYSQLI_ASSOC); // Fetch multiple rows
+    $edit_timetable = $result->fetch_all(MYSQLI_ASSOC); // Fetch multiple rows for the timetable
     $stmt->close();
 }
 
@@ -469,7 +473,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_timetable'])) 
     $end_times = $_POST['end_times'];  // Array of end times
 
     try {
-        // Loop through each subject, day, and time and insert them one by one
+        // Loop through each subject, day, and time to insert
         for ($i = 0; $i < count($subjects); $i++) {
             $subject_id = $subjects[$i];
             $day_of_week = $days[$i];
@@ -477,8 +481,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_timetable'])) 
             $end_time = $end_times[$i];
 
             // Insert timetable for each subject/day/time combination
-            $stmt = $conn->prepare("INSERT INTO timetable (subject_id, section_id, room_id, day_of_week, start_time, end_time)
-                                    VALUES (?, ?, ?, ?, ?, ?)");
+            $stmt = $conn->prepare("
+                INSERT INTO timetable (subject_id, section_id, room_id, day_of_week, start_time, end_time)
+                VALUES (?, ?, ?, ?, ?, ?)");
             $stmt->bind_param("iiisss", $subject_id, $section_id, $room_id, $day_of_week, $start_time, $end_time);
             $stmt->execute();
         }
@@ -508,9 +513,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_timetable'])) 
     $end_times = $_POST['end_times'];
 
     try {
-        // Delete the existing timetable for this section first (to avoid duplicates)
-        $delete_stmt = $conn->prepare("DELETE FROM timetable WHERE section_id = ?");
-        $delete_stmt->bind_param("i", $section_id);
+        // Delete the existing timetable for this section first
+        $delete_stmt = $conn->prepare("DELETE FROM timetable WHERE section_id = ? AND room_id = ?");
+        $delete_stmt->bind_param("ii", $section_id, $room_id);
         $delete_stmt->execute();
         $delete_stmt->close();
 
@@ -522,8 +527,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_timetable'])) 
             $end_time = $end_times[$i];
 
             // Insert updated timetable entries
-            $stmt = $conn->prepare("INSERT INTO timetable (subject_id, section_id, room_id, day_of_week, start_time, end_time)
-                                    VALUES (?, ?, ?, ?, ?, ?)");
+            $stmt = $conn->prepare("
+                INSERT INTO timetable (subject_id, section_id, room_id, day_of_week, start_time, end_time)
+                VALUES (?, ?, ?, ?, ?, ?)");
             $stmt->bind_param("iiisss", $subject_id, $section_id, $room_id, $day_of_week, $start_time, $end_time);
             $stmt->execute();
         }
@@ -548,7 +554,7 @@ if (isset($_GET['delete_timetable_id'])) {
     
     try {
         // Prepare the delete statement for timetable
-        $stmt = $conn->prepare("DELETE FROM timetable WHERE section_id = ?");
+        $stmt = $conn->prepare("DELETE FROM timetable WHERE id = ?");
         $stmt->bind_param("i", $delete_id);
         $stmt->execute();
         $stmt->close();
@@ -568,9 +574,11 @@ if (isset($_GET['delete_timetable_id'])) {
 }
 
 // Fetch all timetables (adjust to join all relevant data)
-$timetables = $conn->query("SELECT t.*, s.subject_code, sec.section_number, r.room_name, d.department_code
-                            FROM timetable t 
-                            JOIN subjects s ON t.subject_id = s.id 
-                            JOIN sections sec ON t.section_id = sec.id 
-                            JOIN rooms r ON t.room_id = r.id
-                            JOIN departments d ON sec.department_id = d.id");
+$timetables = $conn->query("
+    SELECT t.*, s.subject_code, sec.section_number, r.room_name, d.department_code
+    FROM timetable t 
+    JOIN subjects s ON t.subject_id = s.id 
+    JOIN sections sec ON t.section_id = sec.id 
+    JOIN rooms r ON t.room_id = r.id
+    JOIN departments d ON sec.department_id = d.id");
+    
