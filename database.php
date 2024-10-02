@@ -127,13 +127,13 @@ if (isset($_GET['edit_room_id'])) {
 // Add room
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_room'])) {
     $room_name = $_POST['room_name'];
-    $capacity = $_POST['capacity'];
     $location = $_POST['location'];
+    $department_id = $_POST['department_id'];
 
     try{
     // Insert room
-    $stmt = $conn->prepare("INSERT INTO rooms (room_name, capacity, location) VALUES (?, ?, ?)");
-    $stmt->bind_param("sis", $room_name, $capacity, $location);
+    $stmt = $conn->prepare("INSERT INTO rooms (room_name, location, department_id) VALUES (?, ?, ?)");
+    $stmt->bind_param("ssi", $room_name, $location, $department_id);
     $stmt->execute();
     $stmt->close();
 
@@ -155,13 +155,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_room'])) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_room'])) {
     $room_id = $_POST['room_id'];  // The ID of the room being updated
     $room_name = $_POST['room_name'];
-    $capacity = $_POST['capacity'];
     $location = $_POST['location'];
+    $department_id = $_POST['department_id'];
 
     try{
     // Update the room in the database
-    $stmt = $conn->prepare("UPDATE rooms SET room_name = ?, capacity = ?, location = ? WHERE id = ?");
-    $stmt->bind_param("sisi", $room_name, $capacity, $location, $room_id);
+    $stmt = $conn->prepare("UPDATE rooms SET room_name = ?, location = ?, department_id = ? WHERE id = ?");
+    $stmt->bind_param("ssii", $room_name, $location, $department_id, $room_id);
     $stmt->execute();
     $stmt->close();
 
@@ -207,7 +207,7 @@ if (isset($_GET['delete_room_id'])) {
 }
 
 // Fetch all rooms
-$rooms = $conn->query("SELECT * FROM rooms");
+$rooms = $conn->query("SELECT r.*, d.department_code FROM rooms r JOIN departments d ON r.department_id = d.id");
 
 // Edit section
 $edit_section = null;
@@ -228,58 +228,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_section'])) {
     $section_number = $_POST['section_number'];
     $year_level = $_POST['year_level'];
     $semester = $_POST['semester'];
+    $capacity = $_POST['capacity']; 
     $department_id = $_POST['department_id'];
 
-    try{
-    // Insert section
-    $stmt = $conn->prepare("INSERT INTO sections (section_number, year_level, semester, department_id) VALUES (?, ?, ?, ?)");
-    $stmt->bind_param("iisi", $section_number, $year_level, $semester, $department_id);
-    $stmt->execute();
-    $stmt->close();
+    try {
+        // Insert section
+        $stmt = $conn->prepare("INSERT INTO sections (section_number, year_level, semester, capacity, department_id) VALUES (?, ?, ?, ?, ?)");
+        $stmt->bind_param("iissi", $section_number, $year_level, $semester, $capacity, $department_id);
+        $stmt->execute();
+        $stmt->close();
 
-    $_SESSION['success_message'] = "Section added successfully!";
-
-    // After form submission, redirect to the same page using GET method to prevent form resubmission
-    header("Location: manage_sections.php");
-    exit;
+        $_SESSION['success_message'] = "Section added successfully!";
+        // After form submission, redirect to the same page using GET method to prevent form resubmission
+        header("Location: manage_sections.php");
+        exit;
     } catch (mysqli_sql_exception $e) {
-        if ($e->getCode() == 1062) { // Duplicate entry error code
-            $_SESSION['error_message'] = "Error: Duplicate entry for department code or name.";
+        if ($e->getCode() == 1062) { // Duplicate entry error
+            $_SESSION['error_message'] = "Error: Duplicate entry for section number.";
         } else {
             $_SESSION['error_message'] = "Error: " . $e->getMessage();
         }
-        header('Location: manage_sections.php'); // Redirect to show error
+        header('Location: manage_sections.php');
         exit;
     }
 }
 
 // Update section
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_section'])) {
-    $section_id = $_POST['section_id'];  // The ID of the section being updated
+    $section_id = $_POST['section_id'];
     $section_number = $_POST['section_number'];
     $year_level = $_POST['year_level'];
     $semester = $_POST['semester'];
+    $capacity = $_POST['capacity'];
     $department_id = $_POST['department_id'];
 
-    try{
-    // Update the section in the database
-    $stmt = $conn->prepare("UPDATE sections SET section_number = ?, year_level = ?, semester = ?, department_id = ? WHERE id = ?");
-    $stmt->bind_param("iisii", $section_number, $year_level, $semester, $department_id, $section_id);
-    $stmt->execute();
-    $stmt->close();
+    try {
+        // Update the section in the database
+        $stmt = $conn->prepare("UPDATE sections SET section_number = ?, year_level = ?, semester = ?, capacity = ?, department_id = ? WHERE id = ?");
+        $stmt->bind_param("iissii", $section_number, $year_level, $semester, $capacity, $department_id, $section_id);
+        $stmt->execute();
+        $stmt->close();
 
-    $_SESSION['success_message'] = "Section updated successfully!";
-
-    // Redirect to manage_sections.php after updating
-    header('Location: manage_sections.php');
-    exit;
+        $_SESSION['success_message'] = "Section updated successfully!";
+        header('Location: manage_sections.php');
+        exit;
     } catch (mysqli_sql_exception $e) {
-        if ($e->getCode() == 1062) { // Duplicate entry error code
-            $_SESSION['error_message'] = "Error: Duplicate entry for department code or name.";
+        if ($e->getCode() == 1062) { // Duplicate entry error
+            $_SESSION['error_message'] = "Error: Duplicate entry for section number.";
         } else {
             $_SESSION['error_message'] = "Error: " . $e->getMessage();
         }
-        header('Location: manage_sections.php'); // Redirect to show error
+        header('Location: manage_sections.php');
         exit;
     }
 }
@@ -451,76 +450,94 @@ $edit_timetable = null;
 if (isset($_GET['edit_timetable_id'])) {
     $edit_timetable_id = $_GET['edit_timetable_id'];
 
-    // Fetch the timetable details to pre-fill the form for editing
-    $stmt = $conn->prepare("SELECT * FROM timetable WHERE id = ?");
+    // Fetch the timetable details to pre-fill the form for editing (adjust to fetch multiple entries)
+    $stmt = $conn->prepare("SELECT * FROM timetable WHERE section_id = ?");
     $stmt->bind_param("i", $edit_timetable_id);
     $stmt->execute();
     $result = $stmt->get_result();
-    $edit_timetable = $result->fetch_assoc();
+    $edit_timetable = $result->fetch_all(MYSQLI_ASSOC); // Fetch multiple rows
     $stmt->close();
 }
 
-// Add timetable
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_timetable'])) {
-    $subject_id = $_POST['subject_id'];
+// Add timetable with multiple subjects
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_timetable'])) {
     $section_id = $_POST['section_id'];
     $room_id = $_POST['room_id'];
-    $day_of_week = $_POST['day_of_week'];
-    $start_time = $_POST['start_time'];
-    $end_time = $_POST['end_time'];
+    $subjects = $_POST['subjects'];  // Array of subject IDs
+    $days = $_POST['days'];          // Array of days
+    $start_times = $_POST['start_times'];  // Array of start times
+    $end_times = $_POST['end_times'];  // Array of end times
 
-    try{
-    // Insert timetable
-    $stmt = $conn->prepare("INSERT INTO timetable (subject_id, section_id, room_id, day_of_week, start_time, end_time) VALUES (?, ?, ?, ?, ?, ?)");
-    $stmt->bind_param("iiisss", $subject_id, $section_id, $room_id, $day_of_week, $start_time, $end_time);
-    $stmt->execute();
-    $stmt->close();
+    try {
+        // Loop through each subject, day, and time and insert them one by one
+        for ($i = 0; $i < count($subjects); $i++) {
+            $subject_id = $subjects[$i];
+            $day_of_week = $days[$i];
+            $start_time = $start_times[$i];
+            $end_time = $end_times[$i];
 
-    $_SESSION['success_message'] = "Timetable added successfully!";
+            // Insert timetable for each subject/day/time combination
+            $stmt = $conn->prepare("INSERT INTO timetable (subject_id, section_id, room_id, day_of_week, start_time, end_time)
+                                    VALUES (?, ?, ?, ?, ?, ?)");
+            $stmt->bind_param("iiisss", $subject_id, $section_id, $room_id, $day_of_week, $start_time, $end_time);
+            $stmt->execute();
+        }
 
-    // Redirect to manage_timetable.php
-    header('Location: manage_timetable.php');
-    exit;
+        $_SESSION['success_message'] = "Timetable added successfully!";
+        header('Location: manage_timetable.php');
+        exit;
     } catch (mysqli_sql_exception $e) {
-        if ($e->getCode() == 1062) { // Duplicate entry error code
+        if ($e->getCode() == 1062) { // Duplicate entry error
             $_SESSION['error_message'] = "Error: Duplicate entry for timetable.";
         } else {
             $_SESSION['error_message'] = "Error: " . $e->getMessage();
         }
-        header('Location: manage_timetable.php'); // Redirect to show error
+        header('Location: manage_timetable.php');
         exit;
     }
 }
 
-// Update timetable
+// Update timetable (Update multiple rows)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_timetable'])) {
-    $timetable_id = $_POST['timetable_id'];  // The ID of the timetable being updated
-    $subject_id = $_POST['subject_id'];
+    $timetable_id = $_POST['timetable_id'];  // ID of the timetable being updated
     $section_id = $_POST['section_id'];
     $room_id = $_POST['room_id'];
-    $day_of_week = $_POST['day_of_week'];
-    $start_time = $_POST['start_time'];
-    $end_time = $_POST['end_time'];
+    $subjects = $_POST['subjects'];
+    $days = $_POST['days'];
+    $start_times = $_POST['start_times'];
+    $end_times = $_POST['end_times'];
 
-    try{
-    // Update the timetable in the database
-    $stmt = $conn->prepare("UPDATE timetable SET subject_id = ?, section_id = ?, room_id = ?, day_of_week = ?, start_time = ?, end_time = ? WHERE id = ?");
-    $stmt->bind_param("iiisssi", $subject_id, $section_id, $room_id, $day_of_week, $start_time, $end_time, $timetable_id);
-    $stmt->execute();
-    $stmt->close();
+    try {
+        // Delete the existing timetable for this section first (to avoid duplicates)
+        $delete_stmt = $conn->prepare("DELETE FROM timetable WHERE section_id = ?");
+        $delete_stmt->bind_param("i", $section_id);
+        $delete_stmt->execute();
+        $delete_stmt->close();
 
-    $_SESSION['success_message'] = "Timetable updated successfully!";
+        // Insert the updated timetable entries
+        for ($i = 0; $i < count($subjects); $i++) {
+            $subject_id = $subjects[$i];
+            $day_of_week = $days[$i];
+            $start_time = $start_times[$i];
+            $end_time = $end_times[$i];
 
-    // Redirect to manage_timetable.php after updating
-    header('Location: manage_timetable.php');
-    exit;
+            // Insert updated timetable entries
+            $stmt = $conn->prepare("INSERT INTO timetable (subject_id, section_id, room_id, day_of_week, start_time, end_time)
+                                    VALUES (?, ?, ?, ?, ?, ?)");
+            $stmt->bind_param("iiisss", $subject_id, $section_id, $room_id, $day_of_week, $start_time, $end_time);
+            $stmt->execute();
+        }
+
+        $_SESSION['success_message'] = "Timetable updated successfully!";
+        header('Location: manage_timetable.php');
+        exit;
     } catch (mysqli_sql_exception $e) {
-        if ($e->getCode() == 1062) { // Duplicate entry error code
+        if ($e->getCode() == 1062) { // Duplicate entry error
             $_SESSION['error_message'] = "Error: Duplicate entry for timetable.";
         } else {
             $_SESSION['error_message'] = "Error: " . $e->getMessage();
         }
-        header('Location: manage_timetable.php'); // Redirect to show error
+        header('Location: manage_timetable.php');
         exit;
     }
 }
@@ -529,33 +546,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_timetable'])) 
 if (isset($_GET['delete_timetable_id'])) {
     $delete_id = $_GET['delete_timetable_id'];
     
-    try{
-    // Prepare the delete statement for timetable
-    $stmt = $conn->prepare("DELETE FROM timetable WHERE id = ?");
-    $stmt->bind_param("i", $delete_id);
-    $stmt->execute();
-    $stmt->close();
+    try {
+        // Prepare the delete statement for timetable
+        $stmt = $conn->prepare("DELETE FROM timetable WHERE section_id = ?");
+        $stmt->bind_param("i", $delete_id);
+        $stmt->execute();
+        $stmt->close();
 
-    $_SESSION['success_message'] = "Timetable deleted successfully!";
-
-    // Redirect back to manage_timetable.php after deletion
-    header('Location: manage_timetable.php');
-    exit;
+        $_SESSION['success_message'] = "Timetable deleted successfully!";
+        header('Location: manage_timetable.php');
+        exit;
     } catch (mysqli_sql_exception $e) {
-        if ($e->getCode() == 1451) { // Foreign key constraint error code
+        if ($e->getCode() == 1451) { // Foreign key constraint error
             $_SESSION['error_message'] = "Error: This timetable is still connected to other data.";
         } else {
             $_SESSION['error_message'] = "Error: " . $e->getMessage();
         }
-        header('Location: manage_timetable.php'); // Redirect to show error
+        header('Location: manage_timetable.php');
         exit;
     }
 }
 
-// Fetch all timetables
-$timetables = $conn->query("SELECT t.*, s.subject_code, sec.section_number, r.room_name 
+// Fetch all timetables (adjust to join all relevant data)
+$timetables = $conn->query("SELECT t.*, s.subject_code, sec.section_number, r.room_name, d.department_code
                             FROM timetable t 
                             JOIN subjects s ON t.subject_id = s.id 
                             JOIN sections sec ON t.section_id = sec.id 
-                            JOIN rooms r ON t.room_id = r.id");
-
+                            JOIN rooms r ON t.room_id = r.id
+                            JOIN departments d ON sec.department_id = d.id");

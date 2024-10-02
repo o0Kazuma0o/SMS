@@ -274,9 +274,9 @@
           <!-- Add Section Form -->
           <form action="manage_sections.php" method="POST" class="mb-4">
             <div class="form-group">
-                <label for="section_number">Section Number:</label>
-                <input type="number" class="form-control" name="section_number" id="section_number" required
-                value="<?= isset($edit_section) ? $edit_section['section_number'] : ''; ?>">
+              <label for="section_number">Section Number:</label>
+              <input type="number" class="form-control" name="section_number" id="section_number" required
+              value="<?= isset($edit_section) ? $edit_section['section_number'] : ''; ?>">
             </div>
             <div class="form-group mt-2">
                 <label for="year_level">Year Level:</label>
@@ -293,6 +293,11 @@
                 <option value="1st" <?= isset($edit_section) && $edit_section['semester'] == '1st' ? 'selected' : ''; ?>>1st Semester</option>
                 <option value="2nd" <?= isset($edit_section) && $edit_section['semester'] == '2nd' ? 'selected' : ''; ?>>2nd Semester</option>
               </select>
+            </div>
+            <div class="form-group mt-2">
+              <label for="capacity">Section Capacity:</label>
+              <input type="number" class="form-control" name="capacity" id="capacity" required
+              value="<?= isset($edit_section) ? $edit_section['capacity'] : ''; ?>" min="1" placeholder="Enter section capacity">
             </div>
             <div class="form-group mt-2">
               <label for="department_id">Assign to Department:</label>
@@ -327,6 +332,7 @@
                     <th>Section Number</th>
                     <th>Year Level</th>
                     <th>Semester</th>
+                    <th>Capacity</th>
                     <th>Department</th>
                     <th>Actions</th>
                 </tr>
@@ -337,6 +343,7 @@
                     <td><?= $section['section_number']; ?></td>
                     <td><?= $section['year_level']; ?></td>
                     <td><?= $section['semester']; ?></td>
+                    <td><?= $section['capacity']; ?></td>
                     <td><?= $section['department_code']; ?></td>
                     <td>
                         <a href="manage_sections.php?edit_section_id=<?= $section['id']; ?>" 

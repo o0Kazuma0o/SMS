@@ -266,16 +266,25 @@
             </div>
 
             <div class="form-group mt-2">
-              <label for="capacity">Capacity:</label>
-              <input type="number" class="form-control" name="capacity" id="capacity" required
-                    value="<?= isset($edit_room) ? $edit_room['capacity'] : ''; ?>">
-            </div>
-
-            <div class="form-group mt-2">
               <label for="location">Location:</label>
               <input type="text" class="form-control" name="location" id="location" required
                     value="<?= isset($edit_room) ? $edit_room['location'] : ''; ?>">
             </div>
+
+            <div class="form-group mt-2">
+            <label for="department_id">Assign to Department:</label>
+            <select class="form-control" name="department_id" id="department_id" required>
+              <!-- Fetch Departments -->
+              <?php
+              $departments = $conn->query("SELECT * FROM departments");
+              while ($department = $departments->fetch_assoc()): ?>
+                <option value="<?= $department['id']; ?>" <?= isset($edit_room) && $edit_room['department_id'] == $department['id'] ? 'selected' : ''; ?>>
+                  <?= $department['department_code']; ?>
+                </option>
+              <?php endwhile; ?>
+            </select>
+            </div>
+
             <?php if (isset($edit_room)): ?>
               <input type="hidden" name="room_id" value="<?= $edit_room['id']; ?>">
               <button type="submit" name="update_room" class="btn btn-warning mt-3">Update Room</button>
@@ -293,8 +302,8 @@
             <thead>
                 <tr>
                     <th>Room Name</th>
-                    <th>Capacity</th>
                     <th>Location</th>
+                    <th>Department</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -302,8 +311,8 @@
               <?php while ($room = $rooms->fetch_assoc()): ?>
                 <tr>
                     <td><?= $room['room_name']; ?></td>
-                    <td><?= $room['capacity']; ?></td>
                     <td><?= $room['location']; ?></td>
+                    <td><?= $room['department_code']; ?></td>
                     <td>
                       <a href="manage_rooms.php?edit_room_id=<?= $room['id']; ?>" 
                         class="btn btn-info btn-sm">Edit</a>

@@ -259,74 +259,43 @@
           Add Timetable
         <?php endif; ?>
         </h5>
-        <form action="manage_timetable.php" method="POST" class="mb-4">
-        <div class="form-group">
-            <label for="subject_id">Subject:</label>
-            <select class="form-control" name="subject_id" id="subject_id" required onchange="fetchSections()">
-              <!-- Fetch Subjects -->
+          <form action="manage_timetable.php" method="POST" class="mb-4">
+            <div class="form-group">
+            <label for="department_id">Select Department:</label>
+            <select class="form-control" name="department_id" id="department_id" required onchange="fetchRelatedData()">
+              <option value="">Select Department</option>
+              <!-- Fetch Departments -->
               <?php
-                $subjects = $conn->query("SELECT * FROM subjects");
-                while ($subject = $subjects->fetch_assoc()): ?>
-                  <option value="<?= $subject['id']; ?>" <?= isset($edit_timetable) && $edit_timetable['subject_id'] == $subject['id'] ? 'selected' : ''; ?>>
-                    <?= $subject['subject_code']; ?>
-                  </option>
+              $departments = $conn->query("SELECT * FROM departments");
+              while ($department = $departments->fetch_assoc()): ?>
+                <option value="<?= $department['id']; ?>"><?= $department['department_code']; ?></option>
               <?php endwhile; ?>
             </select>
-          </div>
+            </div>
 
-          <div class="form-group mt-2">
-            <label for="section_id">Section:</label>
-            <select class="form-control" name="section_id" id="section_id" required>
-              <!-- Sections will be populated based on the selected subject using AJAX -->
-              <?php if (isset($edit_timetable)): ?>
-                <!-- Pre-fill if editing -->
-                <option value="<?= $edit_timetable['section_id']; ?>"><?= $edit_timetable['section_number']; ?></option>
-              <?php else: ?>
-                <option value="">Select a section</option>
-              <?php endif; ?>
-            </select>
-          </div>
-          <div class="form-group mt-2">
-            <label for="room_id">Room:</label>
-            <select class="form-control" name="room_id" id="room_id" required>
-              <!-- Fetch Rooms -->
-              <?php
-              $rooms = $conn->query("SELECT * FROM rooms");
-              while ($room = $rooms->fetch_assoc()): ?>
-                  <option value="<?= $room['id']; ?>" <?= isset($edit_timetable) && $edit_timetable['room_id'] == $room['id'] ? 'selected' : ''; ?>>
-                    <?= $room['room_name']; ?>
-                  </option>
-              <?php endwhile; ?>
-            </select>
-          </div>
-              <div class="form-group mt-2">
-                  <label for="day_of_week">Day of the Week:</label>
-                  <select class="form-control" name="day_of_week" id="day_of_week" required
-                  value="<?= isset($edit_timetable) ? $edit_timetable['day_of_week'] : ''; ?>">
-                      <option value="Monday">Monday</option>
-                      <option value="Tuesday">Tuesday</option>
-                      <option value="Wednesday">Wednesday</option>
-                      <option value="Thursday">Thursday</option>
-                      <option value="Friday">Friday</option>
-                      <option value="Saturday">Saturday</option>
-                  </select>
+            <div class="form-group mt-2">
+            <label for="section_id">Select Section:</label>
+              <select class="form-control" name="section_id" id="section_id" required>
+              <!-- Sections will be populated dynamically based on the selected department -->
+              </select>
+            </div>
+
+            <div class="form-group mt-2">
+            <label for="room_id">Select Room:</label>
+              <select class="form-control" name="room_id" id="room_id" required>
+              <!-- Rooms will be populated dynamically based on the selected department -->
+              </select>
+            </div>
+
+            <div class="form-group mt-2">
+            <label for="subjects">Select Subjects and Time:</label>
+              <div id="subject-time-list">
+              <!-- Dynamically add subject, day, and time fields -->
+              <button type="button" class="btn btn-secondary" onclick="addSubjectTime()">Add Subject and Time</button>
               </div>
-              <div class="form-group mt-2">
-              <label for="start_time">Start Time:</label>
-                <input type="time" class="form-control" name="start_time" id="start_time" required
-                value="<?= isset($edit_timetable) ? $edit_timetable['start_time'] : ''; ?>">
-              </div>
-              <div class="form-group mt-2">
-                <label for="end_time">End Time:</label>
-                <input type="time" class="form-control" name="end_time" id="end_time" required
-                value="<?= isset($edit_timetable) ? $edit_timetable['end_time'] : ''; ?>">
-              </div>
-              <?php if (isset($edit_timetable)): ?>
-              <input type="hidden" name="timetable_id" value="<?= $edit_timetable['id']; ?>">
-              <button type="submit" name="update_timetable" class="btn btn-warning mt-3">Update Timetable</button>
-              <?php else: ?>
-                  <button type="submit" name="add_timetable" class="btn btn-primary mt-3">Add Timetable</button>
-              <?php endif; ?>
+            </div>
+
+            <button type="submit" name="create_timetable" class="btn btn-primary mt-3">Create Timetable</button>
           </form>
 
         </div>
@@ -337,32 +306,27 @@
         <h5 class="card-title">List of Timetables</h5>
           <table class="table table-bordered">
             <thead>
-                <tr>
-                    <th>Subject Code</th>
-                    <th>Section Number</th>
-                    <th>Room</th>
-                    <th>Day</th>
-                    <th>Time</th>
-                    <th>Actions</th>
-                </tr>
+              <tr>
+                <th>Department</th>
+                <th>Section</th>
+                <th>Timetable</th>
+                <th>Actions</th>
+              </tr>
             </thead>
             <tbody>
-                <?php while ($timetable = $timetables->fetch_assoc()): ?>
+              <?php while ($timetable = $timetables->fetch_assoc()): ?>
                 <tr>
-                    <td><?= $timetable['subject_code']; ?></td>
-                    <td><?= $timetable['section_number']; ?></td>
-                    <td><?= $timetable['room_name']; ?></td>
-                    <td><?= $timetable['day_of_week']; ?></td>
-                    <td><?= $timetable['start_time'] . ' - ' . $timetable['end_time']; ?></td>
-                    <td>
-                    <a href="manage_timetable.php?edit_timetable_id=<?= $timetable['id']; ?>" 
-                      class="btn btn-info btn-sm">Edit</a>
-                    <a href="manage_timetable.php?delete_timetable_id=<?= $timetable['id']; ?>" 
-                      class="btn btn-danger btn-sm"
-                      onclick="return confirm('Are you sure you want to delete this timetable?')">Delete</a>
-                    </td>
+                  <td><?= $timetable['department_code']; ?></td>
+                  <td><?= $timetable['section_number']; ?></td>
+                  <td>
+                    <button class="btn btn-info btn-sm" onclick="viewTimetableDetails(<?= $timetable['id']; ?>)">View Timetable</button>
+                  </td>
+                  <td>
+                    <a href="manage_timetable.php?edit_timetable_id=<?= $timetable['id']; ?>" class="btn btn-warning btn-sm">Edit</a>
+                    <a href="manage_timetable.php?delete_timetable_id=<?= $timetable['id']; ?>" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this timetable?')">Delete</a>
+                  </td>
                 </tr>
-                <?php endwhile; ?>
+              <?php endwhile; ?>
             </tbody>
           </table>
         </div>
@@ -371,22 +335,99 @@
     </div>
     </section>
 
-    <!-- JavaScript for AJAX -->
-    <script>
-    function fetchSections() {
-        var subjectId = document.getElementById('subject_id').value;
+    <!-- Modal for Timetable Details -->
+  <div class="modal" id="timetableModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Timetable Details</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <table class="table table-bordered" id="timetable-details">
+            <thead>
+              <tr>
+                <th>Subject</th>
+                <th>Day</th>
+                <th>Start Time</th>
+                <th>End Time</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Timetable details will be populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
 
-        var xhr = new XMLHttpRequest();
-        xhr.open('GET', 'fetch_sections.php?subject_id=' + subjectId, true);
-        xhr.onload = function () {
-            if (xhr.status === 200) {
-                // Update the sections dropdown
-                document.getElementById('section_id').innerHTML = xhr.responseText;
-            }
-        };
-        xhr.send();
-    }
-    </script>
+  <!-- JavaScript for AJAX -->
+  <script>
+  // Fetch sections, subjects, and rooms based on the selected department
+  function fetchRelatedData() {
+    var departmentId = document.getElementById('department_id').value;
+
+    // Fetch sections
+    fetch('fetch_sections.php?department_id=' + departmentId)
+      .then(response => response.text())
+      .then(data => document.getElementById('section_id').innerHTML = data);
+
+    // Fetch rooms
+    fetch('fetch_rooms.php?department_id=' + departmentId)
+      .then(response => response.text())
+      .then(data => document.getElementById('room_id').innerHTML = data);
+
+    // Fetch subjects
+    fetch('fetch_subjects.php?department_id=' + departmentId)
+      .then(response => response.text())
+      .then(data => document.getElementById('subject-time-list').innerHTML = data);
+  }
+
+  // Add subject, day, and time fields
+  function addSubjectTime() {
+    var subjectTimeList = document.getElementById('subject-time-list');
+    var newEntry = `
+      <div class="form-group mt-2">
+        <select class="form-control" name="subjects[]" required>
+          <!-- Populate subjects dynamically -->
+        </select>
+        <select class="form-control mt-2" name="days[]" required>
+          <option value="Monday">Monday</option>
+          <option value="Tuesday">Tuesday</option>
+          <option value="Wednesday">Wednesday</option>
+          <option value="Thursday">Thursday</option>
+          <option value="Friday">Friday</option>
+          <option value="Saturday">Saturday</option>
+        </select>
+        <input type="time" class="form-control mt-2" name="start_times[]" required>
+        <input type="time" class="form-control mt-2" name="end_times[]" required>
+      </div>`;
+    subjectTimeList.insertAdjacentHTML('beforeend', newEntry);
+  }
+
+  // Fetch and display timetable details in a modal
+  function viewTimetableDetails(timetableId) {
+    fetch('fetch_timetable_details.php?timetable_id=' + timetableId)
+      .then(response => response.json())
+      .then(data => {
+        var timetableDetails = document.getElementById('timetable-details').getElementsByTagName('tbody')[0];
+        timetableDetails.innerHTML = '';
+        data.forEach(row => {
+          var newRow = `<tr>
+            <td>${row.subject}</td>
+            <td>${row.day}</td>
+            <td>${row.start_time}</td>
+            <td>${row.end_time}</td>
+          </tr>`;
+          timetableDetails.insertAdjacentHTML('beforeend', newRow);
+        });
+        // Show the modal
+        var timetableModal = new bootstrap.Modal(document.getElementById('timetableModal'));
+        timetableModal.show();
+      });
+  }
+  </script>
 
   </main><!-- End #main -->
 
