@@ -285,21 +285,12 @@
               </select>
             </div>
 
-            <!-- Select Room -->
-            <div class="form-group mt-3">
-              <label for="room_id">Select Room:</label>
-              <select class="form-control" name="room_id" id="room_id" required>
-                <option value="">Select Room</option>
-                <!-- Rooms will be populated dynamically based on the selected department -->
-              </select>
-            </div>
-
-            <!-- Select Multiple Subjects and Times -->
+            <!-- Select Multiple Rooms, Subjects and Times -->
             <div class="form-group mt-3">
               <label for="subjects">Select Subjects and Time:</label>
               <div id="subject-time-list">
-                <!-- Subject and Time fields will be dynamically added here -->
-                <button type="button" class="btn btn-secondary mt-2" onclick="addSubjectTime()">Add Subject and Time</button>
+                <!-- Room,Subject and Time fields will be dynamically added here -->
+                <button type="button" class="btn btn-secondary mt-2" onclick="addSubjectTime()">Add Room, Subject and Time</button>
               </div>
             </div>
 
@@ -313,150 +304,222 @@
         <div class="card-body">
         <h5 class="card-title">List of Timetables</h5>
         <table class="table table-bordered">
-          <thead>
-            <tr>
-              <th>Department</th>
-              <th>Section</th>
-              <th>Timetable</th>
-              <th>Actions</th>
-            </tr>
+            <thead>
+                <tr>
+                    <th>Department</th>
+                    <th>Section</th>
+                    <th>Timetable</th>
+                    <th>Actions</th>
+                </tr>
             </thead>
             <tbody>
-              <?php
-              // Fetch grouped timetables from the database
-              $sql = "SELECT t.id, d.department_code, sec.section_number, r.room_name as room,
-                            GROUP_CONCAT(s.subject_code SEPARATOR ', ') as subjects, 
-                            GROUP_CONCAT(t.day_of_week SEPARATOR ', ') as days, 
-                            GROUP_CONCAT(t.start_time SEPARATOR ', ') as start_times, 
-                            GROUP_CONCAT(t.end_time SEPARATOR ', ') as end_times
-                      FROM timetable t
-                      JOIN subjects s ON t.subject_id = s.id
-                      JOIN sections sec ON t.section_id = sec.id
-                      JOIN rooms r ON t.room_id = r.id
-                      JOIN departments d ON sec.department_id = d.id
-                      GROUP BY d.department_code, sec.section_number, r.room_name";
-              $timetables = $conn->query($sql);
+                <?php
+                // Fetch grouped timetables from the database
+                $sql = "SELECT t.id, d.department_code, sec.section_number,
+                                GROUP_CONCAT(s.subject_code SEPARATOR ', ') as subjects,
+                                GROUP_CONCAT(t.day_of_week SEPARATOR ', ') as days,
+                                GROUP_CONCAT(t.start_time SEPARATOR ', ') as start_times,
+                                GROUP_CONCAT(t.end_time SEPARATOR ', ') as end_times
+                        FROM timetable t
+                        JOIN subjects s ON t.subject_id = s.id
+                        JOIN sections sec ON t.section_id = sec.id
+                        JOIN rooms r ON t.room_id = r.id
+                        JOIN departments d ON sec.department_id = d.id
+                        GROUP BY d.department_code, sec.section_number, r.room_name";
+                $timetables = $conn->query($sql);
 
-              // Loop through grouped timetables
-              while ($timetable = $timetables->fetch_assoc()):
-              ?>
+                // Loop through grouped timetables
+                while ($timetable = $timetables->fetch_assoc()):
+                ?>
                 <tr>
-                  <td><?= $timetable['department_code']; ?></td>
-                  <td><?= $timetable['section_number']; ?></td>
-                  <td>
-                    <button class="btn btn-info btn-sm" onclick="viewTimetableDetails(<?= $timetable['id']; ?>)">View Timetable</button>
-                  </td>
-                  <td>
-                    <a href="manage_timetable.php?edit_timetable_id=<?= $timetable['id']; ?>" class="btn btn-warning btn-sm">Edit</a>
-                    <a href="manage_timetable.php?delete_timetable_id=<?= $timetable['id']; ?>" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this timetable?')">Delete</a>
-                  </td>
+                    <td><?= $timetable['department_code']; ?></td>
+                    <td><?= $timetable['section_number']; ?></td>
+                    <td>
+                        <button class="btn btn-info btn-sm" onclick="viewTimetableDetails(<?= $timetable['id']; ?>)">View Timetable</button>
+                    </td>
+                    <td>
+                        <a href="manage_timetable.php?edit_timetable_id=<?= $timetable['id']; ?>" class="btn btn-warning btn-sm">Edit</a>
+                        <a href="manage_timetable.php?delete_timetable_id=<?= $timetable['id']; ?>" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this timetable?')">Delete</a>
+                    </td>
                 </tr>
-              <?php endwhile; ?>
+                <?php endwhile; ?>
             </tbody>
-          </table>
-        </div>
+        </table>
       </div>
+    </div>
 
     </div>
     </section>
 
     <!-- Modal for Timetable Details -->
-  <div class="modal fade" id="timetableModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Timetable Details</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          <table class="table table-bordered" id="timetable-details">
-            <thead>
-              <tr>
-                <th>Subject</th>
-                <th>Day</th>
-                <th>Room</th>
-                <th>Start Time</th>
-                <th>End Time</th>
-              </tr>
-            </thead>
-            <tbody>
-              <!-- Timetable details will be populated dynamically -->
-            </tbody>
-          </table>
+    <div class="modal fade" id="timetableModal" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Timetable Details</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+            <div class="modal-body">
+              <table class="table table-bordered" id="timetable-details">
+                <thead>
+                  <tr>
+                    <th>Subject</th>
+                    <th>Day</th>
+                    <th>Room</th>
+                    <th>Start Time</th>
+                    <th>End Time</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                <!-- Timetable details will be populated dynamically -->
+                </tbody>
+              </table>
+          </div>
         </div>
       </div>
     </div>
-  </div>
 
+    <!-- Modal for Editing Timetable -->
+    <div class="modal fade" id="editTimetableModal" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Edit Timetable</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <form id="editTimetableForm" action="manage_timetable.php" method="POST">
+              <!-- Hidden inputs to pass timetable and section IDs -->
+              <input type="hidden" name="timetable_id" id="editTimetableId">
+
+              <!-- Subject -->
+              <div class="form-group">
+                <label for="editSubject">Subject:</label>
+                <input type="text" class="form-control" name="subject" id="editSubject" required>
+              </div>
+
+              <!-- Day -->
+              <div class="form-group mt-3">
+                <label for="editDay">Day:</label>
+                <select class="form-control" name="day" id="editDay" required>
+                  <option value="Monday">Monday</option>
+                  <option value="Tuesday">Tuesday</option>
+                  <option value="Wednesday">Wednesday</option>
+                  <option value="Thursday">Thursday</option>
+                  <option value="Friday">Friday</option>
+                  <option value="Saturday">Saturday</option>
+                </select>
+              </div>
+
+              <!-- Room -->
+              <div class="form-group mt-3">
+                <label for="editRoom">Room:</label>
+                <input type="text" class="form-control" name="room" id="editRoom" required>
+              </div>
+
+              <!-- Start Time -->
+              <div class="form-group mt-3">
+                <label for="editStartTime">Start Time:</label>
+                <input type="time" class="form-control" name="start_time" id="editStartTime" required>
+              </div>
+
+              <!-- End Time -->
+              <div class="form-group mt-3">
+                <label for="editEndTime">End Time:</label>
+                <input type="time" class="form-control" name="end_time" id="editEndTime" required>
+              </div>
+
+              <!-- Submit Button -->
+              <button type="submit" name="update_single_timetable" class="btn btn-primary mt-3">Update Timetable</button>
+              <button type="button" class="btn btn-secondary mt-3" id="cancelEditButton">Cancel</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
 
   <!-- JavaScript for AJAX -->
   <script>
 
-  // Fetch and display timetable details in a modal
-  function viewTimetableDetails(timetableId) {
-    fetch('fetch_timetable_details.php?timetable_id=' + timetableId)
+// Fetch and display timetable details in a modal
+function viewTimetableDetails(timetableId) {
+  fetch('fetch_timetable_details.php?timetable_id=' + timetableId)
     .then(response => response.json())
     .then(data => {
-        var timetableDetails = document.getElementById('timetable-details').getElementsByTagName('tbody')[0];
-        timetableDetails.innerHTML = ''; // Clear any previous content
+      var timetableDetails = document.getElementById('timetable-details').getElementsByTagName('tbody')[0];
+      timetableDetails.innerHTML = ''; // Clear any previous content
 
-        // Loop through the fetched data and add rows to the table
-        data.forEach(row => {
-            var newRow = `
-                <tr>
-                    <td>${row.subject_code}</td>
-                    <td>${row.day_of_week}</td>
-                    <td>${row.room_name}</td>
-                    <td>${row.start_time}</td>
-                    <td>${row.end_time}</td>
-                    <td><button class="btn btn-sm btn-warning" onclick="editTimetable(${row.id})">Edit</button></td>
-                </tr>`;
-            timetableDetails.insertAdjacentHTML('beforeend', newRow);
-        });
+      // Loop through the fetched data and add rows to the table
+      data.forEach(row => {
+        var newRow = `
+          <tr>
+            <td>${row.subject_code}</td>
+            <td>${row.day_of_week}</td>
+            <td>${row.room_name}</td>
+            <td>${row.start_time}</td>
+            <td>${row.end_time}</td>
+            <td><button class="btn btn-sm btn-warning" onclick="editTimetable(${row.id})">Edit</button></td>
+          </tr>`;
+        timetableDetails.insertAdjacentHTML('beforeend', newRow);
+      });
 
-        // Show the modal
-        var timetableModal = new bootstrap.Modal(document.getElementById('timetableModal'));
-        timetableModal.show();
+      // Show the "View Timetable" modal
+      var timetableModal = new bootstrap.Modal(document.getElementById('timetableModal'));
+      timetableModal.show();
     });
-  }
+}
 
-  // Edit timetable details (to be implemented with backend changes)
-function editTimetable(timetableDetailId) {
+  // Edit timetable details
+  function editTimetable(timetableDetailId) {
     // Fetch the details of the timetable you want to edit
     fetch('fetch_single_timetable_detail.php?id=' + timetableDetailId)
-    .then(response => response.json())
-    .then(data => {
+      .then(response => response.json())
+      .then(data => {
         // Populate the form with the existing timetable data
         document.getElementById('editTimetableId').value = data.id;
         document.getElementById('editSubject').value = data.subject_code;
-        document.getElementById('editDay').value = data.day;
+        document.getElementById('editDay').value = data.day_of_week;
+        document.getElementById('editRoom').value = data.room_name;
         document.getElementById('editStartTime').value = data.start_time;
         document.getElementById('editEndTime').value = data.end_time;
 
-        // Show the edit form
-        document.getElementById('editTimetableForm').style.display = 'block';
-    });
+        // Hide the "View Timetable" modal
+        var timetableModal = bootstrap.Modal.getInstance(document.getElementById('timetableModal'));
+        timetableModal.hide();
+
+        // Show the "Edit Timetable" modal
+        var editTimetableModal = new bootstrap.Modal(document.getElementById('editTimetableModal'));
+        editTimetableModal.show();
+      });
   }
+
+// Handle the Cancel button functionality
+document.getElementById('cancelEditButton').addEventListener('click', function() {
+  // Hide the "Edit Timetable" modal
+  var editTimetableModal = bootstrap.Modal.getInstance(document.getElementById('editTimetableModal'));
+  editTimetableModal.hide();
+
+  // Show the "View Timetable" modal again
+  var timetableModal = new bootstrap.Modal(document.getElementById('timetableModal'));
+  timetableModal.show();
+});
   function fetchRelatedData() {
-  var departmentId = document.getElementById('department_id').value;
+      var departmentId = document.getElementById('department_id').value;
 
-  // If "Select Department" is chosen, clear the dropdowns
-  if (departmentId === "") {
-      document.getElementById('section_id').innerHTML = '<option value="">Select Section</option>';
-      document.getElementById('room_id').innerHTML = '<option value="">Select Room</option>';
-      document.getElementById('subject-time-list').innerHTML = '<button type="button" class="btn btn-secondary" onclick="addSubjectTime()">Add Subject and Time</button>';
-      return;
-  }
+      // Clear the dropdowns if no department selected
+      if (departmentId === "") {
+          document.getElementById('section_id').innerHTML = '<option value="">Select Section</option>';
+          document.getElementById('subject-time-list').innerHTML = '<button type="button" class="btn btn-secondary" onclick="addSubjectTime()">Add Subject, Room, and Time</button>';
+          return;
+      }
 
-  // Fetch sections
-  fetch('fetch_sections.php?department_id=' + departmentId)
-      .then(response => response.text())
-      .then(data => document.getElementById('section_id').innerHTML = data);
+      // Fetch sections
+      fetch('fetch_sections.php?department_id=' + departmentId)
+          .then(response => response.text())
+          .then(data => document.getElementById('section_id').innerHTML = data);
 
-  // Fetch rooms
-  fetch('fetch_rooms.php?department_id=' + departmentId)
-      .then(response => response.text())
-      .then(data => document.getElementById('room_id').innerHTML = data);
+      // Fetch subjects (populated dynamically when a new subject row is added)
 
   // Fetch subjects
   fetch('fetch_subjects.php?department_id=' + departmentId)
@@ -464,37 +527,48 @@ function editTimetable(timetableDetailId) {
       .then(data => document.getElementById('subject_id').innerHTML = data);
   }
   function addSubjectTime() {
-    var subjectTimeList = document.getElementById('subject-time-list');
-    var departmentId = document.getElementById('department_id').value;
+      var subjectTimeList = document.getElementById('subject-time-list');
+      var departmentId = document.getElementById('department_id').value;
 
-    // Fetch subjects based on the selected department
-    fetch('fetch_subjects.php?department_id=' + departmentId)
-        .then(response => response.text())
-        .then(subjectOptions => {
-            // Ensure that subject options are inserted correctly in the dropdown, not outside as plain text
-            var newEntry = `
-                <div class="form-group mt-2">
-                    <label for="subject_id">Subject:</label>
-                    <select class="form-control" name="subjects[]" required>
-                        ${subjectOptions} <!-- This will insert the options into the select dropdown -->
-                    </select>
-                    <select class="form-control mt-2" name="days[]" required>
-                        <option value="Monday">Monday</option>
-                        <option value="Tuesday">Tuesday</option>
-                        <option value="Wednesday">Wednesday</option>
-                        <option value="Thursday">Thursday</option>
-                        <option value="Friday">Friday</option>
-                        <option value="Saturday">Saturday</option>
-                    </select>
-                    <input type="time" class="form-control mt-2" name="start_times[]" required>
-                    <input type="time" class="form-control mt-2" name="end_times[]" required>
-                </div>
-            `;
-            subjectTimeList.insertAdjacentHTML('beforeend', newEntry);
-        })
-        .catch(error => {
-            console.error('Error fetching subjects:', error);
-        });
+      // Fetch subjects and rooms based on the selected department
+      fetch('fetch_subjects.php?department_id=' + departmentId)
+          .then(response => response.text())
+          .then(subjectOptions => {
+              fetch('fetch_rooms.php?department_id=' + departmentId)
+              .then(response => response.text())
+              .then(roomOptions => {
+                  // Add a new entry for subject, room, day, and time
+                  var newEntry = `
+                      <div class="form-group mt-2">
+                          <label for="subject_id">Subject:</label>
+                          <select class="form-control" name="subjects[]" required>
+                              ${subjectOptions}
+                          </select>
+                          <label for="room_id" class="mt-2">Room:</label>
+                          <select class="form-control" name="rooms[]" required>
+                              ${roomOptions}
+                          </select>
+                          <label for="days[]" class="mt-2">Day:</label>
+                          <select class="form-control mt-2" name="days[]" required>
+                              <option value="Monday">Monday</option>
+                              <option value="Tuesday">Tuesday</option>
+                              <option value="Wednesday">Wednesday</option>
+                              <option value="Thursday">Thursday</option>
+                              <option value="Friday">Friday</option>
+                              <option value="Saturday">Saturday</option>
+                          </select>
+                          <label for="start_times[]" class="mt-2">Start Time:</label>
+                          <input type="time" class="form-control" name="start_times[]" required>
+                          <label for="end_times[]" class="mt-2">End Time:</label>
+                          <input type="time" class="form-control" name="end_times[]" required>
+                      </div>
+                  `;
+                  subjectTimeList.insertAdjacentHTML('beforeend', newEntry);
+              });
+          })
+          .catch(error => {
+              console.error('Error fetching subjects or rooms:', error);
+          });
     }
   </script>
 

@@ -8,6 +8,29 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
+function getSubjectIdByCode($subject_code) {
+    global $conn;
+    $stmt = $conn->prepare("SELECT id FROM subjects WHERE subject_code = ?");
+    $stmt->bind_param("s", $subject_code);
+    $stmt->execute();
+    $stmt->bind_result($subject_id);
+    $stmt->fetch();
+    $stmt->close();
+    return $subject_id;
+}
+
+// Function to get the room_id based on room_name
+function getRoomIdByName($room_name) {
+    global $conn;
+    $stmt = $conn->prepare("SELECT id FROM rooms WHERE room_name = ?");
+    $stmt->bind_param("s", $room_name);
+    $stmt->execute();
+    $stmt->bind_result($room_id);
+    $stmt->fetch();
+    $stmt->close();
+    return $room_id;
+}
+
 // Edit department
 $edit_department = null;
 if (isset($_GET['edit_department_id'])) {
@@ -463,86 +486,91 @@ if (isset($_GET['edit_timetable_id'])) {
     $stmt->close();
 }
 
-// Add timetable with multiple subjects
+// Add timetable with multiple subjects, rooms, and times
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_timetable'])) {
-    $section_id = $_POST['section_id'];
-    $room_id = $_POST['room_id'];
+    $section_id = $_POST['section_id'];  // The selected section
     $subjects = $_POST['subjects'];  // Array of subject IDs
-    $days = $_POST['days'];          // Array of days
+    $rooms = $_POST['rooms'];  // Array of room IDs
+    $days = $_POST['days'];  // Array of days
     $start_times = $_POST['start_times'];  // Array of start times
     $end_times = $_POST['end_times'];  // Array of end times
 
-    try {
-        // Loop through each subject, day, and time to insert
-        for ($i = 0; $i < count($subjects); $i++) {
-            $subject_id = $subjects[$i];
-            $day_of_week = $days[$i];
-            $start_time = $start_times[$i];
-            $end_time = $end_times[$i];
+    // Ensure all arrays have the same number of entries
+    if (count($subjects) == count($rooms) && count($rooms) == count($days) && count($days) == count($start_times) && count($start_times) == count($end_times)) {
+        try {
+            // Loop through each entry and insert them one by one
+            for ($i = 0; $i < count($subjects); $i++) {
+                $subject_id = $subjects[$i];
+                $room_id = $rooms[$i];
+                $day_of_week = $days[$i];
+                $start_time = $start_times[$i];
+                $end_time = $end_times[$i];
 
-            // Insert timetable for each subject/day/time combination
-            $stmt = $conn->prepare("
-                INSERT INTO timetable (subject_id, section_id, room_id, day_of_week, start_time, end_time)
-                VALUES (?, ?, ?, ?, ?, ?)");
-            $stmt->bind_param("iiisss", $subject_id, $section_id, $room_id, $day_of_week, $start_time, $end_time);
-            $stmt->execute();
-        }
+                // Insert timetable for each subject, room, day, and time combination
+                $stmt = $conn->prepare("
+                    INSERT INTO timetable (subject_id, section_id, room_id, day_of_week, start_time, end_time)
+                    VALUES (?, ?, ?, ?, ?, ?)");
+                $stmt->bind_param("iiisss", $subject_id, $section_id, $room_id, $day_of_week, $start_time, $end_time);
+                $stmt->execute();
+            }
 
-        $_SESSION['success_message'] = "Timetable added successfully!";
-        header('Location: manage_timetable.php');
-        exit;
-    } catch (mysqli_sql_exception $e) {
-        if ($e->getCode() == 1062) { // Duplicate entry error
-            $_SESSION['error_message'] = "Error: Duplicate entry for timetable.";
-        } else {
-            $_SESSION['error_message'] = "Error: " . $e->getMessage();
+            $_SESSION['success_message'] = "Timetable added successfully!";
+            header('Location: manage_timetable.php');
+            exit;
+        } catch (mysqli_sql_exception $e) {
+            if ($e->getCode() == 1062) { // Duplicate entry error
+                $_SESSION['error_message'] = "Error: Duplicate entry for timetable.";
+            } else {
+                $_SESSION['error_message'] = "Error: " . $e->getMessage();
+            }
+            header('Location: manage_timetable.php');
+            exit;
         }
+    } else {
+        // If the array sizes don't match, return an error
+        $_SESSION['error_message'] = "Error: Mismatch in subject, room, day, or time fields.";
         header('Location: manage_timetable.php');
         exit;
     }
 }
 
-// Update timetable (Update multiple rows)
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_timetable'])) {
+// Update timetable with multiple entries
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_single_timetable'])) {
     $timetable_id = $_POST['timetable_id'];  // ID of the timetable being updated
-    $section_id = $_POST['section_id'];
-    $room_id = $_POST['room_id'];
-    $subjects = $_POST['subjects'];
-    $days = $_POST['days'];
-    $start_times = $_POST['start_times'];
-    $end_times = $_POST['end_times'];
+    $subject_code = $_POST['subject'];  // Subject code from the form
+    $room_name = $_POST['room'];  // Room name from the form
+    $day_of_week = $_POST['day'];  // Day from the form
+    $start_time = $_POST['start_time'];  // Start time from the form
+    $end_time = $_POST['end_time'];  // End time from the form
 
     try {
-        // Delete the existing timetable for this section first
-        $delete_stmt = $conn->prepare("DELETE FROM timetable WHERE section_id = ? AND room_id = ?");
-        $delete_stmt->bind_param("ii", $section_id, $room_id);
-        $delete_stmt->execute();
-        $delete_stmt->close();
+        // Fetch the subject_id based on subject_code
+        $subject_id = getSubjectIdByCode($subject_code);
 
-        // Insert the updated timetable entries
-        for ($i = 0; $i < count($subjects); $i++) {
-            $subject_id = $subjects[$i];
-            $day_of_week = $days[$i];
-            $start_time = $start_times[$i];
-            $end_time = $end_times[$i];
+        // Fetch the room_id based on room_name
+        $room_id = getRoomIdByName($room_name);
 
-            // Insert updated timetable entries
+        // Check if both IDs are valid
+        if ($subject_id && $room_id) {
+            // Update the single timetable entry
             $stmt = $conn->prepare("
-                INSERT INTO timetable (subject_id, section_id, room_id, day_of_week, start_time, end_time)
-                VALUES (?, ?, ?, ?, ?, ?)");
-            $stmt->bind_param("iiisss", $subject_id, $section_id, $room_id, $day_of_week, $start_time, $end_time);
+                UPDATE timetable
+                SET subject_id = ?, room_id = ?, day_of_week = ?, start_time = ?, end_time = ?
+                WHERE id = ?");
+            $stmt->bind_param("iisssi", $subject_id, $room_id, $day_of_week, $start_time, $end_time, $timetable_id);
             $stmt->execute();
-        }
 
         $_SESSION['success_message'] = "Timetable updated successfully!";
         header('Location: manage_timetable.php');
         exit;
-    } catch (mysqli_sql_exception $e) {
-        if ($e->getCode() == 1062) { // Duplicate entry error
-            $_SESSION['error_message'] = "Error: Duplicate entry for timetable.";
         } else {
-            $_SESSION['error_message'] = "Error: " . $e->getMessage();
+            // Handle error if subject_id or room_id is invalid
+            $_SESSION['error_message'] = "Invalid subject or room.";
+            header('Location: manage_timetable.php');
+            exit;
         }
+    } catch (mysqli_sql_exception $e) {
+        $_SESSION['error_message'] = "Error: " . $e->getMessage();
         header('Location: manage_timetable.php');
         exit;
     }
@@ -553,7 +581,6 @@ if (isset($_GET['delete_timetable_id'])) {
     $delete_id = $_GET['delete_timetable_id'];
     
     try {
-        // Prepare the delete statement for timetable
         $stmt = $conn->prepare("DELETE FROM timetable WHERE id = ?");
         $stmt->bind_param("i", $delete_id);
         $stmt->execute();
@@ -563,15 +590,12 @@ if (isset($_GET['delete_timetable_id'])) {
         header('Location: manage_timetable.php');
         exit;
     } catch (mysqli_sql_exception $e) {
-        if ($e->getCode() == 1451) { // Foreign key constraint error
-            $_SESSION['error_message'] = "Error: This timetable is still connected to other data.";
-        } else {
-            $_SESSION['error_message'] = "Error: " . $e->getMessage();
-        }
+        $_SESSION['error_message'] = "Error: " . $e->getMessage();
         header('Location: manage_timetable.php');
         exit;
     }
 }
+
 
 // Fetch all timetables (adjust to join all relevant data)
 $timetables = $conn->query("
