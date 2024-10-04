@@ -576,17 +576,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_single_timetab
     }
 }
 
-// Delete timetable
+// Delete entire timetable for a section (or group of timetables)
 if (isset($_GET['delete_timetable_id'])) {
     $delete_id = $_GET['delete_timetable_id'];
     
     try {
-        $stmt = $conn->prepare("DELETE FROM timetable WHERE id = ?");
+        // Delete all timetable entries for a section based on the timetable ID
+        $stmt = $conn->prepare("DELETE FROM timetable WHERE section_id = (SELECT section_id FROM timetable WHERE id = ?)");
         $stmt->bind_param("i", $delete_id);
         $stmt->execute();
         $stmt->close();
 
-        $_SESSION['success_message'] = "Timetable deleted successfully!";
+        $_SESSION['success_message'] = "Entire timetable deleted successfully!";
+        header('Location: manage_timetable.php');
+        exit;
+    } catch (mysqli_sql_exception $e) {
+        $_SESSION['error_message'] = "Error: " . $e->getMessage();
+        header('Location: manage_timetable.php');
+        exit;
+    }
+}
+
+// Delete a single row from the timetable
+if (isset($_GET['delete_row_id'])) {
+    $delete_row_id = $_GET['delete_row_id'];
+
+    try {
+        $stmt = $conn->prepare("DELETE FROM timetable WHERE id = ?");
+        $stmt->bind_param("i", $delete_row_id);
+        $stmt->execute();
+        $stmt->close();
+
+        $_SESSION['success_message'] = "Timetable entry deleted successfully!";
         header('Location: manage_timetable.php');
         exit;
     } catch (mysqli_sql_exception $e) {

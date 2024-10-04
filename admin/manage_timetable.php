@@ -338,8 +338,7 @@
                         <button class="btn btn-info btn-sm" onclick="viewTimetableDetails(<?= $timetable['id']; ?>)">View Timetable</button>
                     </td>
                     <td>
-                        <a href="manage_timetable.php?edit_timetable_id=<?= $timetable['id']; ?>" class="btn btn-warning btn-sm">Edit</a>
-                        <a href="manage_timetable.php?delete_timetable_id=<?= $timetable['id']; ?>" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this timetable?')">Delete</a>
+                    <a href="manage_timetable.php?delete_timetable_id=<?= $timetable['id']; ?>" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete the entire timetable?')">Delete</a>
                     </td>
                 </tr>
                 <?php endwhile; ?>
@@ -459,7 +458,10 @@ function viewTimetableDetails(timetableId) {
             <td>${row.room_name}</td>
             <td>${row.start_time}</td>
             <td>${row.end_time}</td>
-            <td><button class="btn btn-sm btn-warning" onclick="editTimetable(${row.id})">Edit</button></td>
+            <td>
+            <button class="btn btn-sm btn-warning" onclick="editTimetable(${row.id})">Edit</button>
+            <button class="btn btn-sm btn-danger" onclick="deleteTimetableRow(${row.id})">Delete</button>
+            </td>
           </tr>`;
         timetableDetails.insertAdjacentHTML('beforeend', newRow);
       });
@@ -468,6 +470,13 @@ function viewTimetableDetails(timetableId) {
       var timetableModal = new bootstrap.Modal(document.getElementById('timetableModal'));
       timetableModal.show();
     });
+}
+
+// Delete individual timetable row
+function deleteTimetableRow(rowId) {
+  if (confirm("Are you sure you want to delete this timetable entry?")) {
+    window.location.href = 'manage_timetable.php?delete_row_id=' + rowId;
+  }
 }
 
   // Edit timetable details
@@ -562,6 +571,7 @@ document.getElementById('cancelEditButton').addEventListener('click', function()
                           <label for="end_times[]" class="mt-2">End Time:</label>
                           <input type="time" class="form-control" name="end_times[]" required>
                       </div>
+                      <br>
                   `;
                   subjectTimeList.insertAdjacentHTML('beforeend', newEntry);
               });
