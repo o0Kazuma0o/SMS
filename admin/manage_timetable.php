@@ -359,7 +359,35 @@
 
     </div>
     </section>
-    
+
+    <!-- Modal for Timetable Details -->
+  <div class="modal fade" id="timetableModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Timetable Details</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <table class="table table-bordered" id="timetable-details">
+            <thead>
+              <tr>
+                <th>Subject</th>
+                <th>Day</th>
+                <th>Room</th>
+                <th>Start Time</th>
+                <th>End Time</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Timetable details will be populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
 
   <!-- JavaScript for AJAX -->
   <script>
@@ -377,7 +405,8 @@
             var newRow = `
                 <tr>
                     <td>${row.subject_code}</td>
-                    <td>${row.day}</td>
+                    <td>${row.day_of_week}</td>
+                    <td>${row.room_name}</td>
                     <td>${row.start_time}</td>
                     <td>${row.end_time}</td>
                     <td><button class="btn btn-sm btn-warning" onclick="editTimetable(${row.id})">Edit</button></td>

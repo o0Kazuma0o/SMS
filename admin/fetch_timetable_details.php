@@ -3,10 +3,13 @@ $conn = new mysqli('localhost', 'root', '', 'admission_db');
 $timetable_id = $_GET['timetable_id'];
 
 // Fetch timetable details
-$result = $conn->query("SELECT s.subject_code, t.day_of_week as day, t.start_time, t.end_time
-                        FROM timetable t
-                        JOIN subjects s ON t.subject_id = s.id
-                        WHERE t.section_id = $timetable_id");
+$result = $conn->query("SELECT t.*, s.subject_code, sec.section_number, r.room_name, d.department_code
+    FROM timetable t 
+    JOIN subjects s ON t.subject_id = s.id 
+    JOIN sections sec ON t.section_id = sec.id 
+    JOIN rooms r ON t.room_id = r.id
+    JOIN departments d ON sec.department_id = d.id");
+    
 
 
 $timetable = [];
