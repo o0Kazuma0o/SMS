@@ -260,7 +260,7 @@
         <?php endif; ?>
         </h5>
           <!-- Add Timetable Form -->
-          <form action="manage_timetable.php" method="POST" class="mb-4">
+          <form action="manage_timetable.php" method="POST" class="mb-4" onsubmit="return validateTimetableForm();">
 
               <!-- Select Department -->
             <div class="form-group">
@@ -291,6 +291,7 @@
               <div id="subject-time-list">
                 <!-- Room,Subject and Time fields will be dynamically added here -->
                 <button type="button" class="btn btn-secondary mt-2" onclick="addSubjectTime()">Add Room, Subject and Time</button>
+                <button type="button" class="btn btn-danger mt-2" id="clear-btn" onclick="clearLastSubjectTime()">Clear Last Entry</button>
               </div>
             </div>
 
@@ -388,7 +389,7 @@
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
-            <form id="editTimetableForm" action="manage_timetable.php" method="POST">
+            <form id="editTimetableForm" action="manage_timetable.php" method="POST" onsubmit="return validateTimetableForm();">
               <!-- Hidden inputs to pass timetable and section IDs -->
               <input type="hidden" name="timetable_id" id="editTimetableId">
 
@@ -441,43 +442,43 @@
   <!-- JavaScript for AJAX -->
   <script>
 
-// Fetch and display timetable details in a modal
-function viewTimetableDetails(timetableId) {
-  fetch('fetch_timetable_details.php?timetable_id=' + timetableId)
-    .then(response => response.json())
-    .then(data => {
-      var timetableDetails = document.getElementById('timetable-details').getElementsByTagName('tbody')[0];
-      timetableDetails.innerHTML = ''; // Clear any previous content
+  // Fetch and display timetable details in a modal
+  function viewTimetableDetails(timetableId) {
+    fetch('fetch_timetable_details.php?timetable_id=' + timetableId)
+      .then(response => response.json())
+      .then(data => {
+        var timetableDetails = document.getElementById('timetable-details').getElementsByTagName('tbody')[0];
+        timetableDetails.innerHTML = ''; // Clear any previous content
 
-      // Loop through the fetched data and add rows to the table
-      data.forEach(row => {
-        var newRow = `
-          <tr>
-            <td>${row.subject_code}</td>
-            <td>${row.day_of_week}</td>
-            <td>${row.room_name}</td>
-            <td>${row.start_time}</td>
-            <td>${row.end_time}</td>
-            <td>
-            <button class="btn btn-sm btn-warning" onclick="editTimetable(${row.id})">Edit</button>
-            <button class="btn btn-sm btn-danger" onclick="deleteTimetableRow(${row.id})">Delete</button>
-            </td>
-          </tr>`;
-        timetableDetails.insertAdjacentHTML('beforeend', newRow);
+        // Loop through the fetched data and add rows to the table
+        data.forEach(row => {
+          var newRow = `
+            <tr>
+              <td>${row.subject_code}</td>
+              <td>${row.day_of_week}</td>
+              <td>${row.room_name}</td>
+              <td>${row.start_time}</td>
+              <td>${row.end_time}</td>
+              <td>
+              <button class="btn btn-sm btn-warning" onclick="editTimetable(${row.id})">Edit</button>
+              <button class="btn btn-sm btn-danger" onclick="deleteTimetableRow(${row.id})">Delete</button>
+              </td>
+            </tr>`;
+          timetableDetails.insertAdjacentHTML('beforeend', newRow);
+        });
+
+        // Show the "View Timetable" modal
+        var timetableModal = new bootstrap.Modal(document.getElementById('timetableModal'));
+        timetableModal.show();
       });
-
-      // Show the "View Timetable" modal
-      var timetableModal = new bootstrap.Modal(document.getElementById('timetableModal'));
-      timetableModal.show();
-    });
 }
 
-// Delete individual timetable row
-function deleteTimetableRow(rowId) {
-  if (confirm("Are you sure you want to delete this timetable entry?")) {
-    window.location.href = 'manage_timetable.php?delete_row_id=' + rowId;
+  // Delete individual timetable row
+  function deleteTimetableRow(rowId) {
+    if (confirm("Are you sure you want to delete this timetable entry?")) {
+      window.location.href = 'manage_timetable.php?delete_row_id=' + rowId;
+    }
   }
-}
 
   // Edit timetable details
   function editTimetable(timetableDetailId) {
@@ -503,8 +504,8 @@ function deleteTimetableRow(rowId) {
       });
   }
 
-// Handle the Cancel button functionality
-document.getElementById('cancelEditButton').addEventListener('click', function() {
+  // Handle the Cancel button functionality
+  document.getElementById('cancelEditButton').addEventListener('click', function() {
   // Hide the "Edit Timetable" modal
   var editTimetableModal = bootstrap.Modal.getInstance(document.getElementById('editTimetableModal'));
   editTimetableModal.hide();
@@ -512,74 +513,122 @@ document.getElementById('cancelEditButton').addEventListener('click', function()
   // Show the "View Timetable" modal again
   var timetableModal = new bootstrap.Modal(document.getElementById('timetableModal'));
   timetableModal.show();
-});
+  });
+
   function fetchRelatedData() {
-      var departmentId = document.getElementById('department_id').value;
+  var departmentId = document.getElementById('department_id').value;
 
-      // Clear the dropdowns if no department selected
-      if (departmentId === "") {
-          document.getElementById('section_id').innerHTML = '<option value="">Select Section</option>';
-          document.getElementById('subject-time-list').innerHTML = '<button type="button" class="btn btn-secondary" onclick="addSubjectTime()">Add Subject, Room, and Time</button>';
-          return;
-      }
+  // Clear the dropdowns if no department selected
+  if (departmentId === "") {
+      document.getElementById('section_id').innerHTML = '<option value="">Select Section</option>';
+      document.getElementById('subject-time-list').innerHTML = '<button type="button" class="btn btn-secondary" onclick="addSubjectTime()">Add Subject, Room, and Time</button>';
+      return;
+  }
 
-      // Fetch sections
-      fetch('fetch_sections.php?department_id=' + departmentId)
-          .then(response => response.text())
-          .then(data => document.getElementById('section_id').innerHTML = data);
+  // Fetch sections
+  fetch('fetch_sections.php?department_id=' + departmentId)
+      .then(response => response.text())
+      .then(data => document.getElementById('section_id').innerHTML = data);
 
-      // Fetch subjects (populated dynamically when a new subject row is added)
-
-  // Fetch subjects
+  // Fetch subjects (populated dynamically when a new subject row is added)
   fetch('fetch_subjects.php?department_id=' + departmentId)
       .then(response => response.text())
       .then(data => document.getElementById('subject_id').innerHTML = data);
   }
-  function addSubjectTime() {
-      var subjectTimeList = document.getElementById('subject-time-list');
-      var departmentId = document.getElementById('department_id').value;
 
-      // Fetch subjects and rooms based on the selected department
-      fetch('fetch_subjects.php?department_id=' + departmentId)
-          .then(response => response.text())
-          .then(subjectOptions => {
-              fetch('fetch_rooms.php?department_id=' + departmentId)
-              .then(response => response.text())
-              .then(roomOptions => {
-                  // Add a new entry for subject, room, day, and time
-                  var newEntry = `
-                      <div class="form-group mt-2">
-                          <label for="subject_id">Subject:</label>
-                          <select class="form-control" name="subjects[]" required>
-                              ${subjectOptions}
-                          </select>
-                          <label for="room_id" class="mt-2">Room:</label>
-                          <select class="form-control" name="rooms[]" required>
-                              ${roomOptions}
-                          </select>
-                          <label for="days[]" class="mt-2">Day:</label>
-                          <select class="form-control mt-2" name="days[]" required>
-                              <option value="Monday">Monday</option>
-                              <option value="Tuesday">Tuesday</option>
-                              <option value="Wednesday">Wednesday</option>
-                              <option value="Thursday">Thursday</option>
-                              <option value="Friday">Friday</option>
-                              <option value="Saturday">Saturday</option>
-                          </select>
-                          <label for="start_times[]" class="mt-2">Start Time:</label>
-                          <input type="time" class="form-control" name="start_times[]" required>
-                          <label for="end_times[]" class="mt-2">End Time:</label>
-                          <input type="time" class="form-control" name="end_times[]" required>
-                      </div>
-                      <br>
-                  `;
-                  subjectTimeList.insertAdjacentHTML('beforeend', newEntry);
-              });
-          })
-          .catch(error => {
-              console.error('Error fetching subjects or rooms:', error);
-          });
+  // Add Subject, Room, Day, and Time dynamically
+  function addSubjectTime() {
+    var subjectTimeList = document.getElementById('subject-time-list');
+    var departmentId = document.getElementById('department_id').value;
+
+    if (!document.getElementById('section_id').value) {
+        alert("Please select a department and section first.");
+        return;
     }
+
+    fetch('fetch_subjects.php?department_id=' + departmentId)
+        .then(response => response.text())
+        .then(subjectOptions => {
+            fetch('fetch_rooms.php?department_id=' + departmentId)
+            .then(response => response.text())
+            .then(roomOptions => {
+                var newEntry = `
+                    <div class="form-group mt-2 subject-time-entry">
+                        <label for="subject_id">Subject:</label>
+                        <select class="form-control" name="subjects[]" required>
+                          ${subjectOptions}
+                        </select>
+                        <label for="room_id" class="mt-2">Room:</label>
+                        <select class="form-control" name="rooms[]" required>
+                          ${roomOptions}
+                        </select>
+                        <label for="days[]" class="mt-2">Day:</label>
+                        <select class="form-control mt-2" name="days[]" required>
+                            <option value="Monday">Monday</option>
+                            <option value="Tuesday">Tuesday</option>
+                            <option value="Wednesday">Wednesday</option>
+                            <option value="Thursday">Thursday</option>
+                            <option value="Friday">Friday</option>
+                            <option value="Saturday">Saturday</option>
+                        </select>
+                        <label for="start_times[]" class="mt-2">Start Time:</label>
+                        <input type="time" class="form-control" name="start_times[]" required>
+                        <label for="end_times[]" class="mt-2">End Time:</label>
+                        <input type="time" class="form-control" name="end_times[]" required>
+                    </div>
+                    <br>
+                `;
+                subjectTimeList.insertAdjacentHTML('beforeend', newEntry);
+            });
+        })
+        .catch(error => console.error('Error fetching subjects or rooms:', error));
+}
+
+  // Clear the last added subject, room, day, and time entry
+  function clearLastSubjectTime() {
+    var subjectTimeList = document.getElementById('subject-time-list');
+    var entries = subjectTimeList.getElementsByClassName('subject-time-entry');
+
+    if (entries.length > 0) {
+        subjectTimeList.removeChild(entries[entries.length - 1]); // Remove the last added field group
+    }
+}
+
+  // Validation to check if a section has duplicate subjects or overlapping times on the same day
+  function validateTimetableForm() {
+    var subjects = document.getElementsByName('subjects[]');
+    var days = document.getElementsByName('days[]');
+    var startTimes = document.getElementsByName('start_times[]');
+    var endTimes = document.getElementsByName('end_times[]');
+
+    var subjectDayCombination = {}; // Store unique combination of subject + day
+
+    for (let i = 0; i < subjects.length; i++) {
+        var subject = subjects[i].value;
+        var day = days[i].value;
+        var startTime = startTimes[i].value;
+        var endTime = endTimes[i].value;
+
+        var combinationKey = subject + "-" + day;
+
+        // Check for duplicate subject on the same day
+        if (subjectDayCombination[combinationKey]) {
+            alert(`Duplicate subject "${subject}" on the same day.`);
+            return false; // Prevent form submission
+        }
+
+        subjectDayCombination[combinationKey] = true;
+
+        // Check for overlapping times
+        for (let j = i + 1; j < startTimes.length; j++) {
+            if (days[j].value === day && (startTimes[j].value < endTime && startTimes[i].value < endTimes[j].value)) {
+                alert(`Overlapping times for subject "${subject}" on ${day}.`);
+                return false; // Prevent form submission
+            }
+        }
+    }
+    return true; // Allow form submission
+  }
   </script>
 
   </main><!-- End #main -->
