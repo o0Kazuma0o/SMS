@@ -175,6 +175,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_room'])) {
     }
 }
 
+// Update room
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_room'])) {
     $room_id = $_POST['room_id'];  // The ID of the room being updated
     $room_name = $_POST['room_name'];
@@ -498,7 +499,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_timetable'])) 
     // Ensure all arrays have the same number of entries
     if (count($subjects) == count($rooms) && count($rooms) == count($days) && count($days) == count($start_times) && count($start_times) == count($end_times)) {
         try {
-            // Loop through each entry and insert them one by one
+            $conn->begin_transaction();  // Start a transaction
+
             for ($i = 0; $i < count($subjects); $i++) {
                 $subject_id = $subjects[$i];
                 $room_id = $rooms[$i];
@@ -506,7 +508,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_timetable'])) 
                 $start_time = $start_times[$i];
                 $end_time = $end_times[$i];
 
-                // Insert timetable for each subject, room, day, and time combination
+                // 1. Check if the subject already exists in the same section (ignoring the day)
+                $stmt = $conn->prepare("
+                    SELECT COUNT(*) 
+                    FROM timetable 
+                    WHERE section_id = ? 
+                    AND subject_id = ?");
+                $stmt->bind_param("ii", $section_id, $subject_id);
+                $stmt->execute();
+                $stmt->bind_result($subject_count);
+                $stmt->fetch();
+                $stmt->close();
+
+                if ($subject_count > 0) {
+                    // Duplicate subject detected in the section
+                    $_SESSION['error_message'] = "Error: Duplicate subject in this section.";
+                    $conn->rollback();  // Rollback the transaction
+                    header('Location: manage_timetable.php');
+                    exit;
+                }
+
+                // 2. Check for time conflicts within the section on the same day
+                $stmt = $conn->prepare("
+                    SELECT COUNT(*) 
+                    FROM timetable 
+                    WHERE section_id = ? 
+                    AND day_of_week = ? 
+                    AND ((start_time < ? AND end_time > ?) OR (start_time < ? AND end_time > ?))
+                    AND NOT (end_time = ?)");
+                $stmt->bind_param("issssss", $section_id, $day_of_week, $end_time, $start_time, $end_time, $start_time, $start_time);
+                $stmt->execute();
+                $stmt->bind_result($time_conflict_count);
+                $stmt->fetch();
+                $stmt->close();
+
+                if ($time_conflict_count > 0) {
+                    // Time conflict detected
+                    $_SESSION['error_message'] = "Error: Time conflict on {$day_of_week} between {$start_time} and {$end_time}.";
+                    $conn->rollback();  // Rollback the transaction
+                    header('Location: manage_timetable.php');
+                    exit;
+                }
+
+                // 3. Insert timetable for each subject, room, day, and time combination
                 $stmt = $conn->prepare("
                     INSERT INTO timetable (subject_id, section_id, room_id, day_of_week, start_time, end_time)
                     VALUES (?, ?, ?, ?, ?, ?)");
@@ -514,15 +558,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_timetable'])) 
                 $stmt->execute();
             }
 
+            $conn->commit();  // Commit the transaction
             $_SESSION['success_message'] = "Timetable added successfully!";
             header('Location: manage_timetable.php');
             exit;
+
         } catch (mysqli_sql_exception $e) {
-            if ($e->getCode() == 1062) { // Duplicate entry error
-                $_SESSION['error_message'] = "Error: Duplicate entry for timetable.";
-            } else {
-                $_SESSION['error_message'] = "Error: " . $e->getMessage();
-            }
+            $conn->rollback();  // Rollback transaction on error
+            $_SESSION['error_message'] = "Error: " . $e->getMessage();
             header('Location: manage_timetable.php');
             exit;
         }
@@ -534,9 +577,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_timetable'])) 
     }
 }
 
-// Update timetable with multiple entries
+// Update a single timetable entry
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_single_timetable'])) {
     $timetable_id = $_POST['timetable_id'];  // ID of the timetable being updated
+    $section_id = $_POST['section_id'];  // The section ID
     $subject_code = $_POST['subject'];  // Subject code from the form
     $room_name = $_POST['room'];  // Room name from the form
     $day_of_week = $_POST['day'];  // Day from the form
@@ -552,7 +596,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_single_timetab
 
         // Check if both IDs are valid
         if ($subject_id && $room_id) {
-            // Update the single timetable entry
+            // 1. Ensure no duplicate subjects in the same section
+            $stmt = $conn->prepare("
+                SELECT COUNT(*) 
+                FROM timetable 
+                WHERE section_id = ? 
+                AND subject_id = ? 
+                AND id != ?");
+            $stmt->bind_param("iii", $section_id, $subject_id, $timetable_id);
+            $stmt->execute();
+            $stmt->bind_result($duplicate_subject_count);
+            $stmt->fetch();
+            $stmt->close();
+
+            if ($duplicate_subject_count > 0) {
+                // Subject already exists in the section
+                $_SESSION['error_message'] = "Error: Duplicate subject in this section.";
+                header('Location: manage_timetable.php');
+                exit;
+            }
+
+            // 2. Ensure no time conflicts within the section on the same day
+            $stmt = $conn->prepare("
+                SELECT COUNT(*) 
+                FROM timetable 
+                WHERE section_id = ? 
+                AND day_of_week = ? 
+                AND ((start_time < ? AND end_time > ?) OR (start_time < ? AND end_time > ?)) 
+                AND id != ?
+                AND NOT (end_time = ?)");
+            $stmt->bind_param("issssssi", $section_id, $day_of_week, $end_time, $start_time, $end_time, $start_time, $timetable_id, $start_time);
+            $stmt->execute();
+            $stmt->bind_result($time_conflict_count);
+            $stmt->fetch();
+            $stmt->close();
+
+            if ($time_conflict_count > 0) {
+                // Time conflict detected
+                $_SESSION['error_message'] = "Error: Time conflict on {$day_of_week} between {$start_time} and {$end_time}.";
+                header('Location: manage_timetable.php');
+                exit;
+            }
+
+            // 3. If no conflicts, update the single timetable entry
             $stmt = $conn->prepare("
                 UPDATE timetable
                 SET subject_id = ?, room_id = ?, day_of_week = ?, start_time = ?, end_time = ?
@@ -560,9 +646,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_single_timetab
             $stmt->bind_param("iisssi", $subject_id, $room_id, $day_of_week, $start_time, $end_time, $timetable_id);
             $stmt->execute();
 
-        $_SESSION['success_message'] = "Timetable updated successfully!";
-        header('Location: manage_timetable.php');
-        exit;
+            $_SESSION['success_message'] = "Timetable updated successfully!";
+            header('Location: manage_timetable.php');
+            exit;
         } else {
             // Handle error if subject_id or room_id is invalid
             $_SESSION['error_message'] = "Invalid subject or room.";
