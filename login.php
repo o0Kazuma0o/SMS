@@ -89,10 +89,6 @@
                 </div>
               </div>
 
-              <div class="credits">
-                BCP
-              </div>
-
             </div>
           </div>
         </div>
