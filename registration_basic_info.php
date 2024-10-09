@@ -132,107 +132,122 @@
                       <div class="row form-row">
                         <div class="col-md-6">
                           <label for="program" class="form-label">Program</label>
-                          <select class="form-select" id="program" name="program" required>
-                            <option value=""></option>
+                          <select class="form-select" id="program" name="Program" required>
+                            <option value=""disabled selected></option>
                             <!-- Options here -->
                             <option value="BSIT">Bachelor of Science in Information Technology</option>
                             <option value="BSIS">Bachelor of Science in Information Systems</option>
                             <option value="CRIM">Criminology</option>
                           </select>
+                          <div class="text-danger" id="program-error"></div>
                         </div>
                         <div class="col-md-3">
                           <label for="admissiontype" class="form-label">Admission Type</label>
-                          <select class="form-select" id="admissiontype" name="admissiontype" required>
-                            <option value=""></option>
+                          <select class="form-select" id="admissiontype" name="Admission Type" required>
+                            <option value="" disabled selected></option>
                             <!-- Options here -->
                             <option value="Regular">New Regular</option>
                             <option value="Transferee">Transferee</option>
                             <option value="Returnee">Returnee</option>
                           </select>
+                          <div class="text-danger" id="admissiontype-error"></div>
                           <br>
                           <label class="form-check-label">
-                            <input type="checkbox" class="form-check-input" name="workingstudent" id="workingstudent"> 
+                            <input type="checkbox" class="form-check-input" name="Working Student" id="workingstudent"> 
                             Are you a Working Student?
                           </label>
                         </div>
                         <div class="col-md-3">
                           <label for="yrlvl" class="form-label">Year Level</label>
-                          <select class="form-select" id="yrlvl" name="yrlvl" required>
-                            <option value=""></option>
+                          <select class="form-select" id="yrlvl" name="Year Level" required>
+                            <option value="" disabled selected></option>
                             <!-- Options here -->
                             <option value="1st">1st Year</option>
                             <option value="2nd">2nd Year</option>
                             <option value="3rd">3rd Year</option>
                             <option value="4th">4th Year</option>
                           </select>
+                          <div class="text-danger" id="yrlvl-error"></div>
                         </div>
                       </div>
                       <!-- Row 2: Lastname, Firstname, Middlename, Suffix -->
                       <div class="row form-row">
                         <div class="col-md-3">
                           <label for="lastname" class="form-label">Lastname</label>
-                          <input type="text" class="form-control" id="lastname" name="lastname" required>
+                          <input type="text" class="form-control" id="lastname" name="Last Name" required oninput="validateLettersOnly(this)">
+                          <div class="text-danger" id="lastname-error"></div>
                         </div>
                         <div class="col-md-3">
                           <label for="firstname" class="form-label">Firstname</label>
-                          <input type="text" class="form-control" id="firstname" name="firstname" required>
+                          <input type="text" class="form-control" id="firstname" name="First Name" required oninput="validateLettersOnly(this)">
+                          <div class="text-danger" id="firstname-error"></div>
                         </div>
                         <div class="col-md-3">
                           <label for="middlename" class="form-label">Middlename</label>
-                          <input type="text" class="form-control" id="middlename" name="middlename" required>
+                          <input type="text" class="form-control" id="middlename" name="Middle Name" required oninput="validateLettersOnly(this)">
+                          <div class="text-danger" id="middlename-error"></div>
                         </div>
                         <div class="col-md-3">
                           <label for="suffix" class="form-label">Suffix</label>
-                          <input type="text" class="form-control" id="suffix" name="suffix">
+                          <input type="text" class="form-control" id="suffix" name="Suffix">
                         </div>
                       </div>
                       <!-- Row 3: Sex, Civil Status, Religion -->
                       <div class="row form-row">
                         <div class="col-md-3">
                             <label for="sex" class="form-label">Sex</label>
-                            <select class="form-select" id="sex" name="sex" required>
-                              <option value=""></option>
+                            <select class="form-select" id="sex" name="Sex" required>
+                              <option value="" disabled selected></option>
                               <!-- Options here -->
                               <option value="Male">Male</option>
                               <option value="Female">Female</option>
                             </select>
+                            <div class="text-danger" id="sex-error"></div>
                         </div>
                         <div class="col-md-3">
                           <label for="civilstatus" class="form-label">Civil Status</label>
-                          <select class="form-select" id="civilstatus" name="civilstatus" required>
-                            <option value=""></option>
+                          <select class="form-select" id="civilstatus" name="Civil Status" required>
+                            <option value="" disabled selected></option>
                             <!-- Options here -->
                             <option value="Single">Single</option>
                             <option value="Married">Married</option>
                             <option value="Separated">Separated</option>
                             <option value="Widowed">Widowed</option>
                           </select>
+                          <div class="text-danger" id="civilstatus-error"></div>
                         </div>
                         <div class="col-md-3">
                           <label for="religion" class="form-label">Religion</label>
-                          <input type="text" class="form-control" id="religion" name="religion" required>
+                          <input type="text" class="form-control" id="religion" name="Religion" required oninput="validateLettersOnly(this)">
+                          <div class="text-danger" id="religion-error"></div>
                         </div>
                       </div>
                       <!-- Row 4: Birthday, Email Address, Contact Number -->
                       <div class="row form-row">
                         <div class="col-md-3">
                           <label for="birthday" class="form-label">Birthday</label>
-                          <input type="date" class="form-control" id="birthday" name="birthday" required>
+                          <input type="date" class="form-control" id="birthday" name="Birthday" required readonly onfocus="(this.type='date')">
+                          <div class="text-danger" id="birthday-error"></div>
                         </div>
                         <div class="col-md-3">
                           <label for="email" class="form-label">Email Address</label>
-                          <input type="email" class="form-control" id="email" name="email" required>
+                          <input type="email" class="form-control" id="email" name="E-mail" required>
+                          <div class="text-danger" id="email-error"></div>
                         </div>
                         <div class="col-md-3">
                           <label for="contactnumber" class="form-label">Contact Number</label>
-                          <input type="number" class="form-control" id="contactnumber" name="contactnumber" required pattern="[0-9]{10}" placeholder="10-digit phone number">
+                          <input type="number" class="form-control" id="contactnumber" name="Contact Number" required pattern="[0-9]{10}" placeholder="11-digit phone number" oninput="validateContactNumber(this)">
+                          <div class="text-danger" id="contactnumber-error"></div>
                         </div>
                         <div class="col-md-3">
                           <label for="facebookmessenger" class="form-label">Facebook Name</label>
-                          <input type="text" class="form-control" id="facebookmessenger" name="facebookmessenger" required>
+                          <input type="text" class="form-control" id="facebookmessenger" name="Facebook Name" required>
+                          <div class="text-danger" id="facebookmessenger-error"></div>
                         </div>
                       </div>
-                      <button type="button" class="btn btn-primary" onclick="validateBasicInfo()">Next</button>
+                      <div class="d-flex justify-content-end">
+                        <button type="button" class="btn btn-primary" onclick="validateBasicInfo()">Next</button>
+                      </div>
                     </form>
                   </div>
                 </div>
@@ -250,20 +265,23 @@
                       <div class="row form-row">
                         <div class="col-md-3">
                           <label for="address" class="form-label">Address #</label>
-                          <input type="text" class="form-control" id="address" name="address" required>
+                          <input type="text" class="form-control" id="address" name="Address" required>
+                          <div class="text-danger" id="address-error"></div>
                         </div>
                         <div class="col-md-3">
                           <label for="barangay" class="form-label">Barangay</label>
-                          <input type="text" class="form-control" id="barangay" name="barangay" required>
+                          <input type="text" class="form-control" id="barangay" name="Barangay" required>
+                          <div class="text-danger" id="barangay-error"></div>
                         </div>
                         <div class="col-md-3">
                           <label for="municipality" class="form-label">Municipality/City</label>
-                          <input type="text" class="form-control" id="municipality" name="municipality" required>
+                          <input type="text" class="form-control" id="municipality" name="Municipality" required>
+                          <div class="text-danger" id="municipality-error"></div>
                         </div>
                         <div class="col-md-3">
                           <label for="region" class="form-label">Region</label>
-                          <select class="form-select" id="region" name="region" required>
-                            <option value=""></option>
+                          <select class="form-select" id="region" name="Region" required>
+                            <option value="" disabled selected></option>
                             <!-- Options here -->
                             <option value="NCR">NCR</option>
                             <option value="CAR">CAR</option>
@@ -284,9 +302,12 @@
                             <option value="13">Region XIII - Caraga</option>
                             <!--Put Limit on list-->
                           </select>
+                          <div class="text-danger" id="region-error"></div>
                         </div>
                       </div>
-                      <button type="button" class="btn btn-primary" onclick="validateAddress()">Next</button>
+                      <div class="d-flex justify-content-end">
+                        <button type="button" class="btn btn-primary" onclick="validateAddress()">Next</button>
+                      </div>                      
                     </form>
                   </div>
                 </div>
@@ -304,15 +325,18 @@
                       <div class="row form-row">
                         <div class="col-md-3">
                           <label for="flastname" class="form-label">Father's Last Name</label>
-                          <input type="text" class="form-control" id="flastname" name="flastname" required>
+                          <input type="text" class="form-control" id="flastname" name="Father's Last Name" required oninput="validateLettersOnly(this)">
+                          <div class="text-danger" id="flastname-error"></div>
                         </div>
                         <div class="col-md-3">
                           <label for="ffirstname" class="form-label">Father's First Name</label>
-                          <input type="text" class="form-control" id="ffirstname" name="ffirstname" required>
+                          <input type="text" class="form-control" id="ffirstname" name="Father's First Name" required oninput="validateLettersOnly(this)">
+                          <div class="text-danger" id="ffirstname-error"></div>
                         </div>
                         <div class="col-md-3">
                           <label for="fmiddlename" class="form-label">Father's Middle Name</label>
-                          <input type="text" class="form-control" id="fmiddlename" name="fmiddlename" required>
+                          <input type="text" class="form-control" id="fmiddlename" name="Father's Middle Name" required oninput="validateLettersOnly(this)">
+                          <div class="text-danger" id="fmiddlename-error"></div>
                         </div>
                       </div>
                       <!-- Row 2: Mother's Name -->
@@ -320,41 +344,49 @@
                         <h6>Mother's Maiden Name</h6>
                         <div class="col-md-3">
                           <label for="mlastname" class="form-label">Mother's Last Name</label>
-                          <input type="text" class="form-control" id="mlastname" name="mlastname" required>
+                          <input type="text" class="form-control" id="mlastname" name="Mother's Last Name" required oninput="validateLettersOnly(this)">
+                          <div class="text-danger" id="mlastname-error"></div>
                         </div>
                         <div class="col-md-3">
                           <label for="mfirstname" class="form-label">Mother's First Name</label>
-                          <input type="text" class="form-control" id="mfirstname" name="mfirstname" required>
+                          <input type="text" class="form-control" id="mfirstname" name="Mother's First Name" required oninput="validateLettersOnly(this)">
+                          <div class="text-danger" id="mfirstname-error"></div>
                         </div>
                         <div class="col-md-3">
                           <label for="mmiddlename" class="form-label">Mother's Middle Name</label>
-                          <input type="text" class="form-control" id="mmiddlename" name="mmiddlename" required>
+                          <input type="text" class="form-control" id="mmiddlename" name="Mother's Middle Name" required oninput="validateLettersOnly(this)">
+                          <div class="text-danger" id="mmiddlename-error"></div>
                         </div>
                       </div>
                       <!-- Row 3: Guardian's Name -->
                       <div class="row form-row">
                         <div class="col-md-3">
                           <label for="glastname" class="form-label">Guardian's Last Name</label>
-                          <input type="text" class="form-control" id="glastname" name="glastname" required>
+                          <input type="text" class="form-control" id="glastname" name="Guardian's Last Name" required oninput="validateLettersOnly(this)">
+                          <div class="text-danger" id="glastname-error"></div>
                         </div>
                         <div class="col-md-3">
                           <label for="gfirstname" class="form-label">Guardian's First Name</label>
-                          <input type="text" class="form-control" id="gfirstname" name="gfirstname" required>
+                          <input type="text" class="form-control" id="gfirstname" name="Guardian's First Name" required oninput="validateLettersOnly(this)">
+                          <div class="text-danger" id="gfirstname-error"></div>
                         </div>
                         <div class="col-md-3">
                           <label for="gmiddlename" class="form-label">Guardian's Middle Name</label>
-                          <input type="text" class="form-control" id="gmiddlename" name="gmiddlename" required>
+                          <input type="text" class="form-control" id="gmiddlename" name="Guardian's Middle Name" required oninput="validateLettersOnly(this)">
+                          <div class="text-danger" id="gmiddlename-error"></div>
                         </div>
                         <div class="col-md-3">
                           <label for="gcontactnumber" class="form-label">Contact Number</label>
-                          <input type="number" class="form-control" id="gcontactnumber" name="gcontactnumber" required pattern="[0-9]{10}" placeholder="10-digit phone number">
+                          <input type="number" class="form-control" id="gcontactnumber" name="Guardian's Contact Number" required pattern="[0-9]{10}" placeholder="11-digit phone number" oninput="validateContactNumber(this)">
+                          <div class="text-danger" id="gcontactnumber-error"></div>
                         </div>
                       </div>
                       <!-- Row 3: Guardian's Occupation -->
                       <div class="row form-row">
                         <div class="col-md-6">
                           <label for="occupation" class="form-label">Occupation</label>
-                          <input type="text" class="form-control" id="occupation" name="occupation" required>
+                          <input type="text" class="form-control" id="occupation" name="Occupation" required oninput="validateLettersOnly(this)">
+                          <div class="text-danger" id="occupation-error"></div>
                           <br>
                           <label class="form-check-label">
                             <input type="checkbox" class="form-check-input" name="4ps" id="4ps"> 
@@ -362,7 +394,9 @@
                           </label>
                         </div>
                       </div>
-                      <button type="button" class="btn btn-primary" onclick="validateGuardianInfo()">Next</button>
+                      <div class="d-flex justify-content-end">
+                       <button type="button" class="btn btn-primary" onclick="validateGuardianInfo()">Next</button> 
+                      </div>
                     </form>
                   </div>
                 </div>
@@ -380,36 +414,43 @@
                       <div class="row form-row">
                         <div class="col-md-9">
                           <label for="primary" class="form-label">Primary</label>
-                          <input type="text" class="form-control" id="primary" name="primary" required>
+                          <input type="text" class="form-control" id="primary" name="Primary School" required>
+                          <div class="text-danger" id="primary-error"></div>
                         </div>
                         <div class="col-md-3">
                           <label for="pyear" class="form-label">Year Graduated</label>
-                          <input type="number" class="form-control" id="pyear" name="pyear" required>
+                          <input type="number" class="form-control" id="pyear" name="Primary Year Graduated" required oninput="validateYearGraduated(this)">
+                          <div class="text-danger" id="yeargraduated-error"></div>
                         </div>
                       </div>
                       <!-- Row 2: Secondary School -->
                       <div class="row form-row">
                         <div class="col-md-9">
                           <label for="secondary" class="form-label">Secondary</label>
-                          <input type="text" class="form-control" id="secondary" name="secondary" required>
+                          <input type="text" class="form-control" id="secondary" name="Secondary" required>
+                          <div class="text-danger" id="secondary-error"></div>
                         </div>
                         <div class="col-md-3">
                           <label for="syear" class="form-label">Year Graduated</label>
-                          <input type="number" class="form-control" id="syear" name="syear" required>
+                          <input type="number" class="form-control" id="syear" name="Secondary Year Graduated" required oninput="validateYearGraduated(this)">
+                          <div class="text-danger" id="yeargraduated-error"></div>
                         </div>
                       </div>
                       <!-- Row 3: Last School -->
                       <div class="row form-row">
                         <div class="col-md-9">
                           <label for="lschool" class="form-label">Last School Attended</label>
-                          <input type="text" class="form-control" id="lschool" name="lschool" required>
+                          <input type="text" class="form-control" id="lschool" name="Last School Attended" required>
                         </div>
                         <div class="col-md-3">
                           <label for="syear" class="form-label">Last School Year Attended</label>
-                          <input type="number" class="form-control" id="syear" name="syear" required>
+                          <input type="number" class="form-control" id="lyear" name="Last School Year Attended" required oninput="validateYearGraduated(this)">
+                          <div class="text-danger" id="yeargraduated-error"></div>
                         </div>
                       </div>
-                      <button type="button" class="btn btn-primary" onclick="validateEducation()">Next</button>
+                      <div class="d-flex justify-content-end">
+                        <button type="button" class="btn btn-primary" onclick="validateEducation()">Next</button>
+                      </div>
                     </form>
                   </div>
                 </div>
@@ -426,16 +467,19 @@
                       <div class="row form-row">
                         <div class="col-md-3">
                           <label for="how" class="form-label">Options</label>
-                          <select class="form-select" id="how" name="how" required>
-                            <option value=""></option>
+                          <select class="form-select" id="how" name="How did you hear our school?" required>
+                            <option value="" disabled selected></option>
                             <!-- Options here -->
-                            <option value="socmed">Social Media</option>
-                            <option value="refer">Adviser/Referral/Others</option>
-                            <option value="walkin">Walk-in/No Referral</option>
+                            <option value="Social Media">Social Media</option>
+                            <option value="Refferal">Adviser/Referral/Others</option>
+                            <option value="Walk-In">Walk-in/No Referral</option>
                           </select>
+                          <div class="text-danger" id="how-error"></div>
                         </div>
                       </div>
-                      <button type="button" class="btn btn-primary" onclick="generateSummary()">Next</button>
+                      <div class="d-flex justify-content-end">
+                        <button type="button" class="btn btn-primary" onclick="generateSummary()">Next</button>
+                      </div>
                     </form>
                   </div>
                 </div>
@@ -503,15 +547,42 @@
     const educationInfo = {};
     const referralInfo = {};
 
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // Simple email regex for validation
+
+    // Prevent manual accordion collapsing
+    const accordionHeaders = document.querySelectorAll('.accordion-button');
+    accordionHeaders.forEach(button => {
+      button.addEventListener('click', (event) => {
+        event.preventDefault(); // Disable manual toggling of accordions
+      });
+    });
+
+    // Get today's date
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    
+    // Set maxDate to 16 years ago to ensure the user is at least 16 years old
+    const maxDate = `${yyyy - 8}-${mm}-${dd}`; // 16 years ago from today
+    const minDate = `${yyyy - 100}-${mm}-${dd}`; // 100 years ago (older limit)
+
+    // Set date limits
+    document.getElementById('birthday').setAttribute('max', maxDate);
+    document.getElementById('birthday').setAttribute('min', minDate);
+
     function validateBasicInfo() {
       const form = document.getElementById('basic-info-form');
       let valid = true;
+
+      document.querySelectorAll('.text-danger').forEach((error) => error.innerText = '');
 
       form.querySelectorAll('input').forEach((input) => {
         // Skip validation for "Suffix"
         if (input.id !== 'suffix' && input.hasAttribute('required')) {
           if (!input.value.trim()) {
             input.style.border = '2px solid red';
+            document.getElementById(input.id + '-error').innerText = 'This field is required';
             valid = false;
           } else {
             input.style.border = '';
@@ -519,12 +590,62 @@
         }
       });
 
+      // Validate select fields
+      form.querySelectorAll('select[required]').forEach((select) => {
+        if (select.value === '') {
+          select.style.border = '2px solid red';
+          document.getElementById(select.id + '-error').innerText = 'This field is required';
+          valid = false;
+        } else {
+          select.style.border = '';
+        }
+      });
+
+      // Validate email format
+      const email = document.getElementById('email');
+      if (email.value && !emailRegex.test(email.value)) {
+        document.getElementById('email-error').innerText = 'Please enter a valid email address';
+        email.style.border = '2px solid red';
+        valid = false;
+      } else {
+        email.style.border = '';
+      }
+
+      // Validate contact number (must be exactly 11 digits)
+    const contactnumber = document.getElementById('contactnumber');
+    if (contactnumber.value.length !== 11 || !/^\d{11}$/.test(contactnumber.value)) {
+      document.getElementById('contactnumber-error').innerText = 'Contact number must be exactly 11 digits';
+      contactnumber.style.border = '2px solid red';
+      valid = false;
+    } else {
+      contactnumber.style.border = '';
+    }
+
+      const birthday = document.getElementById('birthday');
+      const selectedDate = new Date(birthday.value);
+      if (!birthday.value) {
+        document.getElementById('birthday-error').innerText = 'Please select a valid date';
+        birthday.style.border = '2px solid red';
+        valid = false;
+      } else if (selectedDate > new Date(maxDate)) {
+        document.getElementById('birthday-error').innerText = 'You must be at least 16 years old';
+        birthday.style.border = '2px solid red';
+        valid = false;
+      } else if (selectedDate < new Date(minDate)) {
+        document.getElementById('birthday-error').innerText = 'Please select a more recent date';
+        birthday.style.border = '2px solid red';
+        valid = false;
+      } else {
+        birthday.style.border = '';
+      }
+
       if (valid) {
         // Collect form data
         const formData = new FormData(form);
         formData.forEach((value, key) => { basicInfo[key] = value; });
         // Move to the next accordion and unlock it
-        document.getElementById('headingTwo').querySelector('button').disabled = false;
+        document.querySelector('#headingOne button').disabled = false;
+        document.querySelector('#headingTwo button').disabled = false;
         var nextAccordion = new bootstrap.Collapse(document.getElementById('collapseTwo'), {toggle: true});
       } else {
         form.reportValidity();
@@ -539,6 +660,7 @@
         if (input.hasAttribute('required')) {
           if (!input.value.trim()) {
             input.style.border = '2px solid red';
+            document.getElementById(input.id + '-error').innerText = 'This field is required';
             valid = false;
           } else {
             input.style.border = '';
@@ -546,10 +668,21 @@
         }
       });
 
+      // Validate select fields
+      form.querySelectorAll('select[required]').forEach((select) => {
+        if (select.value === '') {
+          select.style.border = '2px solid red';
+          document.getElementById(select.id + '-error').innerText = 'This field is required';
+          valid = false;
+        } else {
+          select.style.border = '';
+        }
+      });
+
       if (valid) {
         const formData = new FormData(form);
         formData.forEach((value, key) => { addressInfo[key] = value; });
-        document.getElementById('headingThree').querySelector('button').disabled = false;
+        document.querySelector('#headingThree button').disabled = false;
         var nextAccordion = new bootstrap.Collapse(document.getElementById('collapseThree'), {toggle: true});
       } else {
         form.reportValidity();
@@ -564,6 +697,7 @@
         if (input.hasAttribute('required')) {
           if (!input.value.trim()) {
             input.style.border = '2px solid red';
+            document.getElementById(input.id + '-error').innerText = 'This field is required';
             valid = false;
           } else {
             input.style.border = '';
@@ -571,10 +705,21 @@
         }
       });
 
+      // Validate select fields
+      form.querySelectorAll('select[required]').forEach((select) => {
+        if (select.value === '') {
+          select.style.border = '2px solid red';
+          document.getElementById(select.id + '-error').innerText = 'This field is required';
+          valid = false;
+        } else {
+          select.style.border = '';
+        }
+      });
+
       if (valid) {
         const formData = new FormData(form);
         formData.forEach((value, key) => { guardianInfo[key] = value; });
-        document.getElementById('headingFour').querySelector('button').disabled = false;
+        document.querySelector('#headingFour button').disabled = false;
         var nextAccordion = new bootstrap.Collapse(document.getElementById('collapseFour'), {toggle: true});
       } else {
         form.reportValidity();
@@ -589,6 +734,7 @@
         if (input.hasAttribute('required')) {
           if (!input.value.trim()) {
             input.style.border = '2px solid red';
+            document.getElementById(input.id + '-error').innerText = 'This field is required';
             valid = false;
           } else {
             input.style.border = '';
@@ -596,10 +742,33 @@
         }
       });
 
+      // Validate select fields
+      form.querySelectorAll('select[required]').forEach((select) => {
+        if (select.value === '') {
+          select.style.border = '2px solid red';
+          document.getElementById(select.id + '-error').innerText = 'This field is required';
+          valid = false;
+        } else {
+          select.style.border = '';
+        }
+      });
+
+      // Validate year graduated (must be exactly 4 digits and within the last 100 years)
+      const yeargraduated = document.getElementById('yeargraduated');
+      const yearGraduatedValue = parseInt(yeargraduated.value);
+      if (yeargraduated.value.length !== 4 || isNaN(yearGraduatedValue) || yearGraduatedValue < yyyy - 100 || yearGraduatedValue > yyyy) {
+        document.getElementById('yeargraduated-error').innerText = 'Please enter a valid 4-digit year not exceeding 100 years ago';
+        yeargraduated.style.border = '2px solid red';
+        valid = false;
+      } else {
+        yeargraduated.style.border = '';
+      }
+
+
       if (valid) {
         const formData = new FormData(form);
         formData.forEach((value, key) => { educationInfo[key] = value; });
-        document.getElementById('headingFive').querySelector('button').disabled = false;
+        document.querySelector('#headingFive button').disabled = false;
         var nextAccordion = new bootstrap.Collapse(document.getElementById('collapseFive'), {toggle: true});
       } else {
         form.reportValidity();
@@ -614,10 +783,22 @@
         if (input.hasAttribute('required')) {
           if (!input.value.trim()) {
             input.style.border = '2px solid red';
+            document.getElementById(input.id + '-error').innerText = 'This field is required';
             valid = false;
           } else {
             input.style.border = '';
           }
+        }
+      });
+
+      // Validate select fields
+      form.querySelectorAll('select[required]').forEach((select) => {
+        if (select.value === '') {
+          select.style.border = '2px solid red';
+          document.getElementById(select.id + '-error').innerText = 'This field is required';
+          valid = false;
+        } else {
+          select.style.border = '';
         }
       });
 
@@ -652,12 +833,35 @@
         }
 
         document.getElementById('summary').innerHTML = summaryHtml;
-        document.getElementById('headingSix').querySelector('button').disabled = false;
+        document.querySelector('#headingSix button').disabled = false;
         var nextAccordion = new bootstrap.Collapse(document.getElementById('collapseSix'), {toggle: true});
       } else {
         form.reportValidity();
       }
     }
+
+    // Restrict text fields (names) to letters, spaces, apostrophes, and hyphens only
+    function validateLettersOnly(input) {
+      input.value = input.value.replace(/[^a-zA-Z\s'-]/g, ''); // Allow only letters, spaces, apostrophes, and hyphens
+    }
+
+    // Restrict contact number to digits only and validate it has exactly 11 digits
+    function validateContactNumber(input) {
+      input.value = input.value.replace(/\D/g, ''); // Allow only numbers
+
+      if (input.value.length > 11) {
+        input.value = input.value.slice(0, 11);
+      }
+    }
+
+    // Restrict year graduated to 4 digits only and check for range
+    function validateYearGraduated(input) {
+      input.value = input.value.replace(/\D/g, ''); // Allow only numbers
+      if (input.value.length > 4) {
+        input.value = input.value.slice(0, 4); // Limit input to 4 digits
+      }
+    }
+
   </script>
 
   <!-- ======= Footer ======= -->
