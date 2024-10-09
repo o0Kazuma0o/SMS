@@ -109,7 +109,7 @@
   <main class="main">
     <div class="title text-center mb-1" style="background-color: #1e3a8a; color: white;">
       <!-- Placeholder for the school logo -->
-      <img src="path/to/school-logo.png" alt="School Logo" width="200">
+      <img src="assets/img/bcp.png" alt="School Logo" width="75">
       <h5>Bestlink College of the Philippines Enrollment Management System</h5>
       <h1>College Admission</h1>
     </div>
@@ -226,7 +226,7 @@
                       <div class="row form-row">
                         <div class="col-md-3">
                           <label for="birthday" class="form-label">Birthday</label>
-                          <input type="date" class="form-control" id="birthday" name="Birthday" required readonly onfocus="(this.type='date')">
+                          <input type="date" class="form-control" id="birthday" name="Birthday" required onkeydown="return false">
                           <div class="text-danger" id="birthday-error"></div>
                         </div>
                         <div class="col-md-3">
@@ -414,38 +414,38 @@
                       <div class="row form-row">
                         <div class="col-md-9">
                           <label for="primary" class="form-label">Primary</label>
-                          <input type="text" class="form-control" id="primary" name="Primary School" required>
+                          <input type="text" class="form-control" id="primary" name="Primary School" required oninput="validateLettersOnly(this)">
                           <div class="text-danger" id="primary-error"></div>
                         </div>
                         <div class="col-md-3">
                           <label for="pyear" class="form-label">Year Graduated</label>
                           <input type="number" class="form-control" id="pyear" name="Primary Year Graduated" required oninput="validateYearGraduated(this)">
-                          <div class="text-danger" id="yeargraduated-error"></div>
+                          <div class="text-danger" id="pyear-error"></div>
                         </div>
                       </div>
                       <!-- Row 2: Secondary School -->
                       <div class="row form-row">
                         <div class="col-md-9">
                           <label for="secondary" class="form-label">Secondary</label>
-                          <input type="text" class="form-control" id="secondary" name="Secondary" required>
+                          <input type="text" class="form-control" id="secondary" name="Secondary" required oninput="validateLettersOnly(this)">
                           <div class="text-danger" id="secondary-error"></div>
                         </div>
                         <div class="col-md-3">
                           <label for="syear" class="form-label">Year Graduated</label>
                           <input type="number" class="form-control" id="syear" name="Secondary Year Graduated" required oninput="validateYearGraduated(this)">
-                          <div class="text-danger" id="yeargraduated-error"></div>
+                          <div class="text-danger" id="syear-error"></div>
                         </div>
                       </div>
                       <!-- Row 3: Last School -->
                       <div class="row form-row">
                         <div class="col-md-9">
                           <label for="lschool" class="form-label">Last School Attended</label>
-                          <input type="text" class="form-control" id="lschool" name="Last School Attended" required>
+                          <input type="text" class="form-control" id="lschool" name="Last School Attended" required oninput="validateLettersOnly(this)">
                         </div>
                         <div class="col-md-3">
                           <label for="syear" class="form-label">Last School Year Attended</label>
                           <input type="number" class="form-control" id="lyear" name="Last School Year Attended" required oninput="validateYearGraduated(this)">
-                          <div class="text-danger" id="yeargraduated-error"></div>
+                          <div class="text-danger" id="lyear-error"></div>
                         </div>
                       </div>
                       <div class="d-flex justify-content-end">
@@ -478,7 +478,7 @@
                         </div>
                       </div>
                       <div class="d-flex justify-content-end">
-                        <button type="button" class="btn btn-primary" onclick="generateSummary()">Next</button>
+                        <button type="button" class="btn btn-primary" onclick="validateReferral()">Next</button>
                       </div>
                     </form>
                   </div>
@@ -753,16 +753,21 @@
         }
       });
 
-      // Validate year graduated (must be exactly 4 digits and within the last 100 years)
-      const yeargraduated = document.getElementById('yeargraduated');
-      const yearGraduatedValue = parseInt(yeargraduated.value);
-      if (yeargraduated.value.length !== 4 || isNaN(yearGraduatedValue) || yearGraduatedValue < yyyy - 100 || yearGraduatedValue > yyyy) {
-        document.getElementById('yeargraduated-error').innerText = 'Please enter a valid 4-digit year not exceeding 100 years ago';
-        yeargraduated.style.border = '2px solid red';
+    // Validate year graduated fields (pyear, syear, lyear)
+    ['pyear', 'syear', 'lyear'].forEach((yearId) => {
+      const yearInput = document.getElementById(yearId);
+      const yearValue = parseInt(yearInput.value);
+      const currentYear = new Date().getFullYear();
+      
+      if (yearInput.value.length !== 4 || isNaN(yearValue) || yearValue < currentYear - 100 || yearValue > currentYear) {
+        document.getElementById(yearId + '-error').innerText = 'Please enter a valid 4-digit year not exceeding 100 years ago';
+        yearInput.style.border = '2px solid red';
         valid = false;
       } else {
-        yeargraduated.style.border = '';
+        yearInput.style.border = '';
+        document.getElementById(yearId + '-error').innerText = ''; // Clear error
       }
+    });
 
 
       if (valid) {
@@ -775,23 +780,11 @@
       }
     }
 
-    function generateSummary() {
+    function validateReferral() {
       const form = document.getElementById('referral-form');
       let valid = true;
 
-      form.querySelectorAll('input, select').forEach((input) => {
-        if (input.hasAttribute('required')) {
-          if (!input.value.trim()) {
-            input.style.border = '2px solid red';
-            document.getElementById(input.id + '-error').innerText = 'This field is required';
-            valid = false;
-          } else {
-            input.style.border = '';
-          }
-        }
-      });
-
-      // Validate select fields
+      // Validate select fields in the referral form
       form.querySelectorAll('select[required]').forEach((select) => {
         if (select.value === '') {
           select.style.border = '2px solid red';
@@ -799,46 +792,100 @@
           valid = false;
         } else {
           select.style.border = '';
+          document.getElementById(select.id + '-error').innerText = ''; // Clear error message
         }
       });
 
       if (valid) {
+        // Collect the referral info
         const formData = new FormData(form);
         formData.forEach((value, key) => { referralInfo[key] = value; });
-
-        // Display Summary
-        let summaryHtml = '<h4>Basic Information</h4><hr>';
-        for (const [key, value] of Object.entries(basicInfo)) {
-          summaryHtml += `<p><strong>${key}:</strong> ${value}</p>`;
-        }
-
-        summaryHtml += '<h4>Address</h4><hr>';
-        for (const [key, value] of Object.entries(addressInfo)) {
-          summaryHtml += `<p><strong>${key}:</strong> ${value}</p>`;
-        }
-
-        summaryHtml += '<h4>Parent/Guardian Information</h4><hr>';
-        for (const [key, value] of Object.entries(guardianInfo)) {
-          summaryHtml += `<p><strong>${key}:</strong> ${value}</p>`;
-        }
-
-        summaryHtml += '<h4>Educational Background</h4><hr>';
-        for (const [key, value] of Object.entries(educationInfo)) {
-          summaryHtml += `<p><strong>${key}:</strong> ${value}</p>`;
-        }
-
-        summaryHtml += '<h4>Referral</h4><hr>';
-        for (const [key, value] of Object.entries(referralInfo)) {
-          summaryHtml += `<p><strong>${key}:</strong> ${value}</p>`;
-        }
-
-        document.getElementById('summary').innerHTML = summaryHtml;
-        document.querySelector('#headingSix button').disabled = false;
+        
+        // Move to the summary accordion and enable it
+        document.getElementById('headingSix').querySelector('button').disabled = false;
         var nextAccordion = new bootstrap.Collapse(document.getElementById('collapseSix'), {toggle: true});
+        
+        // Generate the summary now that all sections are validated
+        generateSummary();
       } else {
         form.reportValidity();
       }
     }
+
+    function generateSummary() {
+    const summaryElement = document.getElementById('summary');
+    let summaryHtml = '';
+
+    // Combine Last Name, First Name, and Middle Name
+    const fullName = `${basicInfo.firstname} ${basicInfo.middlename} ${basicInfo.lastname}`;
+
+    // Combine Parent and Guardian Names
+    const fatherFullName = `${guardianInfo.father_firstname} ${guardianInfo.father_middlename} ${guardianInfo.father_lastname}`;
+    const motherFullName = `${guardianInfo.mother_firstname} ${guardianInfo.mother_middlename} ${guardianInfo.mother_lastname}`;
+    const guardianFullName = `${guardianInfo.guardian_firstname} ${guardianInfo.guardian_middlename} ${guardianInfo.guardian_lastname}`;
+
+    // Basic Information Section in Two Columns
+    summaryHtml += `
+      <h4>Basic Information</h4>
+      <div class="row">
+        <div class="col-md-6">
+          <p><strong>Full Name:</strong> ${fullName}</p>
+          <p><strong>Sex:</strong> ${basicInfo.sex}</p>
+          <p><strong>Birthday:</strong> ${basicInfo.birthday}</p>
+          <p><strong>Email:</strong> ${basicInfo.email}</p>
+        </div>
+        <div class="col-md-6">
+          <p><strong>Civil Status:</strong> ${basicInfo.civilstatus}</p>
+          <p><strong>Contact Number:</strong> ${basicInfo.contactnumber}</p>
+          <p><strong>Address:</strong> ${basicInfo.address}</p>
+          <p><strong>Religion:</strong> ${basicInfo.religion}</p>
+        </div>
+      </div>
+      <hr>
+    `;
+
+    // Parent/Guardian Information in Two Columns
+    summaryHtml += `
+      <h4>Parent/Guardian Information</h4>
+      <div class="row">
+        <div class="col-md-6">
+          <p><strong>Father's Full Name:</strong> ${fatherFullName}</p>
+          <p><strong>Mother's Full Name:</strong> ${motherFullName}</p>
+        </div>
+        <div class="col-md-6">
+          <p><strong>Guardian's Full Name:</strong> ${guardianFullName}</p>
+          <p><strong>Guardian's Contact Number:</strong> ${guardianInfo.gcontactnumber}</p>
+        </div>
+      </div>
+      <hr>
+    `;
+
+    // Educational Background in Two Columns
+    summaryHtml += `
+      <h4>Educational Background</h4>
+      <div class="row">
+        <div class="col-md-6">
+          <p><strong>Last School Attended:</strong> ${educationInfo.lschool}</p>
+          <p><strong>Last School Year Attended:</strong> ${educationInfo.syear}</p>
+        </div>
+        <div class="col-md-6">
+          <p><strong>Program:</strong> ${basicInfo.program}</p>
+          <p><strong>Year Level:</strong> ${basicInfo.yrlvl}</p>
+        </div>
+      </div>
+      <hr>
+    `;
+
+    // Referral Section
+    summaryHtml += `
+      <h4>Referral</h4>
+      <p><strong>How did you hear about our school?</strong> ${referralInfo.how}</p>
+      <hr>
+    `;
+
+    // Display the generated HTML inside the summary element
+    summaryElement.innerHTML = summaryHtml;
+  }
 
     // Restrict text fields (names) to letters, spaces, apostrophes, and hyphens only
     function validateLettersOnly(input) {
