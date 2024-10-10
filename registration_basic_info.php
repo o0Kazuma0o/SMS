@@ -132,7 +132,7 @@
                       <div class="row form-row">
                         <div class="col-md-6">
                           <label for="program" class="form-label">Program</label>
-                          <select class="form-select" id="program" name="Program" required>
+                          <select class="form-select" id="program" name="program" required>
                             <option value=""disabled selected></option>
                             <!-- Options here -->
                             <option value="BSIT">Bachelor of Science in Information Technology</option>
@@ -143,7 +143,7 @@
                         </div>
                         <div class="col-md-3">
                           <label for="admissiontype" class="form-label">Admission Type</label>
-                          <select class="form-select" id="admissiontype" name="Admission Type" required>
+                          <select class="form-select" id="admissiontype" name="admissiontype" required>
                             <option value="" disabled selected></option>
                             <!-- Options here -->
                             <option value="Regular">New Regular</option>
@@ -819,6 +819,8 @@
     // Combine Last Name, First Name, and Middle Name
     const fullName = `${basicInfo.firstname} ${basicInfo.middlename} ${basicInfo.lastname}`;
 
+    const address = `${basicInfo.barangay}, ${basicInfo.barangay}, ${basicInfo.municipality}, ${basicInfo.region}`;
+
     // Combine Parent and Guardian Names
     const fatherFullName = `${guardianInfo.father_firstname} ${guardianInfo.father_middlename} ${guardianInfo.father_lastname}`;
     const motherFullName = `${guardianInfo.mother_firstname} ${guardianInfo.mother_middlename} ${guardianInfo.mother_lastname}`;
@@ -832,12 +834,15 @@
           <p><strong>Full Name:</strong> ${fullName}</p>
           <p><strong>Sex:</strong> ${basicInfo.sex}</p>
           <p><strong>Birthday:</strong> ${basicInfo.birthday}</p>
+          <p><strong>Contact Number:</strong> ${basicInfo.contactnumber}</p>
           <p><strong>Email:</strong> ${basicInfo.email}</p>
+          <p><strong>Address:</strong> ${address}</p>
         </div>
         <div class="col-md-6">
+          <p><strong>Admission Type:</strong> ${basicInfo.admissiontype}</p>
+          <p><strong>Program:</strong> ${basicInfo.program}</p>
+          <p><strong>Year Level:</strong> ${basicInfo.yrlvl}</p>
           <p><strong>Civil Status:</strong> ${basicInfo.civilstatus}</p>
-          <p><strong>Contact Number:</strong> ${basicInfo.contactnumber}</p>
-          <p><strong>Address:</strong> ${basicInfo.address}</p>
           <p><strong>Religion:</strong> ${basicInfo.religion}</p>
         </div>
       </div>
@@ -869,8 +874,6 @@
           <p><strong>Last School Year Attended:</strong> ${educationInfo.syear}</p>
         </div>
         <div class="col-md-6">
-          <p><strong>Program:</strong> ${basicInfo.program}</p>
-          <p><strong>Year Level:</strong> ${basicInfo.yrlvl}</p>
         </div>
       </div>
       <hr>
