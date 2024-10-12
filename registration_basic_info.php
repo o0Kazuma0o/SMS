@@ -143,7 +143,7 @@
                         </div>
                         <div class="col-md-3">
                           <label for="admissiontype" class="form-label">Admission Type</label>
-                          <select class="form-select" id="admissiontype" name="admissiontype" required>
+                          <select class="form-select" id="admissiontype" name="admissiontype" required onchange="validateYearLevel()">
                             <option value="" disabled selected></option>
                             <!-- Options here -->
                             <option value="New Regular">New Regular</option>
@@ -153,9 +153,9 @@
                           <div class="text-danger" id="admissiontype-error"></div>
                           <br>
                           <label class="form-check-label">
-                            <input type="checkbox" class="form-check-input" name="workingstudent" id="workingstudent" onchange="updateCheckboxValue(this)"> 
+                            <input type="checkbox" class="form-check-input" name="workingstudent" id="workingstudent" onchange="updateCheckboxValueInfo(this)"> 
                             Are you a Working Student?
-                            <input type="hidden" name="workingstudent" value="No">
+                            <input type="hidden" name="workingstudent" id="workingstudent-hidden" value="No">
                           </label>
                         </div>
                         <div class="col-md-3">
@@ -190,7 +190,7 @@
                         </div>
                         <div class="col-md-3">
                           <label for="suffix" class="form-label">Suffix</label>
-                          <input type="text" class="form-control" id="suffix" name="Suffix">
+                          <input type="text" class="form-control" id="suffix" name="suffix">
                         </div>
                       </div>
                       <!-- Row 3: Sex, Civil Status, Religion -->
@@ -390,9 +390,9 @@
                           <div class="text-danger" id="occupation-error"></div>
                           <br>
                           <label class="form-check-label">
-                            <input type="checkbox" class="form-check-input" name="member4ps" id="member4ps" onchange="updateCheckboxValue(this)"> 
+                            <input type="checkbox" class="form-check-input" name="member4ps" id="member4ps" onchange="updateCheckboxValue4ps(this)"> 
                             Parent / Guardian member of 4Ps?
-                            <input type="hidden" name="member4ps" value="No">
+                            <input type="hidden" name="member4ps" id="member4ps-hidden" value="No">
                           </label>
                         </div>
                       </div>
@@ -573,11 +573,38 @@
     document.getElementById('birthday').setAttribute('max', maxDate);
     document.getElementById('birthday').setAttribute('min', minDate);
 
-    function updateCheckboxValue(checkbox) {
-      if (checkbox.checked) {
-        checkbox.value = 'Yes';
+    function updateCheckboxValueInfo(checkbox) {
+      const hiddenInput = document.getElementById('workingstudent-hidden');
+      hiddenInput.value = checkbox.checked ? 'Yes' : 'No';
+    }
+
+    function updateCheckboxValue4ps(checkbox) {
+      const hiddenInput = document.getElementById('member4ps-hidden');
+      hiddenInput.value = checkbox.checked ? 'Yes' : 'No';
+    }
+
+    function validateYearLevel() {
+      const admissionType = document.getElementById('admissiontype').value;
+      const yearLevel = document.getElementById('yrlvl');
+
+      if (admissionType === 'New Regular') {
+        // Set Year Level to 1st Year and lock it visually
+        yearLevel.innerHTML = '<option value="1st" selected>1st Year</option>';
+        yearLevel.setAttribute('data-locked', 'true'); // Custom attribute to indicate it's locked
+        yearLevel.style.pointerEvents = 'none'; // Disable user interaction
+        yearLevel.style.backgroundColor = '#e9ecef'; // Make it appear disabled
       } else {
-        checkbox.value = 'No';
+        // Unlock Year Level and restore all options for other admission types
+        yearLevel.removeAttribute('data-locked');
+        yearLevel.style.pointerEvents = 'auto';
+        yearLevel.style.backgroundColor = '';
+        yearLevel.innerHTML = `
+          <option value="" disabled selected></option>
+          <option value="1st">1st Year</option>
+          <option value="2nd">2nd Year</option>
+          <option value="3rd">3rd Year</option>
+          <option value="4th">4th Year</option>
+        `;
       }
     }
 
@@ -648,6 +675,8 @@
       } else {
         birthday.style.border = '';
       }
+
+      updateCheckboxValueInfo(document.getElementById('workingstudent'));
 
       if (valid) {
         // Collect form data
@@ -725,6 +754,8 @@
           select.style.border = '';
         }
       });
+
+      updateCheckboxValue4ps(document.getElementById('member4ps'));
 
       if (valid) {
         const formData = new FormData(form);
@@ -827,7 +858,7 @@
     let summaryHtml = '';
 
     // Combine Last Name, First Name, and Middle Name
-    const fullName = `${basicInfo.lastname}, ${basicInfo.firstname} ${basicInfo.middlename}`;
+    const fullName = `${basicInfo.firstname} ${basicInfo.middlename} ${basicInfo.lastname}` + (basicInfo.suffix ? ` ${basicInfo.suffix}` : '');
 
     const fullAddress = `${addressInfo.address}, ${addressInfo.barangay}, ${addressInfo.municipality} - ${addressInfo.region}`;
 
