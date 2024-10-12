@@ -496,6 +496,7 @@
                   <div class="accordion-body">
                     <form action="registration_basic_info.php" id="summary" method="POST" class="mb-4">
                       <!--Summary of all the information -->
+                      
                     </form>
                   </div>
                 </div>
@@ -649,14 +650,14 @@
       }
 
       // Validate contact number (must be exactly 11 digits)
-    const contactnumber = document.getElementById('contactnumber');
-    if (contactnumber.value.length !== 11 || !/^\d{11}$/.test(contactnumber.value)) {
-      document.getElementById('contactnumber-error').innerText = 'Contact number must be exactly 11 digits';
-      contactnumber.style.border = '2px solid red';
-      valid = false;
-    } else {
-      contactnumber.style.border = '';
-    }
+      const contactnumber = document.getElementById('contactnumber');
+      if (contactnumber.value.length !== 11 || !/^\d{11}$/.test(contactnumber.value)) {
+        document.getElementById('contactnumber-error').innerText = 'Contact number must be exactly 11 digits';
+        contactnumber.style.border = '2px solid red';
+        valid = false;
+      } else {
+        contactnumber.style.border = '';
+      }
 
       const birthday = document.getElementById('birthday');
       const selectedDate = new Date(birthday.value);
@@ -935,6 +936,13 @@
       <hr>
     `;
 
+    // Add the Submit button
+    summaryHtml += `
+      <div class="d-flex justify-content-end">
+        <button type="button" class="btn btn-success" onclick="confirmAndSubmitData()">Submit</button>
+      </div>
+    `;
+
     // Display the generated HTML inside the summary element
     summaryElement.innerHTML = summaryHtml;
   }
@@ -960,6 +968,47 @@
         input.value = input.value.slice(0, 4); // Limit input to 4 digits
       }
     }
+
+    function confirmAndSubmitData() {
+    // Show a confirmation dialog
+    if (confirm("Are you sure you want to submit your application?")) {
+      // If confirmed, send the data to the server
+      submitDataToDatabase();
+    }
+  }
+
+  function submitDataToDatabase() {
+    // Collect all data from the form objects
+    const data = {
+      basicInfo: basicInfo,
+      addressInfo: addressInfo,
+      guardianInfo: guardianInfo,
+      educationInfo: educationInfo,
+      referralInfo: referralInfo
+    };
+
+    // Send an AJAX request to save the data to the database
+    fetch('database.php', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+      if (result.success) {
+        alert('Application submitted successfully!');
+        // Optionally, redirect or reset the form here
+      } else {
+        alert('Failed to submit the application. Please try again.');
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      alert('An error occurred while submitting the application.');
+    });
+  }
 
   </script>
 
