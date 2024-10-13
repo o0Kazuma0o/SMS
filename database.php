@@ -3,8 +3,6 @@ session_start();
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT); // Enable exception for errors
 $conn = new mysqli('localhost', 'root', '', 'admission_db');
 
-header('Content-Type: application/json');
-
 // Check connection
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);

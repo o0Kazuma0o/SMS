@@ -106,6 +106,12 @@
 
 <body>
 
+<?php if (isset($message)): ?>
+  <div class="<?php echo $success ? 'alert alert-success' : 'alert alert-danger'; ?>">
+    <?php echo $message; ?>
+  </div>
+<?php endif; ?>
+
   <main class="main">
     <div class="title text-center mb-1" style="background-color: #1e3a8a; color: white;">
       <!-- Placeholder for the school logo -->
@@ -970,12 +976,62 @@
     }
 
     function confirmAndSubmitData() {
-    // Show a confirmation dialog
-    if (confirm("Are you sure you want to submit your application?")) {
-      // If confirmed, send the data to the server
-      submitDataToDatabase();
+      // Create a custom confirmation dialog
+      const confirmationDialog = document.createElement('div');
+      confirmationDialog.className = 'confirmation-dialog';
+      
+      confirmationDialog.innerHTML = `
+        <div class="confirmation-dialog-content">
+          <p>Are you sure you want to submit your application?</p>
+          <button class="btn btn-success" id="confirmSubmit">Yes, Submit</button>
+          <button class="btn btn-danger" id="cancelSubmit">Cancel</button>
+        </div>
+      `;
+
+      // Style the confirmation dialog
+      confirmationDialog.style.position = 'fixed';
+      confirmationDialog.style.top = '50%';
+      confirmationDialog.style.left = '50%';
+      confirmationDialog.style.transform = 'translate(-50%, -50%)';
+      confirmationDialog.style.backgroundColor = '#fff';
+      confirmationDialog.style.border = '1px solid #ccc';
+      confirmationDialog.style.padding = '20px';
+      confirmationDialog.style.zIndex = '1001';
+      confirmationDialog.style.borderRadius = '8px';
+      confirmationDialog.style.boxShadow = '0px 0px 10px rgba(0, 0, 0, 0.5)';
+
+      // Overlay to dim the background
+      const overlay = document.createElement('div');
+      overlay.className = 'overlay';
+      overlay.style.position = 'fixed';
+      overlay.style.top = '0';
+      overlay.style.left = '0';
+      overlay.style.width = '100%';
+      overlay.style.height = '100%';
+      overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+      overlay.style.zIndex = '1000';
+
+      // Append the dialog and overlay to the document body
+      document.body.appendChild(overlay);
+      document.body.appendChild(confirmationDialog);
+
+      // Handle confirmation button click
+      document.getElementById('confirmSubmit').addEventListener('click', () => {
+        submitDataToDatabase();
+        closeConfirmationDialog();
+      });
+
+      // Handle cancel button click
+      document.getElementById('cancelSubmit').addEventListener('click', () => {
+        closeConfirmationDialog();
+      });
+
+      // Function to close the confirmation dialog
+      function closeConfirmationDialog() {
+        document.body.removeChild(confirmationDialog);
+        document.body.removeChild(overlay);
+      }
     }
-  }
 
   function submitDataToDatabase() {
     // Collect all data from the form objects
@@ -986,6 +1042,39 @@
       educationInfo: educationInfo,
       referralInfo: referralInfo
     };
+
+    // Function to show a custom popup notification
+    function showPopupMessage(message, type = 'success') {
+      // Create the popup element
+      const popup = document.createElement('div');
+      popup.className = `popup-message ${type}`;
+      popup.innerText = message;
+
+      // Style the popup element
+      popup.style.position = 'fixed';
+      popup.style.top = '20px';
+      popup.style.right = '20px';
+      popup.style.padding = '15px';
+      popup.style.zIndex = '1000';
+      popup.style.borderRadius = '5px';
+      popup.style.color = '#fff';
+      popup.style.fontSize = '16px';
+      popup.style.backgroundColor = type === 'success' ? 'green' : 'red';
+      popup.style.opacity = '1';
+      popup.style.transition = 'opacity 0.5s ease';
+
+      // Add the popup to the document
+      document.body.appendChild(popup);
+
+      // Fade out after 3 seconds
+      setTimeout(() => {
+        popup.style.opacity = '0';
+        // Remove the element after the transition ends
+        setTimeout(() => {
+          popup.remove();
+        }, 500);
+      }, 3000);
+    }
 
     // Send an AJAX request to save the data to the database
     fetch('database.php', {
@@ -998,15 +1087,15 @@
     .then(response => response.json())
     .then(result => {
       if (result.success) {
-        alert('Application submitted successfully!');
+        showPopupMessage('Application submitted successfully!', 'success');
         // Optionally, redirect or reset the form here
       } else {
-        alert('Failed to submit the application. Please try again.');
+        showPopupMessage('Failed to submit the application. Please try again.', 'error');
       }
     })
     .catch(error => {
       console.error('Error:', error);
-      alert('An error occurred while submitting the application.');
+      showPopupMessage('An error occurred while submitting the application.', 'error');
     });
   }
 
