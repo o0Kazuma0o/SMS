@@ -1,5 +1,5 @@
 <?php
-$conn = new mysqli('localhost', 'root', '', 'admission_db');
+$conn = new mysqli('localhost', 'root', '', 'bcp-sms_admission');
 
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
@@ -9,7 +9,7 @@ if (isset($_GET['department_id']) && !empty($_GET['department_id'])) {
     $department_id = $_GET['department_id'];
 
     // Fetch rooms that belong to the department
-    $rooms = $conn->query("SELECT * FROM rooms WHERE department_id = $department_id");
+    $rooms = $conn->query("SELECT * FROM sms3_rooms WHERE department_id = $department_id");
 
     echo '<option value="">Select Room</option>';
     while ($room = $rooms->fetch_assoc()) {

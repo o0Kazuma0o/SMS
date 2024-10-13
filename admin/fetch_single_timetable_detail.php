@@ -1,5 +1,5 @@
 <?php
-$conn = new mysqli('localhost', 'root', '', 'admission_db');
+$conn = new mysqli('localhost', 'root', '', 'bcp-sms_admission');
 
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
@@ -10,9 +10,9 @@ $timetable_id = $_GET['id'];  // Get the timetable ID from the request
 if (isset($timetable_id)) {
     // Query to fetch the specific timetable by its ID
     $sql = "SELECT t.id, s.subject_code, t.day_of_week, r.room_name, t.start_time, t.end_time
-            FROM timetable t
-            JOIN subjects s ON t.subject_id = s.id
-            JOIN rooms r ON t.room_id = r.id
+            FROM sms3_timetable t
+            JOIN sms3_subjects s ON t.subject_id = s.id
+            JOIN sms3_rooms r ON t.room_id = r.id
             WHERE t.id = ?";
     
     $stmt = $conn->prepare($sql);

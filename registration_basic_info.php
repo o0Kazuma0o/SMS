@@ -981,11 +981,13 @@
       confirmationDialog.className = 'confirmation-dialog';
       
       confirmationDialog.innerHTML = `
+      <div class="d-flex justify-content-center"></div>
         <div class="confirmation-dialog-content">
           <p>Are you sure you want to submit your application?</p>
           <button class="btn btn-success" id="confirmSubmit">Yes, Submit</button>
           <button class="btn btn-danger" id="cancelSubmit">Cancel</button>
         </div>
+      </div>
       `;
 
       // Style the confirmation dialog
@@ -1077,7 +1079,7 @@
     }
 
     // Send an AJAX request to save the data to the database
-    fetch('database.php', {
+    fetch('database_admission.php', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

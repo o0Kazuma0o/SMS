@@ -1,7 +1,7 @@
 <?php
 session_start();
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT); // Enable exception for errors
-$conn = new mysqli('localhost', 'root', '', 'admission_db');
+$conn = new mysqli('localhost', 'root', '', 'bcp-sms_admission');
 
 // Check connection
 if ($conn->connect_error) {
@@ -10,7 +10,7 @@ if ($conn->connect_error) {
 
 function getSubjectIdByCode($subject_code) {
     global $conn;
-    $stmt = $conn->prepare("SELECT id FROM subjects WHERE subject_code = ?");
+    $stmt = $conn->prepare("SELECT id FROM sms3_subjects WHERE subject_code = ?");
     $stmt->bind_param("s", $subject_code);
     $stmt->execute();
     $stmt->bind_result($subject_id);
@@ -22,7 +22,7 @@ function getSubjectIdByCode($subject_code) {
 // Function to get the room_id based on room_name
 function getRoomIdByName($room_name) {
     global $conn;
-    $stmt = $conn->prepare("SELECT id FROM rooms WHERE room_name = ?");
+    $stmt = $conn->prepare("SELECT id FROM sms3_rooms WHERE room_name = ?");
     $stmt->bind_param("s", $room_name);
     $stmt->execute();
     $stmt->bind_result($room_id);
@@ -37,7 +37,7 @@ if (isset($_GET['edit_department_id'])) {
     $edit_department_id = $_GET['edit_department_id'];
 
     // Fetch the department details to pre-fill the form for editing
-    $stmt = $conn->prepare("SELECT * FROM departments WHERE id = ?");
+    $stmt = $conn->prepare("SELECT * FROM sms3_departments WHERE id = ?");
     $stmt->bind_param("i", $edit_department_id);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -52,7 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_department'])) {
 
     try{
     // Insert department if department code is unique
-    $stmt = $conn->prepare("INSERT INTO departments (department_code, department_name) VALUES (?, ?)");
+    $stmt = $conn->prepare("INSERT INTO sms3_departments (department_code, department_name) VALUES (?, ?)");
     $stmt->bind_param("ss", $department_code, $department_name);
     $stmt->execute();
     $stmt->close();
@@ -81,7 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_department']))
 
     try{
     // Update the department in the database
-    $stmt = $conn->prepare("UPDATE departments SET department_code = ?, department_name = ? WHERE id = ?");
+    $stmt = $conn->prepare("UPDATE sms3_departments SET department_code = ?, department_name = ? WHERE id = ?");
     $stmt->bind_param("ssi", $department_code, $department_name, $department_id);
     $stmt->execute();
     $stmt->close();
@@ -107,7 +107,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_department']))
 if (isset($_GET['delete_department_id'])) {
     $delete_id = $_GET['delete_department_id'];
     try{
-    $stmt = $conn->prepare("DELETE FROM departments WHERE id = ?");
+    $stmt = $conn->prepare("DELETE FROM sms3_departments WHERE id = ?");
     $stmt->bind_param("i", $delete_id);
     $stmt->execute();
     $stmt->close();
@@ -130,7 +130,7 @@ if (isset($_GET['delete_department_id'])) {
 }
 
 // Fetch all departments
-$departments = $conn->query("SELECT * FROM departments");
+$departments = $conn->query("SELECT * FROM sms3_departments");
 
 // Edit room
 $edit_room = null;
@@ -138,7 +138,7 @@ if (isset($_GET['edit_room_id'])) {
     $edit_room_id = $_GET['edit_room_id'];
 
     // Fetch the room details to pre-fill the form for editing
-    $stmt = $conn->prepare("SELECT * FROM rooms WHERE id = ?");
+    $stmt = $conn->prepare("SELECT * FROM sms3_rooms WHERE id = ?");
     $stmt->bind_param("i", $edit_room_id);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -155,7 +155,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_room'])) {
 
     try{
     // Insert room
-    $stmt = $conn->prepare("INSERT INTO rooms (room_name, location, department_id) VALUES (?, ?, ?)");
+    $stmt = $conn->prepare("INSERT INTO sms3_rooms (room_name, location, department_id) VALUES (?, ?, ?)");
     $stmt->bind_param("ssi", $room_name, $location, $department_id);
     $stmt->execute();
     $stmt->close();
@@ -184,7 +184,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_room'])) {
 
     try{
     // Update the room in the database
-    $stmt = $conn->prepare("UPDATE rooms SET room_name = ?, location = ?, department_id = ? WHERE id = ?");
+    $stmt = $conn->prepare("UPDATE sms3_rooms SET room_name = ?, location = ?, department_id = ? WHERE id = ?");
     $stmt->bind_param("ssii", $room_name, $location, $department_id, $room_id);
     $stmt->execute();
     $stmt->close();
@@ -209,7 +209,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_room'])) {
 if (isset($_GET['delete_room_id'])) {
     $delete_id = $_GET['delete_room_id'];
     try{
-    $stmt = $conn->prepare("DELETE FROM rooms WHERE id = ?");
+    $stmt = $conn->prepare("DELETE FROM sms3_rooms WHERE id = ?");
     $stmt->bind_param("i", $delete_id);
     $stmt->execute();
     $stmt->close();
@@ -231,7 +231,7 @@ if (isset($_GET['delete_room_id'])) {
 }
 
 // Fetch all rooms
-$rooms = $conn->query("SELECT r.*, d.department_code FROM rooms r JOIN departments d ON r.department_id = d.id");
+$rooms = $conn->query("SELECT r.*, d.department_code FROM sms3_rooms r JOIN sms3_departments d ON r.department_id = d.id");
 
 // Edit section
 $edit_section = null;
@@ -239,7 +239,7 @@ if (isset($_GET['edit_section_id'])) {
     $edit_section_id = $_GET['edit_section_id'];
 
     // Fetch the section details to pre-fill the form for editing
-    $stmt = $conn->prepare("SELECT * FROM sections WHERE id = ?");
+    $stmt = $conn->prepare("SELECT * FROM sms3_sections WHERE id = ?");
     $stmt->bind_param("i", $edit_section_id);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -257,7 +257,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_section'])) {
 
     try {
         // Insert section
-        $stmt = $conn->prepare("INSERT INTO sections (section_number, year_level, semester, capacity, department_id) VALUES (?, ?, ?, ?, ?)");
+        $stmt = $conn->prepare("INSERT INTO sms3_sections (section_number, year_level, semester, capacity, department_id) VALUES (?, ?, ?, ?, ?)");
         $stmt->bind_param("iissi", $section_number, $year_level, $semester, $capacity, $department_id);
         $stmt->execute();
         $stmt->close();
@@ -288,7 +288,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_section'])) {
 
     try {
         // Update the section in the database
-        $stmt = $conn->prepare("UPDATE sections SET section_number = ?, year_level = ?, semester = ?, capacity = ?, department_id = ? WHERE id = ?");
+        $stmt = $conn->prepare("UPDATE sms3_sections SET section_number = ?, year_level = ?, semester = ?, capacity = ?, department_id = ? WHERE id = ?");
         $stmt->bind_param("iissii", $section_number, $year_level, $semester, $capacity, $department_id, $section_id);
         $stmt->execute();
         $stmt->close();
@@ -312,7 +312,7 @@ if (isset($_GET['delete_section_id'])) {
     $delete_id = $_GET['delete_section_id'];
     try{
     // Delete the section from the database
-    $stmt = $conn->prepare("DELETE FROM sections WHERE id = ?");
+    $stmt = $conn->prepare("DELETE FROM sms3_sections WHERE id = ?");
     $stmt->bind_param("i", $delete_id);
     $stmt->execute();
     $stmt->close();
@@ -336,7 +336,7 @@ if (isset($_GET['delete_section_id'])) {
 // Function to update all sections in DB
 function toggleAllSections($conn) {
     // Fetch all sections
-    $result = $conn->query("SELECT id, section_number, semester FROM sections");
+    $result = $conn->query("SELECT id, section_number, semester FROM sms3_sections");
     
     while ($section = $result->fetch_assoc()) {
         $current_section_number = $section['section_number'];
@@ -352,7 +352,7 @@ function toggleAllSections($conn) {
         }
 
         // Update the section in the database
-        $stmt = $conn->prepare("UPDATE sections SET section_number = ?, semester = ? WHERE id = ?");
+        $stmt = $conn->prepare("UPDATE sms3_sections SET section_number = ?, semester = ? WHERE id = ?");
         $stmt->bind_param("isi", $new_section_number, $new_semester, $section['id']);
         $stmt->execute();
         $stmt->close();
@@ -366,7 +366,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax_toggle_semester'
 }
 
 // Fetch all sections
-$sections = $conn->query("SELECT s.*, d.department_code FROM sections s JOIN departments d ON s.department_id = d.id");
+$sections = $conn->query("SELECT s.*, d.department_code FROM sms3_sections s JOIN sms3_departments d ON s.department_id = d.id");
 
 // Edit subject
 $edit_subject = null;
@@ -374,7 +374,7 @@ if (isset($_GET['edit_subject_id'])) {
     $edit_subject_id = $_GET['edit_subject_id'];
 
     // Fetch the subject details to pre-fill the form for editing
-    $stmt = $conn->prepare("SELECT * FROM subjects WHERE id = ?");
+    $stmt = $conn->prepare("SELECT * FROM sms3_subjects WHERE id = ?");
     $stmt->bind_param("i", $edit_subject_id);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -390,7 +390,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_subject'])) {
 
     try{
     // Insert subject
-    $stmt = $conn->prepare("INSERT INTO subjects (subject_code, subject_name, department_id) VALUES (?, ?, ?)");
+    $stmt = $conn->prepare("INSERT INTO sms3_subjects (subject_code, subject_name, department_id) VALUES (?, ?, ?)");
     $stmt->bind_param("ssi", $subject_code, $subject_name, $department_id);
     $stmt->execute();
     $stmt->close();
@@ -420,7 +420,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_subject'])) {
 
     try{
     // Update the subject in the database
-    $stmt = $conn->prepare("UPDATE subjects SET subject_code = ?, subject_name = ?, department_id = ? WHERE id = ?");
+    $stmt = $conn->prepare("UPDATE sms3_subjects SET subject_code = ?, subject_name = ?, department_id = ? WHERE id = ?");
     $stmt->bind_param("ssii", $subject_code, $subject_name, $department_id, $subject_id);
     $stmt->execute();
     $stmt->close();
@@ -445,7 +445,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_subject'])) {
 if (isset($_GET['delete_subject_id'])) {
     $delete_id = $_GET['delete_subject_id'];
     try{
-    $stmt = $conn->prepare("DELETE FROM subjects WHERE id = ?");
+    $stmt = $conn->prepare("DELETE FROM sms3_subjects WHERE id = ?");
     $stmt->bind_param("i", $delete_id);
     $stmt->execute();
     $stmt->close();
@@ -467,7 +467,7 @@ if (isset($_GET['delete_subject_id'])) {
 }
 
 // Fetch all subjects
-$subjects = $conn->query("SELECT s.*, d.department_code FROM subjects s JOIN departments d ON s.department_id = d.id");
+$subjects = $conn->query("SELECT s.*, d.department_code FROM sms3_subjects s JOIN sms3_departments d ON s.department_id = d.id");
 
 // Edit timetable
 $edit_timetable = null;
@@ -477,8 +477,8 @@ if (isset($_GET['edit_timetable_id'])) {
     // Fetch the timetable details for editing (fetch multiple entries based on timetable id)
     $stmt = $conn->prepare("
         SELECT t.id, t.subject_id, s.subject_code, t.day_of_week, t.start_time, t.end_time 
-        FROM timetable t 
-        JOIN subjects s ON t.subject_id = s.id 
+        FROM sms3_timetable t 
+        JOIN sms3_subjects s ON t.subject_id = s.id 
         WHERE t.id = ?");
     $stmt->bind_param("i", $edit_timetable_id);
     $stmt->execute();
@@ -552,7 +552,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_timetable'])) 
 
                 // 3. Insert timetable for each subject, room, day, and time combination
                 $stmt = $conn->prepare("
-                    INSERT INTO timetable (subject_id, section_id, room_id, day_of_week, start_time, end_time)
+                    INSERT INTO sms3_timetable (subject_id, section_id, room_id, day_of_week, start_time, end_time)
                     VALUES (?, ?, ?, ?, ?, ?)");
                 $stmt->bind_param("iiisss", $subject_id, $section_id, $room_id, $day_of_week, $start_time, $end_time);
                 $stmt->execute();
@@ -599,7 +599,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_single_timetab
             // 1. Ensure no duplicate subjects in the same section
             $stmt = $conn->prepare("
                 SELECT COUNT(*) 
-                FROM timetable 
+                FROM sms3_timetable 
                 WHERE section_id = ? 
                 AND subject_id = ? 
                 AND id != ?");
@@ -619,7 +619,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_single_timetab
             // 2. Ensure no time conflicts within the section on the same day
             $stmt = $conn->prepare("
                 SELECT COUNT(*) 
-                FROM timetable 
+                FROM sms3_timetable 
                 WHERE section_id = ? 
                 AND day_of_week = ? 
                 AND ((start_time < ? AND end_time > ?) OR (start_time < ? AND end_time > ?)) 
@@ -640,7 +640,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_single_timetab
 
             // 3. If no conflicts, update the single timetable entry
             $stmt = $conn->prepare("
-                UPDATE timetable
+                UPDATE sms3_timetable
                 SET subject_id = ?, room_id = ?, day_of_week = ?, start_time = ?, end_time = ?
                 WHERE id = ?");
             $stmt->bind_param("iisssi", $subject_id, $room_id, $day_of_week, $start_time, $end_time, $timetable_id);
@@ -668,7 +668,7 @@ if (isset($_GET['delete_timetable_id'])) {
     
     try {
         // Delete all timetable entries for a section based on the timetable ID
-        $stmt = $conn->prepare("DELETE FROM timetable WHERE section_id = (SELECT section_id FROM timetable WHERE id = ?)");
+        $stmt = $conn->prepare("DELETE FROM sms3_timetable WHERE section_id = (SELECT section_id FROM sms3_timetable WHERE id = ?)");
         $stmt->bind_param("i", $delete_id);
         $stmt->execute();
         $stmt->close();
@@ -688,7 +688,7 @@ if (isset($_GET['delete_row_id'])) {
     $delete_row_id = $_GET['delete_row_id'];
 
     try {
-        $stmt = $conn->prepare("DELETE FROM timetable WHERE id = ?");
+        $stmt = $conn->prepare("DELETE FROM sms3_timetable WHERE id = ?");
         $stmt->bind_param("i", $delete_row_id);
         $stmt->execute();
         $stmt->close();
@@ -707,74 +707,9 @@ if (isset($_GET['delete_row_id'])) {
 // Fetch all timetables (adjust to join all relevant data)
 $timetables = $conn->query("
     SELECT t.*, s.subject_code, sec.section_number, r.room_name, d.department_code
-    FROM timetable t 
-    JOIN subjects s ON t.subject_id = s.id 
-    JOIN sections sec ON t.section_id = sec.id 
+    FROM sms3_timetable t 
+    JOIN sms3_subjects s ON t.subject_id = s.id 
+    JOIN sms3_sections sec ON t.section_id = sec.id 
     JOIN rooms r ON t.room_id = r.id
-    JOIN departments d ON sec.department_id = d.id");
+    JOIN sms3_departments d ON sec.department_id = d.id");
 
-
-// Retrieve the incoming JSON data
-$data = json_decode(file_get_contents('php://input'), true);
-
-if (!$data) {
-    echo json_encode(['success' => false, 'message' => 'Invalid input data']);
-    exit;
-}
-
-// Prepare the SQL statement to insert the data
-$sql = "INSERT INTO sms3_pending_admission (
-    full_name, program, admission_type, year_level, sex, civil_status, religion, 
-    birthday, email, contact_number, facebook_name, address, father_name, mother_name, 
-    guardian_name, guardian_contact, primary_school, primary_year, secondary_school, 
-    secondary_year, last_school, last_school_year, referral_source, status
-) VALUES (
-    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending'
-)";
-
-try {
-    $stmt = $conn->prepare($sql);
-    $fullName = $data['basicInfo']['firstname'] . ' ' . $data['basicInfo']['middlename'] . ' ' . $data['basicInfo']['lastname'];
-    $address = $data['addressInfo']['address'] . ', ' . $data['addressInfo']['barangay'] . ', ' . $data['addressInfo']['municipality'] . ' - ' . $data['addressInfo']['region'];
-    $fatherName = $data['guardianInfo']['father_firstname'] . ' ' . $data['guardianInfo']['father_middlename'] . ' ' . $data['guardianInfo']['father_lastname'];
-    $motherName = $data['guardianInfo']['mother_firstname'] . ' ' . $data['guardianInfo']['mother_middlename'] . ' ' . $data['guardianInfo']['mother_lastname'];
-    $guardianName = $data['guardianInfo']['guardian_firstname'] . ' ' . $data['guardianInfo']['guardian_middlename'] . ' ' . $data['guardianInfo']['guardian_lastname'];
-
-    // Bind parameters to the statement
-    $stmt->bind_param(
-        'sssssssssssssssssssssss', // 23 's' characters
-        $fullName,
-        $data['basicInfo']['program'],
-        $data['basicInfo']['admissiontype'],
-        $data['basicInfo']['yrlvl'],
-        $data['basicInfo']['sex'],
-        $data['basicInfo']['civilstatus'],
-        $data['basicInfo']['religion'],
-        $data['basicInfo']['birthday'],
-        $data['basicInfo']['email'],
-        $data['basicInfo']['contactnumber'],
-        $data['basicInfo']['facebookname'],
-        $address,
-        $fatherName,
-        $motherName,
-        $guardianName,
-        $data['guardianInfo']['gcontactnumber'],
-        $data['educationInfo']['primary'],
-        $data['educationInfo']['pyear'],
-        $data['educationInfo']['secondary'],
-        $data['educationInfo']['syear'],
-        $data['educationInfo']['lschool'],
-        $data['educationInfo']['lyear'],
-        $data['referralInfo']['how']
-    );
-
-    // Execute the prepared statement
-    $stmt->execute();
-    echo json_encode(['success' => true, 'message' => 'Data inserted successfully']);
-} catch (Exception $e) {
-    echo json_encode(['success' => false, 'message' => 'Failed to insert data: ' . $e->getMessage()]);
-}
-
-// Close the statement and connection
-$stmt->close();
-    

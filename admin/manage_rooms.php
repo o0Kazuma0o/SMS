@@ -276,7 +276,7 @@
             <select class="form-control" name="department_id" id="department_id" required>
               <!-- Fetch Departments -->
               <?php
-              $departments = $conn->query("SELECT * FROM departments");
+              $departments = $conn->query("SELECT * FROM sms3_departments");
               while ($department = $departments->fetch_assoc()): ?>
                 <option value="<?= $department['id']; ?>" <?= isset($edit_room) && $edit_room['department_id'] == $department['id'] ? 'selected' : ''; ?>>
                   <?= $department['department_code']; ?>

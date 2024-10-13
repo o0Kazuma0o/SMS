@@ -269,7 +269,7 @@
                 <option value="">Select Department</option>
                 <!-- Fetch Departments -->
                 <?php
-                $departments = $conn->query("SELECT * FROM departments");
+                $departments = $conn->query("SELECT * FROM sms3_departments");
                 while ($department = $departments->fetch_assoc()): ?>
                   <option value="<?= $department['id']; ?>"><?= $department['department_code']; ?></option>
                 <?php endwhile; ?>
@@ -321,11 +321,11 @@
                                 GROUP_CONCAT(t.day_of_week SEPARATOR ', ') as days,
                                 GROUP_CONCAT(t.start_time SEPARATOR ', ') as start_times,
                                 GROUP_CONCAT(t.end_time SEPARATOR ', ') as end_times
-                        FROM timetable t
-                        JOIN subjects s ON t.subject_id = s.id
-                        JOIN sections sec ON t.section_id = sec.id
-                        JOIN rooms r ON t.room_id = r.id
-                        JOIN departments d ON sec.department_id = d.id
+                        FROM sms3_timetable t
+                        JOIN sms3_subjects s ON t.subject_id = s.id
+                        JOIN sms3_sections sec ON t.section_id = sec.id
+                        JOIN sms3_rooms r ON t.room_id = r.id
+                        JOIN sms3_departments d ON sec.department_id = d.id
                         GROUP BY d.department_code, sec.section_number, r.room_name";
                 $timetables = $conn->query($sql);
 
