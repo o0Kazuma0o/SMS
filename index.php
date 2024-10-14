@@ -1,5 +1,71 @@
 <?php
 require('database.php');
+
+// Check if the form is submitted
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $username = $_POST['username'];
+    $password = $_POST['password'];
+
+    // Validate input
+    if (empty($username) || empty($password)) {
+        $_SESSION['error_message'] = 'Please fill in both fields.';
+        header('Location: index.php');
+        exit;
+    }
+
+    // Function to check login in a specified table
+    function checkLogin($conn, $table, $username, $password) {
+        $sql = "SELECT * FROM $table WHERE username = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param('s', $username);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        // Check if a user is found
+        if ($result->num_rows > 0) {
+            $user = $result->fetch_assoc();
+
+            // Verify the password
+            if (password_verify($password, $user['password'])) {
+                return $user;
+            }
+        }
+        return false;
+    }
+
+    // Check in the `sms3_user` table for admin/staff roles
+    $user = checkLogin($conn, 'sms3_user', $username, $password);
+
+    if (!$user) {
+        // Check in the `sms3_students` table for student role
+        $user = checkLogin($conn, 'sms3_students', $username, $password);
+    }
+
+    if ($user) {
+        // Set session variables
+        $_SESSION['user_id'] = $user['id'];
+        $_SESSION['username'] = $user['username'];
+        $_SESSION['role'] = $user['role'];
+
+        // Redirect based on role
+        if ($user['role'] === 'admin') {
+            header('Location: admin/Adashboard.php');
+        } elseif ($user['role'] === 'staff') {
+            header('Location: staff_dashboard.php');
+        } elseif ($user['role'] === 'student') {
+            header('Location: student_dashboard.php');
+        } else {
+            $_SESSION['error_message'] = 'Invalid user role.';
+            header('Location: index.php');
+        }
+        exit;
+    } else {
+        // If login fails, set an error message
+        $_SESSION['error_message'] = 'Invalid username or password.';
+        header('Location: index.php');
+        exit;
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -120,8 +186,14 @@ button:hover {
     </div>
     
     <div class="login-container">
-        <h2>Log Into Your Account</h2>
-        <form id="loginForm" action="login.php" method="post">
+    <h2>Log Into Your Account</h2>
+    <?php if (isset($_SESSION['error_message'])): ?>
+        <div class="alert alert-danger">
+            <?php echo $_SESSION['error_message']; ?>
+        </div>
+        <?php unset($_SESSION['error_message']); ?>
+    <?php endif; ?>
+        <form id="loginForm" action="index.php" method="post">
             <label for="username">Username</label>
             <input type="text" id="username" name="username" required>
 
@@ -133,6 +205,5 @@ button:hover {
         </form>
     </div>
 
-    <script src="js/script.js"></script>
 </body>
 </html>
