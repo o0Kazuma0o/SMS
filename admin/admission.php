@@ -150,31 +150,10 @@
       </li><!-- End System Nav -->
 
       <li class="nav-item">
-        <a class="nav-link collapsed" data-bs-target="#enrollment-nav" data-bs-toggle="collapse" href="#">
-          <i class="bi bi-layout-text-window-reverse"></i><span>Enrolled BSIT</span><i class="bi bi-chevron-down ms-auto"></i>
+        <a class="nav-link " href="enrolled.php">
+          <i class="bi bi-grid"></i>
+          <span>Enrolled Students</span>
         </a>
-        <ul id="enrollment-nav" class="nav-content collapse " data-bs-parent="#sidebar-nav">
-          <li>
-            <a href="enroll1.php">
-              <i class="bi bi-circle"></i><span>1st Year</span>
-            </a>
-          </li>
-          <li>
-            <a href="modules.html">
-              <i class="bi bi-circle"></i><span>2nd Year</span>
-            </a>
-          </li>
-          <li>
-            <a href="modules.html">
-              <i class="bi bi-circle"></i><span>3rd Year</span>
-            </a>
-          </li>
-          <li>
-            <a href="modules.html">
-              <i class="bi bi-circle"></i><span>4th Year</span>
-            </a>
-          </li>
-        </ul>
       </li><!-- End System Nav -->
 
       <hr class="sidebar-divider">

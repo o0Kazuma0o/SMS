@@ -150,31 +150,10 @@
       </li><!-- End System Nav -->
 
       <li class="nav-item">
-        <a class="nav-link " data-bs-target="#enrollment-nav" data-bs-toggle="collapse" href="#">
-          <i class="bi bi-layout-text-window-reverse"></i><span>Enrolled BSIT</span><i class="bi bi-chevron-down ms-auto"></i>
+        <a class="nav-link " href="enrolled.php">
+          <i class="bi bi-grid"></i>
+          <span>Enrolled Students</span>
         </a>
-        <ul id="enrollment-nav" class="nav-content collapse show" data-bs-parent="#sidebar-nav">
-          <li>
-            <a href="enroll1.php">
-              <i class="bi bi-circle"></i><span>1st Year</span>
-            </a>
-          </li>
-          <li>
-            <a href="enroll2.php" class="active">
-              <i class="bi bi-circle"></i><span>2nd Year</span>
-            </a>
-          </li>
-          <li>
-            <a href="enroll3.php">
-              <i class="bi bi-circle"></i><span>3rd Year</span>
-            </a>
-          </li>
-          <li>
-            <a href="enroll4.php">
-              <i class="bi bi-circle"></i><span>4th Year</span>
-            </a>
-          </li>
-        </ul>
       </li><!-- End System Nav -->
 
       <hr class="sidebar-divider">
@@ -259,8 +238,57 @@
                     <td>2024/08/07</td>
                     <td>2024-2025</td>
                     <td>BSIT</td>
-                    <td>2101</td>
-                    <td>2nd Year</td>
+                    <td>1101</td>
+                    <td>1st Year</td>
+                    <td><!-- Modal Here -->
+                      <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#viewsub">
+                      View
+                      </button>
+                      <div class="modal fade" id="viewsub" tabindex="-1">
+                        <div class="modal-dialog modal-dialog-centered modal-lg">
+                          <div class="modal-content">
+                            <div class="modal-header">
+                              <h5 class="modal-title">Subjects</h5>
+                              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                              <table class="table">
+                                <thead>
+                                  <tr>
+                                    <th>Subject Code</th>
+                                    <th>Subject Name</th>
+                                    <th>Room</th>
+                                    <th>Schedule</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  <tr>
+                                    <td>ITSP 1</td>
+                                    <td>Software Engineering</td>
+                                    <td>Lab 1</td>
+                                    <td>Monday, 8:00 AM - 10:00 AM</td>
+                                  </tr>
+                                </tbody>
+                              </table>
+                            </div>
+                            <div class="modal-footer">
+                              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                              <button type="button" class="btn btn-primary">Save changes</button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td><span class="badge bg-success">Enrolled</span></td>
+                  </tr>
+                  <tr>
+                    <td>24121232</td>
+                    <td>Ken Nat</td>
+                    <td>2024/08/07</td>
+                    <td>2024-2025</td>
+                    <td>BSIT</td>
+                    <td>1101</td>
+                    <td>1st Year</td>
                     <td><!-- Modal Here -->
                       <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#viewsub">
                       View

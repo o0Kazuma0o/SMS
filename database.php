@@ -8,6 +8,11 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
+/**
+ * Given a subject code, returns the corresponding subject_id from the database.
+ * @param string $subject_code The subject code to search for
+ * @return int The subject_id, or 0 if not found
+ */
 function getSubjectIdByCode($subject_code) {
     global $conn;
     $stmt = $conn->prepare("SELECT id FROM sms3_subjects WHERE subject_code = ?");
@@ -19,7 +24,12 @@ function getSubjectIdByCode($subject_code) {
     return $subject_id;
 }
 
-// Function to get the room_id based on room_name
+
+/**
+ * Given a room name, returns the corresponding room_id from the database.
+ * @param string $room_name The room name to search for
+ * @return int The room_id, or 0 if not found
+ */
 function getRoomIdByName($room_name) {
     global $conn;
     $stmt = $conn->prepare("SELECT id FROM sms3_rooms WHERE room_name = ?");
@@ -343,11 +353,11 @@ function toggleAllSections($conn) {
         $current_semester = $section['semester'];
 
         // Toggle the semester and update the section number by 100
-        if ($current_semester == '1st') {
-            $new_semester = '2nd';
+        if ($current_semester == '1st Semester') {
+            $new_semester = '2nd Semester';
             $new_section_number = $current_section_number + 100; // Increment by 100 for 2nd semester
         } else {
-            $new_semester = '1st';
+            $new_semester = '1st Semester';
             $new_section_number = $current_section_number - 100; // Decrement by 100 for 1st semester
         }
 
@@ -710,6 +720,6 @@ $timetables = $conn->query("
     FROM sms3_timetable t 
     JOIN sms3_subjects s ON t.subject_id = s.id 
     JOIN sms3_sections sec ON t.section_id = sec.id 
-    JOIN rooms r ON t.room_id = r.id
+    JOIN sms3_rooms r ON t.room_id = r.id
     JOIN sms3_departments d ON sec.department_id = d.id");
 
