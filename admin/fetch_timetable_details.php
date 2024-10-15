@@ -1,5 +1,5 @@
 <?php
-$conn = new mysqli('localhost', 'root', '', 'bcp-sms_admission');
+$conn = new mysqli('localhost', 'admi_caps', 're^AKBzarIgoqxka', 'admi_bcp_sms3_admission');
 $timetable_id = $_GET['timetable_id'];
 
 // Fetch timetable details
