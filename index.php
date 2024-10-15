@@ -17,6 +17,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     function checkLogin($conn, $table, $username, $password) {
         $sql = "SELECT * FROM $table WHERE username = ?";
         $stmt = $conn->prepare($sql);
+        if (!$stmt) {
+            // If prepare() fails, display error message and exit
+            die("Failed to prepare statement: " . $conn->error);
+        }
+
         $stmt->bind_param('s', $username);
         $stmt->execute();
         $result = $stmt->get_result();
@@ -25,11 +30,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if ($result->num_rows > 0) {
             $user = $result->fetch_assoc();
 
-            // Verify the password
-            if (password_verify($password, $user['password'])) {
+            // Debugging output for checking if user is found
+            error_log("User found: " . print_r($user, true));
+
+            // Plain text password verification (not recommended for production)
+            if ($user['password'] === $password) {
                 return $user;
+            } else {
+                // Debugging output for password verification failure
+                error_log("Password verification failed for user: " . $username);
             }
+        } else {
+            // Debugging output for user not found
+            error_log("No user found with username: " . $username);
         }
+
         return false;
     }
 
