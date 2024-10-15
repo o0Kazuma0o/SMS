@@ -1,7 +1,7 @@
 <?php
 session_start();
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT); // Enable exception for errors
-$conn = new mysqli('localhost', 'root', '', 'bcp-sms_admission');
+$conn = new mysqli('localhost', 'admi_caps', 're^AKBzarIgoqxka', 'admi_bcp_sms3_admission');
 
 // Check connection
 if ($conn->connect_error) {
