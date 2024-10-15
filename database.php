@@ -1,12 +1,20 @@
 <?php
 session_start();
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT); // Enable exception for errors
-$conn = new mysqli('localhost', 'admi_caps', 're^AKBzarIgoqxka', 'admi_bcp_sms3_admission');
+
+$environment = 'production'; // Change to 'production' for the website
+
+if ($environment === 'production') {
+    $conn = new mysqli('localhost', 'root', '', 'bcp-sms_admission');
+} else {
+    $conn = new mysqli('localhost', 'admi_caps', 're^AKBzarIgoqxka', 'admi_bcp_sms3_admission');
+}
 
 // Check connection
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
+
 
 /**
  * Given a subject code, returns the corresponding subject_id from the database.

@@ -1,5 +1,5 @@
 <?php
-$conn = new mysqli('localhost', 'admi_caps', 're^AKBzarIgoqxka', 'admi_bcp_sms3_admission');
+require('../database.php');
 
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);

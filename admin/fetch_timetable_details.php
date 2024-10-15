@@ -1,4 +1,6 @@
 <?php
+require('../database.php');
+
 $conn = new mysqli('localhost', 'admi_caps', 're^AKBzarIgoqxka', 'admi_bcp_sms3_admission');
 $timetable_id = $_GET['timetable_id'];
 

@@ -193,6 +193,24 @@ button {
 button:hover {
     background-color: #555;
 }
+
+.admission-button {
+    display: block; /* Make it block level */
+    background-color: #007BFF; /* Blue color for admission button */
+    color: white;
+    padding: 10px 0px; /* Match padding */
+    border: none; /* No border */
+    border-radius: 5px; /* Rounded corners */
+    text-decoration: none; /* Remove underline */
+    font-size: 16px; /* Match font size */
+    width: 100%; /* Full width */
+    cursor: pointer; /* Pointer cursor */
+    margin-top: 10px; /* Space from the login button */
+}
+
+.admission-button:hover {
+    background-color: #0056b3; /* Darker blue on hover */
+}
 </style>
 <body>
     <div class="logo">
@@ -216,7 +234,7 @@ button:hover {
             <input type="password" id="password" name="password" required>
 
             <button type="submit">LOGIN</button>
-            <button type="submit">ADMISSION</button>
+            <a href="registration_basic_info.php" class="admission-button">ADMISSION</a>
         </form>
     </div>
 

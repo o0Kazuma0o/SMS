@@ -493,8 +493,8 @@
                 </div>
               </div>
               <div class="accordion-item">
-                <h2 class="accordion-header" id="headingSix">
-                  <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSix" aria-expanded="false" aria-controls="collapseSix" disabled>
+                <h2 class="accordion-header" id="headingSix"> 
+                  <button class="accordion-button collapsed" id="summaryButton" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSix" aria-expanded="false" aria-controls="collapseSix" disabled>
                     Summary
                   </button>
                 </h2>
@@ -1100,6 +1100,115 @@
       showPopupMessage('An error occurred while submitting the application.', 'error');
     });
   }
+
+  function validateAllFormsAndShowSummary() {
+    let allValid = true; // Flag to track if all forms are valid
+
+    // Function to handle showing the accordion and focusing on the first invalid field
+    function focusOnInvalidSection(sectionId, invalidField) {
+        var accordion = new bootstrap.Collapse(document.getElementById(sectionId), {toggle: true});
+        invalidField.focus();
+    }
+
+    // Basic Information Form Validation
+    const basicInfoForm = document.getElementById('basic-info-form');
+    let basicInfoValid = validateFormFields(basicInfoForm);
+    if (!basicInfoValid) {
+        allValid = false;
+        focusOnInvalidSection('collapseOne', basicInfoForm.querySelector('.is-invalid'));
+        disableSubsequentAccordions('collapseOne');
+        return;
+    }
+
+    // Address Form Validation
+    const addressForm = document.getElementById('address-form');
+    let addressValid = validateFormFields(addressForm);
+    if (!addressValid) {
+        allValid = false;
+        focusOnInvalidSection('collapseTwo', addressForm.querySelector('.is-invalid'));
+        disableSubsequentAccordions('collapseTwo');
+        return;
+    }
+
+    // Guardian Form Validation
+    const guardianForm = document.getElementById('guardian-form');
+    let guardianValid = validateFormFields(guardianForm);
+    if (!guardianValid) {
+        allValid = false;
+        focusOnInvalidSection('collapseThree', guardianForm.querySelector('.is-invalid'));
+        disableSubsequentAccordions('collapseThree');
+        return;
+    }
+
+    // Education Form Validation
+    const educationForm = document.getElementById('education-form');
+    let educationValid = validateFormFields(educationForm);
+    if (!educationValid) {
+        allValid = false;
+        focusOnInvalidSection('collapseFour', educationForm.querySelector('.is-invalid'));
+        disableSubsequentAccordions('collapseFour');
+        return;
+    }
+
+    // Referral Form Validation
+    const referralForm = document.getElementById('referral-form');
+    let referralValid = validateFormFields(referralForm);
+    if (!referralValid) {
+        allValid = false;
+        focusOnInvalidSection('collapseFive', referralForm.querySelector('.is-invalid'));
+        disableSubsequentAccordions('collapseFive');
+        return;
+    }
+
+    // If all validations pass, move to the Summary section
+    if (allValid) {
+        enableAccordion('collapseSix');
+        var nextAccordion = new bootstrap.Collapse(document.getElementById('collapseSix'), {toggle: true});
+    }
+  }
+
+// Function to validate form fields
+  function validateFormFields(form) {
+    let valid = true;
+    form.querySelectorAll('input, select, textarea').forEach((field) => {
+      if (field.hasAttribute('required') && !field.value.trim()) {
+        field.classList.add('is-invalid');
+        valid = false;
+      } else {
+        field.classList.remove('is-invalid');
+      }
+    });
+    return valid;
+  }
+
+  // Function to disable accordions
+  function disableSubsequentAccordions(currentAccordionId) {
+    const accordionHeaders = document.querySelectorAll('.accordion-header button');
+    let disable = false;
+    accordionHeaders.forEach((button) => {
+        if (button.getAttribute('data-bs-target') === `#${currentAccordionId}`) {
+            disable = true; // Start disabling from the next accordion
+        } else if (disable) {
+            button.disabled = true;
+        }
+    });
+  }
+
+  // Function to enable a specific accordion
+  function enableAccordion(accordionId) {
+    const button = document.querySelector(`button[data-bs-target="#${accordionId}"]`);
+    if (button) {
+      button.disabled = false;
+    }
+  }
+
+  // Function to close the summary accordion
+  function closeSummaryAccordion() {
+      var summaryAccordion = new bootstrap.Collapse(document.getElementById('collapseSix'), { toggle: false });
+  }
+
+  // Add event listener to the Summary button
+  document.getElementById('summaryButton').addEventListener('click', validateAllFormsAndShowSummary);
 
   </script>
 

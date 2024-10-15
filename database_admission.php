@@ -1,12 +1,5 @@
 <?php
-session_start();
-mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT); // Enable exception for errors
-$conn = new mysqli('localhost', 'admi_caps', 're^AKBzarIgoqxka', 'admi_bcp_sms3_admission');
-
-// Check connection
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+require 'database.php';
 
 // Retrieve the incoming JSON data
 $data = json_decode(file_get_contents('php://input'), true);
@@ -14,11 +7,11 @@ $data = json_decode(file_get_contents('php://input'), true);
 // Prepare the SQL statement to insert the data
 $sql = "INSERT INTO sms3_pending_admission (
     full_name, program, admission_type, year_level, sex, civil_status, religion, 
-    birthday, email, contact_number, facebook_name, address, father_name, mother_name, 
-    guardian_name, guardian_contact, primary_school, primary_year, secondary_school, 
+    birthday, email, contact_number, facebook_name, working_student, address, father_name, mother_name, 
+    guardian_name, guardian_contact, member4ps, primary_school, primary_year, secondary_school, 
     secondary_year, last_school, last_school_year, referral_source, status
 ) VALUES (
-    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending'
+    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending'
 )";
 
 try {
@@ -31,7 +24,7 @@ try {
 
     // Bind parameters to the statement
     $stmt->bind_param(
-        'sssssssssssssssssssssss', // 23 's' characters
+        'sssssssssssssssssssssssss', // 25 's' characters
         $fullName,
         $data['basicInfo']['program'],
         $data['basicInfo']['admissiontype'],
@@ -43,11 +36,13 @@ try {
         $data['basicInfo']['email'],
         $data['basicInfo']['contactnumber'],
         $data['basicInfo']['facebookname'],
+        $data['basicInfo']['workingstudent'],
         $address,
         $fatherName,
         $motherName,
         $guardianName,
         $data['guardianInfo']['gcontactnumber'],
+        $data['guardianInfo']['member4ps'],
         $data['educationInfo']['primary'],
         $data['educationInfo']['pyear'],
         $data['educationInfo']['secondary'],
