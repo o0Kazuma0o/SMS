@@ -18,16 +18,16 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
 
   <!-- Vendor CSS Files -->
-  <link href="/SMS/assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
-  <link href="/SMS/assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
-  <link href="/SMS/assets/vendor/boxicons/css/boxicons.min.css" rel="stylesheet">
-  <link href="/SMS/assets/vendor/quill/quill.snow.css" rel="stylesheet">
-  <link href="/SMS/assets/vendor/quill/quill.bubble.css" rel="stylesheet">
-  <link href="/SMS/assets/vendor/remixicon/remixicon.css" rel="stylesheet">
-  <link href="/SMS/assets/vendor/simple-datatables/style.css" rel="stylesheet">
+  <link href="../assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link href="../assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
+  <link href="../assets/vendor/boxicons/css/boxicons.min.css" rel="stylesheet">
+  <link href="../assets/vendor/quill/quill.snow.css" rel="stylesheet">
+  <link href="../assets/vendor/quill/quill.bubble.css" rel="stylesheet">
+  <link href="../assets/vendor/remixicon/remixicon.css" rel="stylesheet">
+  <link href="../assets/vendor/simple-datatables/style.css" rel="stylesheet">
 
   <!-- Template Main CSS File -->
-  <link href="/SMS/assets/css/style.css" rel="stylesheet">
+  <link href="../assets/css/style.css" rel="stylesheet">
 
 </head>
 
@@ -46,7 +46,7 @@
         <li class="nav-item dropdown pe-3">
 
           <a class="nav-link nav-profile d-flex align-items-center pe-0" href="#" data-bs-toggle="dropdown">
-            <img src="/SMS/assets/img/profile-img.jpg" alt="Profile" class="rounded-circle">
+            <img src="../assets/img/profile-img.jpg" alt="Profile" class="rounded-circle">
             <span class="d-none d-md-block dropdown-toggle ps-2">K. Anderson</span>
           </a><!-- End Profile Iamge Icon -->
 
@@ -512,35 +512,35 @@
                     </thead>
                     <tbody>
                       <tr>
-                        <th scope="row"><a href="#"><img src="/SMS/assets/img/product-1.jpg" alt=""></a></th>
+                        <th scope="row"><a href="#"><img src="../assets/img/product-1.jpg" alt=""></a></th>
                         <td><a href="#" class="text-primary fw-bold">Ut inventore ipsa voluptas nulla</a></td>
                         <td>$64</td>
                         <td class="fw-bold">124</td>
                         <td>$5,828</td>
                       </tr>
                       <tr>
-                        <th scope="row"><a href="#"><img src="/SMS/assets/img/product-2.jpg" alt=""></a></th>
+                        <th scope="row"><a href="#"><img src="../assets/img/product-2.jpg" alt=""></a></th>
                         <td><a href="#" class="text-primary fw-bold">Exercitationem similique doloremque</a></td>
                         <td>$46</td>
                         <td class="fw-bold">98</td>
                         <td>$4,508</td>
                       </tr>
                       <tr>
-                        <th scope="row"><a href="#"><img src="/SMS/assets/img/product-3.jpg" alt=""></a></th>
+                        <th scope="row"><a href="#"><img src="../assets/img/product-3.jpg" alt=""></a></th>
                         <td><a href="#" class="text-primary fw-bold">Doloribus nisi exercitationem</a></td>
                         <td>$59</td>
                         <td class="fw-bold">74</td>
                         <td>$4,366</td>
                       </tr>
                       <tr>
-                        <th scope="row"><a href="#"><img src="/SMS/assets/img/product-4.jpg" alt=""></a></th>
+                        <th scope="row"><a href="#"><img src="../assets/img/product-4.jpg" alt=""></a></th>
                         <td><a href="#" class="text-primary fw-bold">Officiis quaerat sint rerum error</a></td>
                         <td>$32</td>
                         <td class="fw-bold">63</td>
                         <td>$2,016</td>
                       </tr>
                       <tr>
-                        <th scope="row"><a href="#"><img src="/SMS/assets/img/product-5.jpg" alt=""></a></th>
+                        <th scope="row"><a href="#"><img src="../assets/img/product-5.jpg" alt=""></a></th>
                         <td><a href="#" class="text-primary fw-bold">Sit unde debitis delectus repellendus</a></td>
                         <td>$79</td>
                         <td class="fw-bold">41</td>
@@ -809,31 +809,31 @@
 
               <div class="news">
                 <div class="post-item clearfix">
-                  <img src="/SMS/assets/img/news-1.jpg" alt="">
+                  <img src="../assets/img/news-1.jpg" alt="">
                   <h4><a href="#">Nihil blanditiis at in nihil autem</a></h4>
                   <p>Sit recusandae non aspernatur laboriosam. Quia enim eligendi sed ut harum...</p>
                 </div>
 
                 <div class="post-item clearfix">
-                  <img src="/SMS/assets/img/news-2.jpg" alt="">
+                  <img src="../assets/img/news-2.jpg" alt="">
                   <h4><a href="#">Quidem autem et impedit</a></h4>
                   <p>Illo nemo neque maiores vitae officiis cum eum turos elan dries werona nande...</p>
                 </div>
 
                 <div class="post-item clearfix">
-                  <img src="/SMS/assets/img/news-3.jpg" alt="">
+                  <img src="../assets/img/news-3.jpg" alt="">
                   <h4><a href="#">Id quia et et ut maxime similique occaecati ut</a></h4>
                   <p>Fugiat voluptas vero eaque accusantium eos. Consequuntur sed ipsam et totam...</p>
                 </div>
 
                 <div class="post-item clearfix">
-                  <img src="/SMS/assets/img/news-4.jpg" alt="">
+                  <img src="../assets/img/news-4.jpg" alt="">
                   <h4><a href="#">Laborum corporis quo dara net para</a></h4>
                   <p>Qui enim quia optio. Eligendi aut asperiores enim repellendusvel rerum cuder...</p>
                 </div>
 
                 <div class="post-item clearfix">
-                  <img src="/SMS/assets/img/news-5.jpg" alt="">
+                  <img src="../assets/img/news-5.jpg" alt="">
                   <h4><a href="#">Et dolores corrupti quae illo quod dolor</a></h4>
                   <p>Odit ut eveniet modi reiciendis. Atque cupiditate libero beatae dignissimos eius...</p>
                 </div>
@@ -863,17 +863,17 @@
   <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
 
   <!-- Vendor JS Files -->
-  <script src="/SMS/assets/vendor/apexcharts/apexcharts.min.js"></script>
-  <script src="/SMS/assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
-  <script src="/SMS/assets/vendor/chart.js/chart.umd.js"></script>
-  <script src="/SMS/assets/vendor/echarts/echarts.min.js"></script>
-  <script src="/SMS/assets/vendor/quill/quill.js"></script>
-  <script src="/SMS/assets/vendor/simple-datatables/simple-datatables.js"></script>
-  <script src="/SMS/assets/vendor/tinymce/tinymce.min.js"></script>
-  <script src="/SMS/assets/vendor/php-email-form/validate.js"></script>
+  <script src="../assets/vendor/apexcharts/apexcharts.min.js"></script>
+  <script src="../assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script src="../assets/vendor/chart.js/chart.umd.js"></script>
+  <script src="../assets/vendor/echarts/echarts.min.js"></script>
+  <script src="../assets/vendor/quill/quill.js"></script>
+  <script src="../assets/vendor/simple-datatables/simple-datatables.js"></script>
+  <script src="../assets/vendor/tinymce/tinymce.min.js"></script>
+  <script src="../assets/vendor/php-email-form/validate.js"></script>
 
   <!-- Template Main JS File -->
-  <script src="/SMS/assets/js/main.js"></script>
+  <script src="../assets/js/main.js"></script>
 
 </body>
 

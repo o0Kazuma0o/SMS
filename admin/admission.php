@@ -18,16 +18,16 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
 
   <!-- Vendor CSS Files -->
-  <link href="/SMS/assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
-  <link href="/SMS/assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
-  <link href="/SMS/assets/vendor/boxicons/css/boxicons.min.css" rel="stylesheet">
-  <link href="/SMS/assets/vendor/quill/quill.snow.css" rel="stylesheet">
-  <link href="/SMS/assets/vendor/quill/quill.bubble.css" rel="stylesheet">
-  <link href="/SMS/assets/vendor/remixicon/remixicon.css" rel="stylesheet">
-  <link href="/SMS/assets/vendor/simple-datatables/style.css" rel="stylesheet">
+  <link href="../assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link href="../assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
+  <link href="../assets/vendor/boxicons/css/boxicons.min.css" rel="stylesheet">
+  <link href="../assets/vendor/quill/quill.snow.css" rel="stylesheet">
+  <link href="../assets/vendor/quill/quill.bubble.css" rel="stylesheet">
+  <link href="../assets/vendor/remixicon/remixicon.css" rel="stylesheet">
+  <link href="../assets/vendor/simple-datatables/style.css" rel="stylesheet">
 
   <!-- Template Main CSS File -->
-  <link href="/SMS/assets/css/style.css" rel="stylesheet">
+  <link href="../assets/css/style.css" rel="stylesheet">
 
 </head>
 
@@ -46,7 +46,7 @@
         <li class="nav-item dropdown pe-3">
 
           <a class="nav-link nav-profile d-flex align-items-center pe-0" href="#" data-bs-toggle="dropdown">
-            <img src="/SMS/assets/img/profile-img.jpg" alt="Profile" class="rounded-circle">
+            <img src="../assets/img/profile-img.jpg" alt="Profile" class="rounded-circle">
             <span class="d-none d-md-block dropdown-toggle ps-2">K. Anderson</span>
           </a><!-- End Profile Iamge Icon -->
 
@@ -275,17 +275,17 @@
   <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
 
   <!-- Vendor JS Files -->
-  <script src="/SMS/assets/vendor/apexcharts/apexcharts.min.js"></script>
-  <script src="/SMS/assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
-  <script src="/SMS/assets/vendor/chart.js/chart.umd.js"></script>
-  <script src="/SMS/assets/vendor/echarts/echarts.min.js"></script>
-  <script src="/SMS/assets/vendor/quill/quill.js"></script>
-  <script src="/SMS/assets/vendor/simple-datatables/simple-datatables.js"></script>
-  <script src="/SMS/assets/vendor/tinymce/tinymce.min.js"></script>
-  <script src="/SMS/assets/vendor/php-email-form/validate.js"></script>
+  <script src="../assets/vendor/apexcharts/apexcharts.min.js"></script>
+  <script src="../assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script src="../assets/vendor/chart.js/chart.umd.js"></script>
+  <script src="../assets/vendor/echarts/echarts.min.js"></script>
+  <script src="../assets/vendor/quill/quill.js"></script>
+  <script src="../assets/vendor/simple-datatables/simple-datatables.js"></script>
+  <script src="../assets/vendor/tinymce/tinymce.min.js"></script>
+  <script src="../assets/vendor/php-email-form/validate.js"></script>
 
   <!-- Template Main JS File -->
-  <script src="/SMS/assets/js/main.js"></script>
+  <script src="../assets/js/main.js"></script>
 
 </body>
 
