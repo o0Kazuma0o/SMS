@@ -631,6 +631,12 @@
           } else {
             input.style.border = '';
           }
+          input.addEventListener('input', function () {
+            if (input.value.trim()) {
+              input.style.border = '';
+              document.getElementById(input.id + '-error').innerText = '';
+            }
+          });
         }
       });
 
@@ -643,6 +649,12 @@
         } else {
           select.style.border = '';
         }
+        select.addEventListener('change', function () {
+          if (select.value !== '') {
+            select.style.border = '';
+            document.getElementById(select.id + '-error').innerText = '';
+          }
+        });
       });
 
       // Validate email format
@@ -654,6 +666,12 @@
       } else {
         email.style.border = '';
       }
+      email.addEventListener('input', function () {
+        if (emailRegex.test(email.value)) {
+          email.style.border = '';
+          document.getElementById('email-error').innerText = '';
+        }
+      });
 
       // Validate contact number (must be exactly 11 digits)
       const contactnumber = document.getElementById('contactnumber');
@@ -664,6 +682,13 @@
       } else {
         contactnumber.style.border = '';
       }
+
+      contactnumber.addEventListener('input', function () {
+        if (contactnumber.value.length === 11 && /^\d{11}$/.test(contactnumber.value)) {
+          contactnumber.style.border = '';
+          document.getElementById('contactnumber-error').innerText = '';
+        }
+      });
 
       const birthday = document.getElementById('birthday');
       const selectedDate = new Date(birthday.value);
@@ -682,6 +707,13 @@
       } else {
         birthday.style.border = '';
       }
+      birthday.addEventListener('input', function () {
+      const inputDate = new Date(birthday.value);
+        if (birthday.value && inputDate <= new Date(maxDate) && inputDate >= new Date(minDate)) {
+          birthday.style.border = '';
+          document.getElementById('birthday-error').innerText = '';
+        }
+      });
 
       updateCheckboxValueInfo(document.getElementById('workingstudent'));
 
@@ -711,6 +743,12 @@
           } else {
             input.style.border = '';
           }
+          input.addEventListener('input', function () {
+          if (input.value.trim()) {
+            input.style.border = '';
+            document.getElementById(input.id + '-error').innerText = '';
+          }
+        });
         }
       });
 
@@ -723,6 +761,12 @@
         } else {
           select.style.border = '';
         }
+        select.addEventListener('change', function () {
+          if (select.value !== '') {
+            select.style.border = '';
+            document.getElementById(select.id + '-error').innerText = '';
+          }
+        });
       });
 
       if (valid) {
@@ -748,6 +792,12 @@
           } else {
             input.style.border = '';
           }
+          input.addEventListener('input', function () {
+          if (input.value.trim()) {
+            input.style.border = '';
+            document.getElementById(input.id + '-error').innerText = '';
+          }
+        });
         }
       });
 
@@ -760,6 +810,12 @@
         } else {
           select.style.border = '';
         }
+        input.addEventListener('input', function () {
+          if (input.value.trim()) {
+            input.style.border = '';
+            document.getElementById(input.id + '-error').innerText = '';
+          }
+        });
       });
 
       updateCheckboxValue4ps(document.getElementById('member4ps'));
@@ -775,58 +831,61 @@
     }
 
     function validateEducation() {
-      const form = document.getElementById('education-form');
-      let valid = true;
+    const form = document.getElementById('education-form');
+    let valid = true;
 
-      form.querySelectorAll('input').forEach((input) => {
-        if (input.hasAttribute('required')) {
-          if (!input.value.trim()) {
-            input.style.border = '2px solid red';
-            document.getElementById(input.id + '-error').innerText = 'This field is required';
-            valid = false;
-          } else {
-            input.style.border = '';
+    form.querySelectorAll('input').forEach((input) => {
+      if (input.hasAttribute('required')) {
+        if (!input.value.trim()) {
+          input.style.border = '2px solid red';
+          const errorElement = document.getElementById(input.id + '-error');
+          if (errorElement) {
+            errorElement.innerText = 'This field is required';
           }
-        }
-      });
-
-      // Validate select fields
-      form.querySelectorAll('select[required]').forEach((select) => {
-        if (select.value === '') {
-          select.style.border = '2px solid red';
-          document.getElementById(select.id + '-error').innerText = 'This field is required';
           valid = false;
         } else {
-          select.style.border = '';
+          input.style.border = '';
+          const errorElement = document.getElementById(input.id + '-error');
+          if (errorElement) {
+            errorElement.innerText = '';
+          }
         }
-      });
+        input.addEventListener('input', function () {
+          if (input.value.trim()) {
+            input.style.border = '';
+            document.getElementById(input.id + '-error').innerText = '';
+          }
+        });
+      }
+    });
 
     // Validate year graduated fields (pyear, syear, lyear)
     ['pyear', 'syear', 'lyear'].forEach((yearId) => {
       const yearInput = document.getElementById(yearId);
-      const yearValue = parseInt(yearInput.value);
-      const currentYear = new Date().getFullYear();
-      
-      if (yearInput.value.length !== 4 || isNaN(yearValue) || yearValue < currentYear - 100 || yearValue > currentYear) {
-        document.getElementById(yearId + '-error').innerText = 'Please enter a valid 4-digit year not exceeding 100 years ago';
-        yearInput.style.border = '2px solid red';
-        valid = false;
-      } else {
-        yearInput.style.border = '';
-        document.getElementById(yearId + '-error').innerText = ''; // Clear error
+      if (yearInput) { // Ensure the field exists before validation
+        const yearValue = parseInt(yearInput.value);
+        const currentYear = new Date().getFullYear();
+        
+        if (yearInput.value.length !== 4 || isNaN(yearValue) || yearValue < currentYear - 100 || yearValue > currentYear) {
+          document.getElementById(yearId + '-error').innerText = 'Please enter a valid 4-digit year not exceeding 100 years ago';
+          yearInput.style.border = '2px solid red';
+          valid = false;
+        } else {
+          yearInput.style.border = '';
+          document.getElementById(yearId + '-error').innerText = ''; // Clear error
+        }
       }
     });
 
-
-      if (valid) {
-        const formData = new FormData(form);
-        formData.forEach((value, key) => { educationInfo[key] = value; });
-        document.querySelector('#headingFive button').disabled = false;
-        var nextAccordion = new bootstrap.Collapse(document.getElementById('collapseFive'), {toggle: true});
-      } else {
-        form.reportValidity();
-      }
+    if (valid) {
+      const formData = new FormData(form);
+      formData.forEach((value, key) => { educationInfo[key] = value; });
+      document.querySelector('#headingFive button').disabled = false;
+      var nextAccordion = new bootstrap.Collapse(document.getElementById('collapseFive'), { toggle: true });
+    } else {
+      form.reportValidity();
     }
+  }
 
     function validateReferral() {
       const form = document.getElementById('referral-form');
@@ -842,6 +901,12 @@
           select.style.border = '';
           document.getElementById(select.id + '-error').innerText = ''; // Clear error message
         }
+        select.addEventListener('change', function () {
+          if (select.value !== '') {
+            select.style.border = '';
+            document.getElementById(select.id + '-error').innerText = '';
+          }
+        });
       });
 
       if (valid) {
@@ -976,6 +1041,13 @@
     }
 
     function confirmAndSubmitData() {
+      
+      const allValid = validateAllFormsAndShowSummary();
+    
+      // If validation fails, stop further execution
+      if (!allValid) {
+          return;
+      }
       // Create a custom confirmation dialog
       const confirmationDialog = document.createElement('div');
       confirmationDialog.className = 'confirmation-dialog';
@@ -1018,20 +1090,28 @@
       document.body.appendChild(confirmationDialog);
 
       // Handle confirmation button click
-      document.getElementById('confirmSubmit').addEventListener('click', () => {
+      document.getElementById('confirmSubmit').addEventListener('click', function () {
+        // Submit data if the user confirms
         submitDataToDatabase();
+        // Remove the confirmation dialog and overlay after submission
         closeConfirmationDialog();
       });
 
       // Handle cancel button click
-      document.getElementById('cancelSubmit').addEventListener('click', () => {
+      document.getElementById('cancelSubmit').addEventListener('click', function () {
+        // Remove the confirmation dialog and overlay if the user cancels
         closeConfirmationDialog();
       });
 
+
       // Function to close the confirmation dialog
       function closeConfirmationDialog() {
-        document.body.removeChild(confirmationDialog);
-        document.body.removeChild(overlay);
+      if (confirmationDialog.parentNode) {
+        confirmationDialog.parentNode.removeChild(confirmationDialog);
+        }
+      if (overlay.parentNode) {
+        overlay.parentNode.removeChild(overlay);
+        }
       }
     }
 
@@ -1090,7 +1170,10 @@
     .then(result => {
       if (result.success) {
         showPopupMessage('Application submitted successfully!', 'success');
-        // Optionally, redirect or reset the form here
+        // Redirect to index.php after a short delay (optional)
+        setTimeout(() => {
+          window.location.href = 'index.php';
+        }, 2000); // Redirects after 2 seconds
       } else {
         showPopupMessage('Failed to submit the application. Please try again.', 'error');
       }
@@ -1106,8 +1189,25 @@
 
     // Function to handle showing the accordion and focusing on the first invalid field
     function focusOnInvalidSection(sectionId, invalidField) {
-        var accordion = new bootstrap.Collapse(document.getElementById(sectionId), {toggle: true});
+        var accordion = new bootstrap.Collapse(document.getElementById(sectionId), { toggle: true });
         invalidField.focus();
+    }
+
+    // Function to close all accordions except the specified one
+    function closeAllAccordionsExcept(exceptAccordionId) {
+        const accordions = document.querySelectorAll('.accordion-collapse');
+        accordions.forEach((accordion) => {
+            if (accordion.id !== exceptAccordionId) {
+                var collapseInstance = new bootstrap.Collapse(accordion, { toggle: false });
+                collapseInstance.hide(); // Collapse the section
+            }
+        });
+    }
+
+    // Close the summary accordion function
+    function closeSummaryAccordion() {
+        var summaryAccordion = new bootstrap.Collapse(document.getElementById('collapseSix'), { toggle: false });
+        summaryAccordion.hide(); // Explicitly hide the summary accordion
     }
 
     // Basic Information Form Validation
@@ -1115,9 +1215,12 @@
     let basicInfoValid = validateFormFields(basicInfoForm);
     if (!basicInfoValid) {
         allValid = false;
+        closeAllAccordionsExcept('collapseOne');
         focusOnInvalidSection('collapseOne', basicInfoForm.querySelector('.is-invalid'));
         disableSubsequentAccordions('collapseOne');
-        return;
+        ; // Disable submit button if there's an error
+        closeSummaryAccordion(); // Close summary accordion
+        return false; // Stop further validation
     }
 
     // Address Form Validation
@@ -1125,9 +1228,12 @@
     let addressValid = validateFormFields(addressForm);
     if (!addressValid) {
         allValid = false;
+        closeAllAccordionsExcept('collapseTwo');
         focusOnInvalidSection('collapseTwo', addressForm.querySelector('.is-invalid'));
         disableSubsequentAccordions('collapseTwo');
-        return;
+        ; // Disable submit button if there's an error
+        closeSummaryAccordion(); // Close summary accordion
+        return false; // Stop further validation
     }
 
     // Guardian Form Validation
@@ -1135,9 +1241,12 @@
     let guardianValid = validateFormFields(guardianForm);
     if (!guardianValid) {
         allValid = false;
+        closeAllAccordionsExcept('collapseThree');
         focusOnInvalidSection('collapseThree', guardianForm.querySelector('.is-invalid'));
         disableSubsequentAccordions('collapseThree');
-        return;
+        ; // Disable submit button if there's an error
+        closeSummaryAccordion(); // Close summary accordion
+        return false; // Stop further validation
     }
 
     // Education Form Validation
@@ -1145,9 +1254,12 @@
     let educationValid = validateFormFields(educationForm);
     if (!educationValid) {
         allValid = false;
+        closeAllAccordionsExcept('collapseFour');
         focusOnInvalidSection('collapseFour', educationForm.querySelector('.is-invalid'));
         disableSubsequentAccordions('collapseFour');
-        return;
+        ; // Disable submit button if there's an error
+        closeSummaryAccordion(); // Close summary accordion
+        return false; // Stop further validation
     }
 
     // Referral Form Validation
@@ -1155,33 +1267,31 @@
     let referralValid = validateFormFields(referralForm);
     if (!referralValid) {
         allValid = false;
+        closeAllAccordionsExcept('collapseFive');
         focusOnInvalidSection('collapseFive', referralForm.querySelector('.is-invalid'));
         disableSubsequentAccordions('collapseFive');
-        return;
+        ; // Disable submit button if there's an error
+        closeSummaryAccordion(); // Close summary accordion
+        return false; // Stop further validation
     }
-
-    // If all validations pass, move to the Summary section
-    if (allValid) {
-        enableAccordion('collapseSix');
-        var nextAccordion = new bootstrap.Collapse(document.getElementById('collapseSix'), {toggle: true});
-    }
+    return true;
   }
 
-// Function to validate form fields
+  // Function to validate form fields
   function validateFormFields(form) {
     let valid = true;
     form.querySelectorAll('input, select, textarea').forEach((field) => {
-      if (field.hasAttribute('required') && !field.value.trim()) {
-        field.classList.add('is-invalid');
-        valid = false;
-      } else {
-        field.classList.remove('is-invalid');
-      }
+        if (field.hasAttribute('required') && !field.value.trim()) {
+            field.classList.add('is-invalid');
+            valid = false;
+        } else {
+            field.classList.remove('is-invalid');
+        }
     });
     return valid;
   }
 
-  // Function to disable accordions
+  // Function to disable subsequent accordions
   function disableSubsequentAccordions(currentAccordionId) {
     const accordionHeaders = document.querySelectorAll('.accordion-header button');
     let disable = false;
@@ -1198,17 +1308,9 @@
   function enableAccordion(accordionId) {
     const button = document.querySelector(`button[data-bs-target="#${accordionId}"]`);
     if (button) {
-      button.disabled = false;
+        button.disabled = false;
     }
   }
-
-  // Function to close the summary accordion
-  function closeSummaryAccordion() {
-      var summaryAccordion = new bootstrap.Collapse(document.getElementById('collapseSix'), { toggle: false });
-  }
-
-  // Add event listener to the Summary button
-  document.getElementById('summaryButton').addEventListener('click', validateAllFormsAndShowSummary);
 
   </script>
 
