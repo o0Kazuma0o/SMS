@@ -161,6 +161,12 @@
       <li class="nav-heading">TEST REGISTRAR</li>
 
       <li class="nav-item">
+        <a class="nav-link " href="manage_academic_year.php">
+          <i class="bi bi-grid"></i>
+          <span>Academic Year</span>
+        </a>
+      </li>
+      <li class="nav-item">
         <a class="nav-link " href="manage_departments.php">
           <i class="bi bi-grid"></i>
           <span>Department</span>

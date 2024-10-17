@@ -159,7 +159,13 @@
       <hr class="sidebar-divider">
 
       <li class="nav-heading">TEST REGISTRAR</li>
-
+      
+      <li class="nav-item">
+        <a class="nav-link " href="manage_academic_year.php">
+          <i class="bi bi-grid"></i>
+          <span>Academic Year</span>
+        </a>
+      </li>
       <li class="nav-item">
         <a class="nav-link " href="manage_departments.php">
           <i class="bi bi-grid"></i>
@@ -226,14 +232,10 @@
                       <th>Sex</th>
                       <th>Department</th>
                       <th>Year Level</th>
-                      <th>Civil Status</th>
-                      <th>Email</th>
-                      <th>Contact #</th>
-                      <th>Working Student</th>
-                      <th>Address</th>
-                      <th>Religion</th>
+                      <th>Information</th>
+                      <th>Date Submitted</th>
                       <th>Status</th>
-
+                      <th>Action</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -243,13 +245,14 @@
                       <td>Male</td>
                       <td>BSIT</td>
                       <td>1st Year</td>
-                      <td>Single</td>
-                      <td>malupet@gmail.com</td>
-                      <td>09123456789</td>
-                      <td>Yes</td>
-                      <td>Brgy. Gaya-Gaya, San Jose del Monte, Bulacan</td>
-                      <td>Christian</td>
+                      <td>
+                        <!-- Button here to see the rest of the info -->
+                      </td>
+                      <td>2022/02/11</td>
                       <td><span class="badge bg-warning">Pending</span></td>
+                      <td>
+                        <!-- Approve and Decline Button -->
+                      </td>
                     </tr>
                   </tbody>
                 </table>

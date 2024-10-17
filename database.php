@@ -731,3 +731,66 @@ $timetables = $conn->query("
     JOIN sms3_rooms r ON t.room_id = r.id
     JOIN sms3_departments d ON sec.department_id = d.id");
 
+// Function to add an academic year
+function addAcademicYear($academicYear, $setCurrent) {
+    global $conn;
+    try {
+        $conn->begin_transaction();
+
+        // If the new academic year should be set as current, reset all others to 0
+        if ($setCurrent) {
+            $resetCurrent = "UPDATE sms3_academic_years SET is_current = 0 WHERE is_current = 1";
+            $conn->query($resetCurrent);
+        }
+
+        // Insert the new academic year
+        $stmt = $conn->prepare("INSERT INTO sms3_academic_years (academic_year, is_current) VALUES (?, ?)");
+        $stmt->bind_param("si", $academicYear, $setCurrent);
+        $stmt->execute();
+
+        $conn->commit();
+        return true;
+    } catch (Exception $e) {
+        $conn->rollback();
+        return false;
+    }
+}
+
+// Function to get all academic years
+function getAcademicYears() {
+    global $conn;
+    $query = "SELECT * FROM sms3_academic_years ORDER BY id DESC";
+    return $conn->query($query);
+}
+
+// Function to set an academic year as current
+function setCurrentAcademicYear($id) {
+    global $conn;
+    try {
+        $conn->begin_transaction();
+
+        // Reset all others to 0
+        $resetCurrent = "UPDATE sms3_academic_years SET is_current = 0 WHERE is_current = 1";
+        $conn->query($resetCurrent);
+
+        // Set the specified academic year as current
+        $setCurrent = "UPDATE sms3_academic_years SET is_current = 1 WHERE id = ?";
+        $stmt = $conn->prepare($setCurrent);
+        $stmt->bind_param("i", $id);
+        $stmt->execute();
+
+        $conn->commit();
+        return true;
+    } catch (Exception $e) {
+        $conn->rollback();
+        return false;
+    }
+}
+
+// Function to delete an academic year
+function deleteAcademicYear($id) {
+    global $conn;
+    $stmt = $conn->prepare("DELETE FROM sms3_academic_years WHERE id = ?");
+    $stmt->bind_param("i", $id);
+    return $stmt->execute();
+}

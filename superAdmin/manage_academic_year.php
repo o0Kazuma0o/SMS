@@ -1,3 +1,21 @@
+<?php require('../database.php');
+
+// Handle form submission to add an academic year
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['academic_year'])) {
+  $academicYear = $_POST['academic_year'];
+  $setCurrent = isset($_POST['set_current']) ? 1 : 0;
+  
+  if (addAcademicYear($academicYear, $setCurrent)) {
+      $success = "Academic year added successfully.";
+  } else {
+      $error = "Error adding academic year.";
+  }
+}
+
+// Get all academic years
+$academicYears = getAcademicYears();
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -5,7 +23,7 @@
   <meta charset="utf-8">
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
 
-  <title>Admission</title>
+  <title>Academic</title>
   <meta content="" name="description">
   <meta content="" name="keywords">
 
@@ -29,6 +47,21 @@
   <!-- Template Main CSS File -->
   <link href="../assets/css/style.css" rel="stylesheet">
 
+  <style>
+    .alert {
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 5px;
+    }
+    .alert-success {
+      background-color: #d4edda;
+      color: #155724;
+    }
+    .alert-danger {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+  </style>
 </head>
 
 <body>
@@ -147,7 +180,7 @@
           <i class="bi bi-grid"></i>
           <span>Admission</span>
         </a>
-      </li><!-- End System Nav -->
+      </li>
 
       <li class="nav-item">
         <a class="nav-link " href="enrolled.php">
@@ -207,144 +240,123 @@
   <main id="main" class="main">
 
     <div class="pagetitle">
-      <h1>Admission</h1>
+      <h1>Dashboard</h1>
       <nav>
         <ol class="breadcrumb">
-          <li class="breadcrumb-item"><a href="Adashboard.php">Dashboard</a></li>
-          <li class="breadcrumb-item">Enrolled BSIT</li>
-          <li class="breadcrumb-item active">1st Year</li>
+          <li class="breadcrumb-item"><a href="index.html">Home</a></li>
+          <li class="breadcrumb-item active">Dashboard</li>
         </ol>
       </nav>
     </div><!-- End Page Title -->
 
     <section class="section">
-      <div class="col-lg-12">
+      <div class="row">
+        <div class="col-lg-12">
           <div class="card">
             <div class="card-body">
-              <h5 class="card-title">List of Student</h5>
-              <!-- Table with stripped rows -->
-              <table class="table datatable">
+              <h5 class="card-title">Add New Academic Year</h5>
+
+              <form action="manage_academic_year.php" method="POST">
+                <div class="mb-3">
+                  <label for="academicYear" class="form-label">Academic Year</label>
+                  <input type="text" class="form-control" id="academicYear" name="academic_year" placeholder="2023-2024" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Add Academic Year</button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-12">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">Academic Year List</h5>
+
+              <table class="table">
                 <thead>
                   <tr>
-                    <th>Student ID</th>
-                    <th>Name</th>
-                    <th data-type="date" data-format="YYYY/DD/MM">Date Enrolled</th>
-                    <th>Academic Year</th>
-                    <th>Department</th>
-                    <th>Section</th>
-                    <th>Year Level</th>
-                    <th>Subjects</th>
-                    <th>Status</th>
+                    <th scope="col">Academic Year</th>
+                    <th scope="col">Set as Current</th>
+                    <th scope="col">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr>
-                    <td>24121232</td>
-                    <td>Ken Nat</td>
-                    <td>2024/08/07</td>
-                    <td>2024-2025</td>
-                    <td>BSIT</td>
-                    <td>1101</td>
-                    <td>1st Year</td>
-                    <td><!-- Modal Here -->
-                      <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#viewsub">
-                      View
-                      </button>
-                      <div class="modal fade" id="viewsub" tabindex="-1">
-                        <div class="modal-dialog modal-dialog-centered modal-lg">
-                          <div class="modal-content">
-                            <div class="modal-header">
-                              <h5 class="modal-title">Subjects</h5>
-                              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                            </div>
-                            <div class="modal-body">
-                              <table class="table">
-                                <thead>
-                                  <tr>
-                                    <th>Subject Code</th>
-                                    <th>Subject Name</th>
-                                    <th>Room</th>
-                                    <th>Schedule</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  <tr>
-                                    <td>ITSP 1</td>
-                                    <td>Software Engineering</td>
-                                    <td>Lab 1</td>
-                                    <td>Monday, 8:00 AM - 10:00 AM</td>
-                                  </tr>
-                                </tbody>
-                              </table>
-                            </div>
-                            <div class="modal-footer">
-                              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                              <button type="button" class="btn btn-primary">Save changes</button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td><span class="badge bg-success">Enrolled</span></td>
-                  </tr>
-                  <tr>
-                    <td>24121232</td>
-                    <td>Ken Nat</td>
-                    <td>2024/08/07</td>
-                    <td>2024-2025</td>
-                    <td>BSIT</td>
-                    <td>1101</td>
-                    <td>1st Year</td>
-                    <td><!-- Modal Here -->
-                      <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#viewsub">
-                      View
-                      </button>
-                      <div class="modal fade" id="viewsub" tabindex="-1">
-                        <div class="modal-dialog modal-dialog-centered modal-lg">
-                          <div class="modal-content">
-                            <div class="modal-header">
-                              <h5 class="modal-title">Subjects</h5>
-                              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                            </div>
-                            <div class="modal-body">
-                              <table class="table">
-                                <thead>
-                                  <tr>
-                                    <th>Subject Code</th>
-                                    <th>Subject Name</th>
-                                    <th>Room</th>
-                                    <th>Schedule</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  <tr>
-                                    <td>ITSP 1</td>
-                                    <td>Software Engineering</td>
-                                    <td>Lab 1</td>
-                                    <td>Monday, 8:00 AM - 10:00 AM</td>
-                                  </tr>
-                                </tbody>
-                              </table>
-                            </div>
-                            <div class="modal-footer">
-                              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                              <button type="button" class="btn btn-primary">Save changes</button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td><span class="badge bg-success">Enrolled</span></td>
-                  </tr>
+                  <?php
+                  $query = "SELECT * FROM sms3_academic_years ORDER BY id DESC";
+                  $result = $conn->query($query);
+                  if ($result->num_rows > 0) {
+                    $i = 1;
+                    while ($row = $result->fetch_assoc()) {
+                      $isCurrent = $row['is_current'] ? 'Yes' : 'No';
+                      echo "<tr>
+                              <td>" . $row['academic_year'] . "</td>
+                              <td>" . ($row['is_current'] ? '<span class="badge bg-success">Current</span>' : '<button class="btn btn-sm btn-primary" onclick="setCurrentAcademicYear(' . $row['id'] . ')">Set as Current</button>') . "</td>
+                              <td>
+                                <button class='btn btn-sm btn-danger' onclick='deleteAcademicYear(" . $row['id'] . ")'>Delete</button>
+                              </td>
+                            </tr>";
+                    }
+                  } else {
+                    echo "<tr><td colspan='4' class='text-center'>No academic years found</td></tr>";
+                  }
+                  ?>
                 </tbody>
               </table>
-              <!-- End Table with stripped rows -->
             </div>
           </div>
+        </div>
       </div>
     </section>
 
   </main><!-- End #main -->
+
+  <script>
+  function setCurrentAcademicYear(id) {
+    if (confirm('Are you sure you want to set this academic year as current?')) {
+      fetch('set_academic_year.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+            alert('Academic year set as current successfully.');
+            location.reload();
+        } else {
+            alert('Failed to set the academic year.');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while setting the academic year.');
+      });
+    }
+  }
+
+  function deleteAcademicYear(id) {
+    if (confirm('Are you sure you want to delete this academic year?')) {
+      fetch('delete_academic_year.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+      })
+      .then(response => response.json())
+      .then(data => {
+          if (data.success) {
+              alert('Academic year deleted successfully.');
+              location.reload();
+          } else {
+              alert('Failed to delete the academic year.');
+          }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while deleting the academic year.');
+      });
+    }
+  }
+  </script>
 
   <!-- ======= Footer ======= -->
   <footer id="footer" class="footer">
