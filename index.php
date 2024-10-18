@@ -1,6 +1,11 @@
 <?php
 require('database.php');
 
+$timeoutMessage = '';
+if (isset($_GET['timeout']) && $_GET['timeout'] === 'true') {
+    $timeoutMessage = "Your session has expired due to inactivity. Please log in again.";
+}
+
 // Check if the form is submitted
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $username = $_POST['username'];
@@ -29,9 +34,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         // Check if a user is found
         if ($result->num_rows > 0) {
             $user = $result->fetch_assoc();
-
-            // Debugging output for checking if user is found
-            error_log("User found: " . print_r($user, true));
 
             // Plain text password verification (not recommended for production)
             if ($user['password'] === $password) {

@@ -1,20 +1,34 @@
 <?php require('../database.php');
+require('../access_control.php'); // Include the file with the checkAccess function
+checkAccess('superadmin'); // Ensure only users with the 'admin' role can access this page
 
 // Handle status update requests
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_id'], $_POST['status'])) {
   $admissionId = intval($_POST['admission_id']);
   $status = $_POST['status'];
 
-  // Update the status in the database
-  $stmt = $conn->prepare("UPDATE sms3_pending_admission SET status = ? WHERE id = ?");
-  $stmt->bind_param("si", $status, $admissionId);
+// If the status is 'Rejected', delete the record
+if ($status === 'Rejected') {
+  $stmt = $conn->prepare("DELETE FROM sms3_pending_admission WHERE id = ?");
+  $stmt->bind_param("i", $admissionId);
 
   if ($stmt->execute()) {
-      echo json_encode(['success' => true, 'message' => 'Admission status updated successfully.']);
+      echo json_encode(['success' => true, 'message' => 'Admission record deleted successfully.']);
   } else {
-      echo json_encode(['success' => false, 'message' => 'Failed to update admission status.']);
+      echo json_encode(['success' => false, 'message' => 'Failed to delete admission record.']);
   }
-  exit; // Terminate the script after handling the AJAX request
+  } else {
+    // Update the status in the database if it's not 'Rejected'
+    $stmt = $conn->prepare("UPDATE sms3_pending_admission SET status = ? WHERE id = ?");
+    $stmt->bind_param("si", $status, $admissionId);
+
+    if ($stmt->execute()) {
+        echo json_encode(['success' => true, 'message' => 'Admission status updated successfully.']);
+    } else {
+        echo json_encode(['success' => false, 'message' => 'Failed to update admission status.']);
+    }
+  }
+exit; // Terminate the script after handling the AJAX request
 }
 
 // Fetch all pending admissions
