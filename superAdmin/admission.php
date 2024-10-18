@@ -1,3 +1,16 @@
+<?php require('../database.php');
+// Initialize the $result variable
+
+// Fetch all pending admissions
+$query = "SELECT * FROM sms3_pending_admission ORDER BY created_at DESC";
+$result = $conn->query($query);
+
+// Check if the query was successful
+if (!$result) {
+    $queryError = "Failed to execute query: " . $conn->error;
+}
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -239,21 +252,34 @@
                     </tr>
                   </thead>
                   <tbody>
-                    <tr>
-                      <td>Unity Pugh</td>
-                      <td>2005/02/11</td>
-                      <td>Male</td>
-                      <td>BSIT</td>
-                      <td>1st Year</td>
-                      <td>
-                        <!-- Button here to see the rest of the info -->
-                      </td>
-                      <td>2022/02/11</td>
-                      <td><span class="badge bg-warning">Pending</span></td>
-                      <td>
-                        <!-- Approve and Decline Button -->
-                      </td>
-                    </tr>
+                    <?php if ($result && $result->num_rows > 0): ?>
+                      <?php while ($row = $result->fetch_assoc()): ?>
+                        <tr>
+                          <td><?= htmlspecialchars($row['full_name']) ?></td>
+                          <td><?= htmlspecialchars($row['birthday']) ?></td>
+                          <td><?= htmlspecialchars($row['sex']) ?></td>
+                          <td><?= htmlspecialchars($row['program']) ?></td>
+                          <td><?= htmlspecialchars($row['year_level']) ?></td>
+                          <td>
+                              <button class="btn btn-info btn-sm" onclick="viewInformation(<?= $row['id'] ?>)">View Information</button>
+                          </td>
+                          <td><?= htmlspecialchars($row['created_at']) ?></td>
+                          <td>
+                              <span class="badge bg-<?= $row['status'] == 'Pending' ? 'warning' : ($row['status'] == 'Approved' ? 'success' : 'danger') ?>">
+                                  <?= htmlspecialchars($row['status']) ?>
+                              </span>
+                          </td>
+                          <td>
+                              <button class="btn btn-sm btn-success" onclick="updateAdmissionStatus(<?= $row['id'] ?>, 'Approved')">Approve</button>
+                              <button class="btn btn-sm btn-danger" onclick="updateAdmissionStatus(<?= $row['id'] ?>, 'Rejected')">Reject</button>
+                          </td>
+                        </tr>
+                      <?php endwhile; ?>
+                    <?php else: ?>
+                      <tr>
+                          <td colspan="9" class="text-center">No admissions found</td>
+                      </tr>
+                    <?php endif; ?>
                   </tbody>
                 </table>
               </div>
@@ -264,6 +290,95 @@
     </section>
 
   </main><!-- End #main -->
+
+  <div class="modal fade" id="informationModal" tabindex="-1" aria-labelledby="informationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="informationModalLabel">Admission Information</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" id="informationContent">
+            <!-- Information will be loaded here dynamically -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+
+  // Initialize the datatable after checking if the table exists
+  document.addEventListener("DOMContentLoaded", function() {
+    var table = document.querySelector("#admissionTable");
+    if (table) {
+      new simpleDatatables.DataTable(table);
+    }
+  });
+
+  function viewInformation(id) {
+    // Fetch additional information using AJAX
+    fetch('get_admission_info.php?id=' + id)
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        // Populate the modal content
+        const info = data.info;
+        const content = `
+          <p><strong>Email:</strong> ${info.email || 'N/A'}</p>
+          <p><strong>Contact Number:</strong> ${info.contact_number || 'N/A'}</p>
+          <p><strong>Facebook Name:</strong> ${info.facebook_name || 'N/A'}</p>
+          <p><strong>Working Student:</strong> ${info.working_student === 'Yes' ? 'Yes' : 'No'}</p>
+          <p><strong>Address:</strong> ${info.address || 'N/A'}</p>
+          <p><strong>Civil Status:</strong> ${info.civil_status || 'N/A'}</p>
+          <p><strong>Religion:</strong> ${info.religion || 'N/A'}</p>
+          <p><strong>Father's Name:</strong> ${info.father_name || 'N/A'}</p>
+          <p><strong>Mother's Name:</strong> ${info.mother_name || 'N/A'}</p>
+          <p><strong>Guardian's Name:</strong> ${info.guardian_name || 'N/A'}</p>
+          <p><strong>Guardian's Contact:</strong> ${info.guardian_contact || 'N/A'}</p>
+          <p><strong>Member 4Ps:</strong> ${info.member4ps === 'Yes' ? 'Yes' : 'No'}</p>
+          <p><strong>Primary School:</strong> ${info.primary_school || 'N/A'} (${info.primary_year || 'N/A'})</p>
+          <p><strong>Secondary School:</strong> ${info.secondary_school || 'N/A'} (${info.secondary_year || 'N/A'})</p>
+          <p><strong>Last School Attended:</strong> ${info.last_school || 'N/A'} (${info.last_school_year || 'N/A'})</p>
+          <p><strong>Referral Source:</strong> ${info.referral_source || 'N/A'}</p>
+        `;
+        document.getElementById('informationContent').innerHTML = content;
+        // Show the modal
+        new bootstrap.Modal(document.getElementById('informationModal')).show();
+      } else {
+          alert('Failed to fetch admission information.');
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      alert('An error occurred while fetching the information.');
+    });
+  }
+
+  function updateAdmissionStatus(id, status) {
+    if (confirm(`Are you sure you want to ${status.toLowerCase()} this admission?`)) {
+      fetch('update_admission_status.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ id, status })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+            alert('Admission status updated successfully.');
+            location.reload();
+        } else {
+            alert('Failed to update admission status.');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while updating the admission status.');
+      });
+    }
+  }
+  </script>
 
   <!-- ======= Footer ======= -->
   <footer id="footer" class="footer">
