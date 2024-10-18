@@ -1,8 +1,24 @@
 <?php require('../database.php');
-// Initialize the $result variable
+
+// Handle status update requests
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_id'], $_POST['status'])) {
+  $admissionId = intval($_POST['admission_id']);
+  $status = $_POST['status'];
+
+  // Update the status in the database
+  $stmt = $conn->prepare("UPDATE sms3_pending_admission SET status = ? WHERE id = ?");
+  $stmt->bind_param("si", $status, $admissionId);
+
+  if ($stmt->execute()) {
+      echo json_encode(['success' => true, 'message' => 'Admission status updated successfully.']);
+  } else {
+      echo json_encode(['success' => false, 'message' => 'Failed to update admission status.']);
+  }
+  exit; // Terminate the script after handling the AJAX request
+}
 
 // Fetch all pending admissions
-$query = "SELECT * FROM sms3_pending_admission ORDER BY created_at DESC";
+$query = "SELECT * FROM sms3_pending_admission WHERE status = 'Pending' ORDER BY created_at DESC";
 $result = $conn->query($query);
 
 // Check if the query was successful
@@ -354,30 +370,39 @@ if (!$result) {
     });
   }
 
-  function updateAdmissionStatus(id, status) {
-    if (confirm(`Are you sure you want to ${status.toLowerCase()} this admission?`)) {
-      fetch('update_admission_status.php', {
+  // JavaScript function to update admission status
+  function updateAdmissionStatus(admissionId, status) {
+    if (!confirm('Are you sure you want to update the status to ' + status + '?')) {
+        return;
+    }
+
+    // Send an AJAX request to update the status
+    fetch('admission.php', {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/x-www-form-urlencoded'
         },
-        body: JSON.stringify({ id, status })
-      })
-      .then(response => response.json())
-      .then(data => {
+        body: new URLSearchParams({
+            'admission_id': admissionId,
+            'status': status
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
         if (data.success) {
-            alert('Admission status updated successfully.');
+            alert('Status updated successfully.');
             location.reload();
         } else {
-            alert('Failed to update admission status.');
+            alert('Failed to update status: ' + data.message);
         }
-      })
-      .catch(error => {
+    })
+    .catch(error => {
         console.error('Error:', error);
-        alert('An error occurred while updating the admission status.');
-      });
-    }
+        alert('An error occurred while updating the status.');
+    });
   }
+
+  
   </script>
 
   <!-- ======= Footer ======= -->
