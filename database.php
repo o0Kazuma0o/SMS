@@ -529,7 +529,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_timetable'])) 
                 // 1. Check if the subject already exists in the same section (ignoring the day)
                 $stmt = $conn->prepare("
                     SELECT COUNT(*) 
-                    FROM timetable 
+                    FROM sms3_timetable 
                     WHERE section_id = ? 
                     AND subject_id = ?");
                 $stmt->bind_param("ii", $section_id, $subject_id);
@@ -549,7 +549,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_timetable'])) 
                 // 2. Check for time conflicts within the section on the same day
                 $stmt = $conn->prepare("
                     SELECT COUNT(*) 
-                    FROM timetable 
+                    FROM sms3_timetable 
                     WHERE section_id = ? 
                     AND day_of_week = ? 
                     AND ((start_time < ? AND end_time > ?) OR (start_time < ? AND end_time > ?))

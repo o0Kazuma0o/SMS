@@ -34,6 +34,63 @@ checkAccess('superadmin'); // Ensure only users with the 'admin' role can access
   <!-- Template Main CSS File -->
   <link href="../assets/css/style.css" rel="stylesheet">
 
+  <style>
+    .modal {
+        display: none; 
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+    .modal-content {
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 5px;
+        text-align: center;
+        width: 300px;
+    }
+    .modal-buttons {
+        margin-top: 20px;
+        display: flex;
+        justify-content: space-between;
+    }
+    .btn-danger {
+        background-color: #dc3545;
+        color: white;
+    }
+    .btn-secondary {
+        background-color: #6c757d;
+        color: white;
+    }
+    .btn:hover {
+        opacity: 0.8;
+    }
+
+    .popup-message {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1000;
+        padding: 15px;
+        border-radius: 5px;
+        font-size: 16px;
+        color: #fff;
+        opacity: 0;
+        transition: opacity 0.5s ease-in-out;
+    }
+    .popup-message.success {
+        background-color: green;
+    }
+    .popup-message.error {
+        background-color: red;
+    }
+  </style>
+
 </head>
 
 <body>
@@ -221,18 +278,15 @@ checkAccess('superadmin'); // Ensure only users with the 'admin' role can access
       </nav>
     </div><!-- End Page Title -->
 
-      <!-- Display JavaScript popup if an error or success message is set -->
-  <script>
-    window.onload = function() {
-      <?php if (isset($_SESSION['error_message'])): ?>
-        alert('<?= $_SESSION['error_message']; ?>');
-        <?php unset($_SESSION['error_message']); ?>
-      <?php elseif (isset($_SESSION['success_message'])): ?>
-        alert('<?= $_SESSION['success_message']; ?>');
-        <?php unset($_SESSION['success_message']); ?>
-      <?php endif; ?>
-    };
-  </script>
+  <div id="confirmationModal" class="modal">
+      <div class="modal-content">
+          <p id="confirmationMessage">Are you sure you want to delete this department?</p>
+          <div class="modal-buttons">
+              <button id="confirmDelete" class="btn btn-danger">Delete</button>
+              <button id="cancelDelete" class="btn btn-secondary">Cancel</button>
+          </div>
+      </div>
+  </div>
 
     <section class="section dashboard">
       <div class="card">
@@ -281,15 +335,15 @@ checkAccess('superadmin'); // Ensure only users with the 'admin' role can access
             <tbody>
               <?php while ($department = $departments->fetch_assoc()): ?>
               <tr>
-                  <td><?= $department['department_code']; ?></td>
-                  <td><?= $department['department_name']; ?></td>
-                  <td>
+                <td><?= $department['department_code']; ?></td>
+                <td><?= $department['department_name']; ?></td>
+                <td>
                   <a href="manage_departments.php?edit_department_id=<?= $department['id']; ?>" 
-                  class="btn btn-info btn-sm">Edit</a>
+                    class="btn btn-info btn-sm">Edit</a>
                   <a href="manage_departments.php?delete_department_id=<?= $department['id']; ?>" 
-                  class="btn btn-danger btn-sm"
-                  onclick="return confirm('Are you sure you want to delete this department?')">Delete</a>
-                  </td>
+                    class="btn btn-danger btn-sm delete-link" 
+                    data-department-name="<?= $department['department_name']; ?>">Delete</a>
+                </td>
               </tr>
               <?php endwhile; ?>
             </tbody>
@@ -299,6 +353,84 @@ checkAccess('superadmin'); // Ensure only users with the 'admin' role can access
     </section>
 
   </main><!-- End #main -->
+
+  <script>
+    function showConfirmationModal(message, onConfirm) {
+      const modal = document.getElementById('confirmationModal');
+      const confirmDeleteBtn = document.getElementById('confirmDelete');
+      const cancelDeleteBtn = document.getElementById('cancelDelete');
+      const confirmationMessage = document.getElementById('confirmationMessage');
+
+      confirmationMessage.innerText = message;
+      modal.style.display = 'flex';
+
+      confirmDeleteBtn.onclick = () => {
+          onConfirm();
+          closeModal();
+      };
+
+      cancelDeleteBtn.onclick = closeModal;
+
+      function closeModal() {
+          modal.style.display = 'none';
+      }
+    }
+
+    document.querySelectorAll('.delete-link').forEach(button => {
+      button.addEventListener('click', function(event) {
+          event.preventDefault();
+          const deleteUrl = this.href;
+          const departmentName = this.getAttribute('data-department-name');
+
+          showConfirmationModal(`Are you sure you want to delete the Department: ${departmentName}?`, () => {
+              window.location.href = deleteUrl;
+          });
+      });
+    });
+
+    function showPopupMessage(message, type = 'success') {
+      // Create the popup element
+      const popup = document.createElement('div');
+      popup.className = `popup-message ${type}`;
+      popup.innerText = message;
+
+      // Style the popup element
+      popup.style.position = 'fixed';
+      popup.style.top = '20px';
+      popup.style.right = '20px';
+      popup.style.padding = '15px';
+      popup.style.zIndex = '1000';
+      popup.style.borderRadius = '5px';
+      popup.style.color = '#fff';
+      popup.style.fontSize = '16px';
+      popup.style.backgroundColor = type === 'success' ? 'green' : 'red';
+      popup.style.opacity = '1';
+      popup.style.transition = 'opacity 0.5s ease';
+
+      // Add the popup to the document
+      document.body.appendChild(popup);
+
+      // Fade out after 3 seconds
+      setTimeout(() => {
+          popup.style.opacity = '0';
+          // Remove the element after the transition ends
+          setTimeout(() => {
+              popup.remove();
+          }, 500);
+      }, 3000);
+    }
+
+    // Trigger the popup based on the session message
+    window.onload = function() {
+      <?php if (isset($_SESSION['error_message'])): ?>
+          showPopupMessage('<?= $_SESSION['error_message']; ?>', 'error');
+          <?php unset($_SESSION['error_message']); ?>
+      <?php elseif (isset($_SESSION['success_message'])): ?>
+          showPopupMessage('<?= $_SESSION['success_message']; ?>', 'success');
+          <?php unset($_SESSION['success_message']); ?>
+      <?php endif; ?>
+    };
+  </script>
 
   <!-- ======= Footer ======= -->
   <footer id="footer" class="footer">

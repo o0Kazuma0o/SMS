@@ -34,6 +34,62 @@ checkAccess('superadmin'); // Ensure only users with the 'admin' role can access
   <!-- Template Main CSS File -->
   <link href="../assets/css/style.css" rel="stylesheet">
 
+  <style>
+    #confirmationModal {
+        display: none; 
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        justify-content: center;
+        align-items: center;
+        z-index: 1100;
+    }
+    #confirmationModalContent {
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 5px;
+        text-align: center;
+        width: 300px;
+    }
+    .modal-buttons {
+        margin-top: 20px;
+        display: flex;
+        justify-content: space-between;
+    }
+    .btn-danger {
+        background-color: #dc3545;
+        color: white;
+    }
+    .btn-secondary {
+        background-color: #6c757d;
+        color: white;
+    }
+    .btn:hover {
+        opacity: 0.8;
+    }
+
+    .popup-message {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1000;
+        padding: 15px;
+        border-radius: 5px;
+        font-size: 16px;
+        color: #fff;
+        opacity: 0;
+        transition: opacity 0.5s ease-in-out;
+    }
+    .popup-message.success {
+        background-color: green;
+    }
+    .popup-message.error {
+        background-color: red;
+    }
+  </style>
 </head>
 
 <body>
@@ -221,31 +277,22 @@ checkAccess('superadmin'); // Ensure only users with the 'admin' role can access
       </nav>
     </div><!-- End Page Title -->
 
-    <script>
-    window.onload = function() {
-      <?php if (isset($_SESSION['error_message'])): ?>
-        alert('<?= $_SESSION['error_message']; ?>');
-        <?php unset($_SESSION['error_message']); ?>
-      <?php elseif (isset($_SESSION['success_message'])): ?>
-        alert('<?= $_SESSION['success_message']; ?>');
-        <?php unset($_SESSION['success_message']); ?>
-      <?php endif; ?>
-    };
-    </script>
-
+    <div id="confirmationModal" class="modal">
+      <div class="modal-content" id="confirmationModalContent">
+          <p id="confirmationMessage">Are you sure you want to delete this Timetable?</p>
+          <div class="modal-buttons">
+              <button id="confirmDelete" class="btn btn-danger">Delete</button>
+              <button id="cancelDelete" class="btn btn-secondary">Cancel</button>
+          </div>
+      </div>
+    </div>
 
     <section class="section dashboard">
     <div class="row">
 
       <div class="card">
         <div class="card-body">
-        <h5 class="card-title">
-          <?php if (isset($_GET['edit_timetable_id'])): ?>
-          Edit Timetable
-        <?php else: ?>
-          Add Timetable
-        <?php endif; ?>
-        </h5>
+        <h5 class="card-title"></h5>
           <!-- Add Timetable Form -->
           <form action="manage_timetable.php" method="POST" class="mb-4" onsubmit="return validateTimetableForm();">
 
@@ -326,7 +373,7 @@ checkAccess('superadmin'); // Ensure only users with the 'admin' role can access
                         <button class="btn btn-info btn-sm" onclick="viewTimetableDetails(<?= $timetable['id']; ?>)">View Timetable</button>
                     </td>
                     <td>
-                    <a href="manage_timetable.php?delete_timetable_id=<?= $timetable['id']; ?>" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete the entire timetable?')">Delete</a>
+                    <a href="manage_timetable.php?delete_timetable_id=<?= $timetable['id']; ?>" class="btn btn-danger btn-sm delete-link" data-timetable-id="<?= $timetable['section_number']; ?>">Delete</a>
                     </td>
                 </tr>
                 <?php endwhile; ?>
@@ -458,12 +505,46 @@ checkAccess('superadmin'); // Ensure only users with the 'admin' role can access
         var timetableModal = new bootstrap.Modal(document.getElementById('timetableModal'));
         timetableModal.show();
       });
-}
+  }
 
   // Delete individual timetable row
   function deleteTimetableRow(rowId) {
-    if (confirm("Are you sure you want to delete this timetable entry?")) {
-      window.location.href = 'manage_timetable.php?delete_row_id=' + rowId;
+    // Hide the viewTimetableDetails modal before showing the confirmation
+    var timetableModal = bootstrap.Modal.getInstance(document.getElementById('timetableModal'));
+    if (timetableModal) {
+        timetableModal.hide();
+    }
+
+    // Use the confirmation modal for deletion
+    showConfirmationModal1("Are you sure you want to delete this timetable entry?", () => {
+        // If confirmed, proceed with deletion
+        window.location.href = 'manage_timetable.php?delete_row_id=' + rowId;
+    });
+  }
+
+  function showConfirmationModal1(message, onConfirm) {
+    const modal = document.getElementById('confirmationModal');
+    const confirmDeleteBtn = document.getElementById('confirmDelete');
+    const cancelDeleteBtn = document.getElementById('cancelDelete');
+    const confirmationMessage = document.getElementById('confirmationMessage');
+
+    confirmationMessage.innerText = message;
+    modal.style.display = 'flex';
+
+    confirmDeleteBtn.onclick = () => {
+        onConfirm();
+        closeModal();
+    };
+
+    cancelDeleteBtn.onclick = () => {
+        closeModal();
+        // Show the viewTimetableDetails modal again if the confirmation is canceled
+        var timetableModal = new bootstrap.Modal(document.getElementById('timetableModal'));
+        timetableModal.show();
+    };
+
+    function closeModal() {
+        modal.style.display = 'none';
     }
   }
 
@@ -569,7 +650,7 @@ checkAccess('superadmin'); // Ensure only users with the 'admin' role can access
             });
         })
         .catch(error => console.error('Error fetching subjects or rooms:', error));
-}
+  }
 
   // Clear the last added subject, room, day, and time entry
   function clearLastSubjectTime() {
@@ -616,6 +697,76 @@ checkAccess('superadmin'); // Ensure only users with the 'admin' role can access
     }
     return true; // Allow form submission
   }
+
+  function showConfirmationModal(message, onConfirm) {
+      const modal = document.getElementById('confirmationModal');
+      const confirmDeleteBtn = document.getElementById('confirmDelete');
+      const cancelDeleteBtn = document.getElementById('cancelDelete');
+      const confirmationMessage = document.getElementById('confirmationMessage');
+
+      confirmationMessage.innerText = message;
+      modal.style.display = 'flex';
+
+      confirmDeleteBtn.onclick = () => {
+          onConfirm();
+          closeModal();
+      };
+
+      cancelDeleteBtn.onclick = closeModal;
+
+      function closeModal() {
+          modal.style.display = 'none';
+      }
+    }
+
+    document.querySelectorAll('.delete-link').forEach(button => {
+      button.addEventListener('click', function(event) {
+          event.preventDefault();
+          const deleteUrl = this.href;
+          const sectionNumber = this.getAttribute('data-timetable-id');
+
+          showConfirmationModal(`Are you sure you want to delete the timetable for Section: ${sectionNumber}?`, () => {
+              window.location.href = deleteUrl;
+          });
+      });
+    });
+
+    function showPopupMessage(message, type = 'success') {
+      const popup = document.createElement('div');
+      popup.className = `popup-message ${type}`;
+      popup.innerText = message;
+
+      popup.style.position = 'fixed';
+      popup.style.top = '20px';
+      popup.style.right = '20px';
+      popup.style.padding = '15px';
+      popup.style.zIndex = '1000';
+      popup.style.borderRadius = '5px';
+      popup.style.color = '#fff';
+      popup.style.fontSize = '16px';
+      popup.style.backgroundColor = type === 'success' ? 'green' : 'red';
+      popup.style.opacity = '1';
+      popup.style.transition = 'opacity 0.5s ease';
+
+      document.body.appendChild(popup);
+
+      setTimeout(() => {
+          popup.style.opacity = '0';
+          setTimeout(() => {
+              popup.remove();
+          }, 500);
+      }, 3000);
+    }
+
+    window.onload = function() {
+      <?php if (isset($_SESSION['error_message'])): ?>
+          showPopupMessage('<?= $_SESSION['error_message']; ?>', 'error');
+          <?php unset($_SESSION['error_message']); ?>
+      <?php elseif (isset($_SESSION['success_message'])): ?>
+          showPopupMessage('<?= $_SESSION['success_message']; ?>', 'success');
+          <?php unset($_SESSION['success_message']); ?>
+      <?php endif; ?>
+    };
   </script>
 
   </main><!-- End #main -->
