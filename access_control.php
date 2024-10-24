@@ -19,13 +19,13 @@ function checkAccess($requiredRole) {
     }
 
     // Check for session timeout
-    if (isset($_SESSION['last_activity']) && (time() - $_SESSION['last_activity']) > INACTIVITY_TIMEOUT) {
-        // Session has expired due to inactivity
-        session_unset();
-        session_destroy();
-        header("Location: /SMS/index.php?timeout=true");
-        exit;
-    }
+    //if (isset($_SESSION['last_activity']) && (time() - $_SESSION['last_activity']) > INACTIVITY_TIMEOUT) {
+    //    Session has expired due to inactivity
+    //    session_unset();
+    //    session_destroy();
+    //    header("Location: /SMS/index.php?timeout=true");
+    //    exit;
+    //}
 
     // Update last activity time
     $_SESSION['last_activity'] = time();

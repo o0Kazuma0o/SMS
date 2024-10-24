@@ -2,6 +2,9 @@
 require('../database.php');
 require('../access_control.php'); // Include the file with the checkAccess function
 checkAccess('superadmin'); // Ensure only users with the 'admin' role can access this page
+
+$query = "SELECT * FROM sms3_students ORDER BY created_at DESC";
+$result = $conn->query($query);
 ?>
 
 <!DOCTYPE html>
@@ -156,9 +159,9 @@ checkAccess('superadmin'); // Ensure only users with the 'admin' role can access
       </li><!-- End System Nav -->
 
       <li class="nav-item">
-        <a class="nav-link " href="enrolled.php">
+        <a class="nav-link " href="students.php">
           <i class="bi bi-grid"></i>
-          <span>Enrolled Students</span>
+          <span>Students</span>
         </a>
       </li><!-- End System Nav -->
 
@@ -232,116 +235,43 @@ checkAccess('superadmin'); // Ensure only users with the 'admin' role can access
               <table class="table datatable">
                 <thead>
                   <tr>
-                    <th>Student ID</th>
+                    <th>Student Number</th>
                     <th>Name</th>
-                    <th data-type="date" data-format="YYYY/DD/MM">Date Enrolled</th>
+                    <th>Date Approved</th>
                     <th>Academic Year</th>
-                    <th>Department</th>
-                    <th>Section</th>
+                    <th>Program</th>
                     <th>Year Level</th>
+                    <th>Information</th>
                     <th>Subjects</th>
                     <th>Status</th>
                   </tr>
                 </thead>
                 <tbody>
+                  <?php
+                  // Fetch students from the sms3_students table
+                  $students = $conn->query("SELECT * FROM sms3_students");
+                  while ($student = $students->fetch_assoc()):
+                  ?>
                   <tr>
-                    <td>24121232</td>
-                    <td>Ken Nat</td>
-                    <td>2024/08/07</td>
-                    <td>2024-2025</td>
-                    <td>BSIT</td>
-                    <td>1101</td>
-                    <td>1st Year</td>
-                    <td><!-- Modal Here -->
-                      <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#viewsub">
-                      View
-                      </button>
-                      <div class="modal fade" id="viewsub" tabindex="-1">
-                        <div class="modal-dialog modal-dialog-centered modal-lg">
-                          <div class="modal-content">
-                            <div class="modal-header">
-                              <h5 class="modal-title">Subjects</h5>
-                              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                            </div>
-                            <div class="modal-body">
-                              <table class="table">
-                                <thead>
-                                  <tr>
-                                    <th>Subject Code</th>
-                                    <th>Subject Name</th>
-                                    <th>Room</th>
-                                    <th>Schedule</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  <tr>
-                                    <td>ITSP 1</td>
-                                    <td>Software Engineering</td>
-                                    <td>Lab 1</td>
-                                    <td>Monday, 8:00 AM - 10:00 AM</td>
-                                  </tr>
-                                </tbody>
-                              </table>
-                            </div>
-                            <div class="modal-footer">
-                              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                              <button type="button" class="btn btn-primary">Save changes</button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
+                    <td><?= $student['student_number']; ?></td>
+                    <td>
+                      <?= htmlspecialchars($student['first_name']) . ' ' . 
+                          (!empty($student['middle_name']) ? htmlspecialchars($student['middle_name']) . ' ' : '') . 
+                          htmlspecialchars($student['last_name']); ?>
                     </td>
-                    <td><span class="badge bg-success">Enrolled</span></td>
-                  </tr>
-                  <tr>
-                    <td>24121232</td>
-                    <td>Ken Nat</td>
-                    <td>2024/08/07</td>
-                    <td>2024-2025</td>
-                    <td>BSIT</td>
-                    <td>1101</td>
-                    <td>1st Year</td>
-                    <td><!-- Modal Here -->
-                      <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#viewsub">
-                      View
-                      </button>
-                      <div class="modal fade" id="viewsub" tabindex="-1">
-                        <div class="modal-dialog modal-dialog-centered modal-lg">
-                          <div class="modal-content">
-                            <div class="modal-header">
-                              <h5 class="modal-title">Subjects</h5>
-                              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                            </div>
-                            <div class="modal-body">
-                              <table class="table">
-                                <thead>
-                                  <tr>
-                                    <th>Subject Code</th>
-                                    <th>Subject Name</th>
-                                    <th>Room</th>
-                                    <th>Schedule</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  <tr>
-                                    <td>ITSP 1</td>
-                                    <td>Software Engineering</td>
-                                    <td>Lab 1</td>
-                                    <td>Monday, 8:00 AM - 10:00 AM</td>
-                                  </tr>
-                                </tbody>
-                              </table>
-                            </div>
-                            <div class="modal-footer">
-                              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                              <button type="button" class="btn btn-primary">Save changes</button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
+                    <td><?= date('Y/m/d', strtotime($student['created_at'])); ?></td>
+                    <td><?= $student['academic_year']; ?></td>
+                    <td><?= $student['program']; ?></td>
+                    <td><?= $student['year_level']; ?></td>
+                    <td>
+                      <button class="btn btn-info btn-sm" onclick="viewInformation(<?= $student['id'] ?>)">View Information</button>
                     </td>
-                    <td><span class="badge bg-success">Enrolled</span></td>
+                    <td>
+                      <button class="btn btn-info btn-sm" onclick="viewSubjects(<?= $student['id'] ?>)">View Subjects</button>
+                    </td>
+                    <td><span class="badge bg-success"><?= $student['status']; ?></span></td>
                   </tr>
+                  <?php endwhile; ?>
                 </tbody>
               </table>
               <!-- End Table with stripped rows -->
@@ -351,6 +281,63 @@ checkAccess('superadmin'); // Ensure only users with the 'admin' role can access
     </section>
 
   </main><!-- End #main -->
+
+  <div class="modal fade" id="informationModal" tabindex="-1" aria-labelledby="informationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="informationModalLabel">Admission Information</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" id="informationContent">
+            <!-- Information will be loaded here dynamically -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function viewInformation(id) {
+    // Fetch additional information using AJAX
+    fetch('get_student_info.php?id=' + id)
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        // Populate the modal content
+        const info = data.info;
+        const content = `
+          <p><strong>Birthdate:</strong> ${info.birthday || 'N/A'}</p>
+          <p><strong>Sex:</strong> ${info.sex || 'N/A'}</p>
+          <p><strong>Email:</strong> ${info.email || 'N/A'}</p>
+          <p><strong>Contact Number:</strong> ${info.contact_number || 'N/A'}</p>
+          <p><strong>Facebook Name:</strong> ${info.facebook_name || 'N/A'}</p>
+          <p><strong>Working Student:</strong> ${info.working_student === 'Yes' ? 'Yes' : 'No'}</p>
+          <p><strong>Address:</strong> ${info.address || 'N/A'}</p>
+          <p><strong>Civil Status:</strong> ${info.civil_status || 'N/A'}</p>
+          <p><strong>Religion:</strong> ${info.religion || 'N/A'}</p>
+          <p><strong>Father's Name:</strong> ${info.father_name || 'N/A'}</p>
+          <p><strong>Mother's Name:</strong> ${info.mother_name || 'N/A'}</p>
+          <p><strong>Guardian's Name:</strong> ${info.guardian_name || 'N/A'}</p>
+          <p><strong>Guardian's Contact:</strong> ${info.guardian_contact || 'N/A'}</p>
+          <p><strong>Member 4Ps:</strong> ${info.member4ps === 'Yes' ? 'Yes' : 'No'}</p>
+          <p><strong>Primary School:</strong> ${info.primary_school || 'N/A'} (${info.primary_year || 'N/A'})</p>
+          <p><strong>Secondary School:</strong> ${info.secondary_school || 'N/A'} (${info.secondary_year || 'N/A'})</p>
+          <p><strong>Last School Attended:</strong> ${info.last_school || 'N/A'} (${info.last_school_year || 'N/A'})</p>
+          <p><strong>Referral Source:</strong> ${info.referral_source || 'N/A'}</p>
+        `;
+        document.getElementById('informationContent').innerHTML = content;
+        // Show the modal
+        new bootstrap.Modal(document.getElementById('informationModal')).show();
+      } else {
+          alert('Failed to fetch admission information.');
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      alert('An error occurred while fetching the information.');
+    });
+  }
+  </script>
 
   <!-- ======= Footer ======= -->
   <footer id="footer" class="footer">

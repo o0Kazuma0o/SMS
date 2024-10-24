@@ -191,8 +191,7 @@
                         </div>
                         <div class="col-md-3">
                           <label for="middlename" class="form-label">Middlename</label>
-                          <input type="text" class="form-control" id="middlename" name="middlename" required oninput="validateLettersOnly(this)">
-                          <div class="text-danger" id="middlename-error"></div>
+                          <input type="text" class="form-control" id="middlename" name="middlename" oninput="validateLettersOnly(this)">
                         </div>
                         <div class="col-md-3">
                           <label for="suffix" class="form-label">Suffix</label>
@@ -622,8 +621,8 @@
       document.querySelectorAll('.text-danger').forEach((error) => error.innerText = '');
 
       form.querySelectorAll('input').forEach((input) => {
-        // Skip validation for "Suffix"
-        if (input.id !== 'suffix' && input.hasAttribute('required')) {
+        // Skip validation for "Suffix" and "Middlename"
+        if (input.id !== 'suffix' && input.id !== 'middlename' && input.hasAttribute('required')) {
           if (!input.value.trim()) {
             input.style.border = '2px solid red';
             document.getElementById(input.id + '-error').innerText = 'This field is required';

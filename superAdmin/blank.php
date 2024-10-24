@@ -150,9 +150,9 @@
       </li>
 
       <li class="nav-item">
-        <a class="nav-link " href="enrolled.php">
+        <a class="nav-link " href="students.php">
           <i class="bi bi-grid"></i>
-          <span>Enrolled Students</span>
+          <span>Students</span>
         </a>
       </li><!-- End System Nav -->
 

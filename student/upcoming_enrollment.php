@@ -169,17 +169,34 @@
   <main id="main" class="main">
 
     <div class="pagetitle">
-      <h1>Dashboard</h1>
+      <h1>Current Enrollment</h1>
       <nav>
         <ol class="breadcrumb">
           <li class="breadcrumb-item"><a href="index.html">Home</a></li>
-          <li class="breadcrumb-item active">Dashboard</li>
+          <li class="breadcrumb-item">Enrollment</li>
+          <li class="breadcrumb-item active">Current Enrollment</li>
         </ol>
       </nav>
     </div><!-- End Page Title -->
 
     <section class="section dashboard">
-      
+    <div class="row">
+
+      <div class="card">
+        <div class="card-body">
+        <h5 class="card-title">??</h5>
+          
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-body">
+        <h5 class="card-title">??</h5>
+          
+        </div>
+      </div>
+
+    </div>
     </section>
 
   </main><!-- End #main -->

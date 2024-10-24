@@ -1,41 +1,138 @@
-<?php require('../database.php');
-require('../access_control.php'); // Include the file with the checkAccess function
-checkAccess('superadmin'); // Ensure only users with the 'admin' role can access this page
+<?php
+require('../database.php');
+require('../access_control.php');
+checkAccess('superadmin'); // Ensure only 'superadmin' role has access
+
+// Function to generate student number
+function generateStudentNumber($conn) {
+  // Get the current year and take the last two digits (e.g., 2024 -> 24)
+  $yearPrefix = date('y');  // 'y' gives the last two digits of the year
+
+  // Get the last student number
+  $result = $conn->query("SELECT student_number FROM sms3_students ORDER BY id DESC LIMIT 1");
+  $lastStudentNumber = $result->fetch_assoc();
+
+  if ($lastStudentNumber) {
+      $lastNumber = intval(substr($lastStudentNumber['student_number'], 2)); // Extract the last 6 digits
+      $newNumber = $lastNumber + 1;
+  } else {
+      $newNumber = 100001; // Starting number for first student
+  }
+
+  // Return the new student number, e.g., "24100001"
+  return $yearPrefix . str_pad($newNumber, 6, '0', STR_PAD_LEFT);
+}
+
+// Function to generate password
+function generatePassword($lastName) {
+  // Use the first 2 letters of the last name
+  $surname = substr($lastName, 0, 2); 
+  return '#' . $surname . '8080';
+}
+
+// Fetch current academic year
+function getCurrentAcademicYear($conn) {
+    $result = $conn->query("SELECT academic_year FROM sms3_academic_years WHERE is_current = 1 LIMIT 1");
+    if ($result && $result->num_rows > 0) {
+        return $result->fetch_assoc()['academic_year'];
+    }
+    return null;
+}
 
 // Handle status update requests
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_id'], $_POST['status'])) {
-  $admissionId = intval($_POST['admission_id']);
-  $status = $_POST['status'];
+    $admissionId = intval($_POST['admission_id']);
+    $status = $_POST['status'];
 
-// If the status is 'Rejected', delete the record
-if ($status === 'Rejected') {
-  $stmt = $conn->prepare("DELETE FROM sms3_pending_admission WHERE id = ?");
-  $stmt->bind_param("i", $admissionId);
+    if ($status === 'Rejected') {
+        // Delete admission record on rejection
+        $stmt = $conn->prepare("DELETE FROM sms3_pending_admission WHERE id = ?");
+        $stmt->bind_param("i", $admissionId);
+        if ($stmt->execute()) {
+            echo json_encode(['success' => true, 'message' => 'Admission record deleted successfully.']);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Failed to delete admission record.']);
+        }
+    } elseif ($status === 'Approved') {
+        // Move record to sms3_students on approval
+        $stmt = $conn->prepare("SELECT * FROM sms3_pending_admission WHERE id = ?");
+        $stmt->bind_param('i', $admissionId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $admissionData = $result->fetch_assoc();
+        $stmt->close();
 
-  if ($stmt->execute()) {
-      echo json_encode(['success' => true, 'message' => 'Admission record deleted successfully.']);
-  } else {
-      echo json_encode(['success' => false, 'message' => 'Failed to delete admission record.']);
-  }
-  } else {
-    // Update the status in the database if it's not 'Rejected'
-    $stmt = $conn->prepare("UPDATE sms3_pending_admission SET status = ? WHERE id = ?");
-    $stmt->bind_param("si", $status, $admissionId);
+        if ($admissionData) {
+            // Get current academic year
+            $academicYear = getCurrentAcademicYear($conn);
+            if (!$academicYear) {
+                echo json_encode(['success' => false, 'message' => 'Error: No current academic year set.']);
+                exit;
+            }
 
-    if ($stmt->execute()) {
-        echo json_encode(['success' => true, 'message' => 'Admission status updated successfully.']);
+            // Generate student number and password
+            $studentNumber = generateStudentNumber($conn);
+            $password = generatePassword($admissionData['last_name']);
+
+            // Insert data into sms3_students
+            $stmt = $conn->prepare("INSERT INTO sms3_students (
+              student_number, first_name, middle_name, last_name, academic_year, username, password, role, program, admission_type, 
+              year_level, sex, civil_status, religion, birthday, email, contact_number, facebook_name, 
+              address, father_name, mother_name, guardian_name, guardian_contact, primary_school, primary_year, 
+              secondary_school, secondary_year, last_school, last_school_year, referral_source, working_student, member4ps, status
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+
+            $username = 's' . $studentNumber;
+            $role = 'Student';
+            $status = 'Not Enrolled';
+
+            $stmt->bind_param(
+              "sssssssssssssssssssssssssssssssss",
+              $studentNumber, $admissionData['first_name'], $admissionData['middle_name'], $admissionData['last_name'], 
+              $academicYear, $username, $password, $role, 
+              $admissionData['program'], $admissionData['admission_type'], $admissionData['year_level'],
+              $admissionData['sex'], $admissionData['civil_status'], $admissionData['religion'], $admissionData['birthday'],
+              $admissionData['email'], $admissionData['contact_number'], $admissionData['facebook_name'], 
+              $admissionData['address'], $admissionData['father_name'], $admissionData['mother_name'], 
+              $admissionData['guardian_name'], $admissionData['guardian_contact'], $admissionData['primary_school'], 
+              $admissionData['primary_year'], $admissionData['secondary_school'], $admissionData['secondary_year'], 
+              $admissionData['last_school'], $admissionData['last_school_year'], $admissionData['referral_source'], 
+              $admissionData['working_student'], $admissionData['member4ps'], $status
+            );
+
+
+            if ($stmt->execute()) {
+                // Delete record from sms3_pending_admission after insertion
+                $deleteStmt = $conn->prepare("DELETE FROM sms3_pending_admission WHERE id = ?");
+                $deleteStmt->bind_param('i', $admissionId);
+                $deleteStmt->execute();
+                $deleteStmt->close();
+
+                echo json_encode(['success' => true, 'message' => 'Student approved and moved to students table successfully!']);
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Failed to insert student record.']);
+            }
+            $stmt->close();
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Admission record not found.']);
+        }
     } else {
-        echo json_encode(['success' => false, 'message' => 'Failed to update admission status.']);
+        // Update the status if it's not 'Rejected' or 'Approved'
+        $stmt = $conn->prepare("UPDATE sms3_pending_admission SET status = ? WHERE id = ?");
+        $stmt->bind_param("si", $status, $admissionId);
+        if ($stmt->execute()) {
+            echo json_encode(['success' => true, 'message' => 'Admission status updated successfully.']);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Failed to update admission status.']);
+        }
     }
-  }
-exit; // Terminate the script after handling the AJAX request
+    exit;
 }
 
 // Fetch all pending admissions
 $query = "SELECT * FROM sms3_pending_admission WHERE status = 'Pending' ORDER BY created_at DESC";
 $result = $conn->query($query);
 
-// Check if the query was successful
 if (!$result) {
     $queryError = "Failed to execute query: " . $conn->error;
 }
@@ -193,9 +290,9 @@ if (!$result) {
       </li><!-- End System Nav -->
 
       <li class="nav-item">
-        <a class="nav-link " href="enrolled.php">
+        <a class="nav-link " href="students.php">
           <i class="bi bi-grid"></i>
-          <span>Enrolled Students</span>
+          <span>Students</span>
         </a>
       </li><!-- End System Nav -->
 
@@ -272,7 +369,7 @@ if (!$result) {
                     <tr>
                       <th>Name</th>
                       <th data-type="date" data-format="YYYY/DD/MM">Birthdate</th>
-                      <th>Sex</th>
+                      <th>Admission Type</th>
                       <th>Department</th>
                       <th>Year Level</th>
                       <th>Information</th>
@@ -285,9 +382,13 @@ if (!$result) {
                     <?php if ($result && $result->num_rows > 0): ?>
                       <?php while ($row = $result->fetch_assoc()): ?>
                         <tr>
-                          <td><?= htmlspecialchars($row['full_name']) ?></td>
+                          <td>
+                          <?= htmlspecialchars($row['first_name']) . ' ' . 
+                              (!empty($row['middle_name']) ? htmlspecialchars($row['middle_name']) . ' ' : '') . 
+                              htmlspecialchars($row['last_name']); ?>
+                          </td>
                           <td><?= htmlspecialchars($row['birthday']) ?></td>
-                          <td><?= htmlspecialchars($row['sex']) ?></td>
+                          <td><?= htmlspecialchars($row['admission_type']) ?></td>
                           <td><?= htmlspecialchars($row['program']) ?></td>
                           <td><?= htmlspecialchars($row['year_level']) ?></td>
                           <td>
@@ -300,8 +401,14 @@ if (!$result) {
                               </span>
                           </td>
                           <td>
-                              <button class="btn btn-sm btn-success" onclick="updateAdmissionStatus(<?= $row['id'] ?>, 'Approved')">Approve</button>
-                              <button class="btn btn-sm btn-danger" onclick="updateAdmissionStatus(<?= $row['id'] ?>, 'Rejected')">Reject</button>
+                            <!-- Approve and Reject buttons -->
+                            <?php if ($row['status'] !== 'Approved' && $row['status'] !== 'Rejected'): ?>
+                                <button class="btn btn-success btn-sm" onclick="updateAdmissionStatus(<?= $row['id'] ?>, 'Approved')">Approve</button>
+                                <button class="btn btn-danger btn-sm" onclick="updateAdmissionStatus(<?= $row['id'] ?>, 'Rejected')">Reject</button>
+                            <?php else: ?>
+                                <!-- No action if already approved or rejected -->
+                                <span>No Action Available</span>
+                            <?php endif; ?>
                           </td>
                         </tr>
                       <?php endwhile; ?>
@@ -337,14 +444,6 @@ if (!$result) {
 
   <script>
 
-  // Initialize the datatable after checking if the table exists
-  document.addEventListener("DOMContentLoaded", function() {
-    var table = document.querySelector("#admissionTable");
-    if (table) {
-      new simpleDatatables.DataTable(table);
-    }
-  });
-
   function viewInformation(id) {
     // Fetch additional information using AJAX
     fetch('get_admission_info.php?id=' + id)
@@ -354,6 +453,7 @@ if (!$result) {
         // Populate the modal content
         const info = data.info;
         const content = `
+          <p><strong>Sex:</strong> ${info.sex || 'N/A'}</p>
           <p><strong>Email:</strong> ${info.email || 'N/A'}</p>
           <p><strong>Contact Number:</strong> ${info.contact_number || 'N/A'}</p>
           <p><strong>Facebook Name:</strong> ${info.facebook_name || 'N/A'}</p>
@@ -415,8 +515,6 @@ if (!$result) {
         alert('An error occurred while updating the status.');
     });
   }
-
-  
   </script>
 
   <!-- ======= Footer ======= -->

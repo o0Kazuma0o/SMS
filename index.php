@@ -1,10 +1,10 @@
 <?php
 require('database.php');
 
-$timeoutMessage = '';
-if (isset($_GET['timeout']) && $_GET['timeout'] === 'true') {
-    $timeoutMessage = "Your session has expired due to inactivity. Please log in again.";
-}
+//$timeoutMessage = '';
+//if (isset($_GET['timeout']) && $_GET['timeout'] === 'true') {
+//    $timeoutMessage = "Your session has expired due to inactivity. Please log in again.";
+//}
 
 // Check if the form is submitted
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
