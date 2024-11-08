@@ -1,6 +1,10 @@
-<?php require('../database.php');
+<?php
+require('../database.php');
 require('../access_control.php'); // Include the file with the checkAccess function
-checkAccess('superadmin'); // Ensure only users with the 'admin' role can access this page
+checkAccess('admin'); // Ensure only users with the 'admin' role can access this page
+
+$query = "SELECT * FROM sms3_students ORDER BY created_at DESC";
+$result = $conn->query($query);
 ?>
 
 <!DOCTYPE html>
@@ -10,7 +14,7 @@ checkAccess('superadmin'); // Ensure only users with the 'admin' role can access
   <meta charset="utf-8">
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
 
-  <title>Department</title>
+  <title>Admission</title>
   <meta content="" name="description">
   <meta content="" name="keywords">
 
@@ -33,63 +37,6 @@ checkAccess('superadmin'); // Ensure only users with the 'admin' role can access
 
   <!-- Template Main CSS File -->
   <link href="../assets/css/style.css" rel="stylesheet">
-
-  <style>
-    .modal {
-        display: none; 
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.5);
-        justify-content: center;
-        align-items: center;
-        z-index: 1000;
-    }
-    .modal-content {
-        background-color: #fff;
-        padding: 20px;
-        border-radius: 5px;
-        text-align: center;
-        width: 300px;
-    }
-    .modal-buttons {
-        margin-top: 20px;
-        display: flex;
-        justify-content: space-between;
-    }
-    .btn-danger {
-        background-color: #dc3545;
-        color: white;
-    }
-    .btn-secondary {
-        background-color: #6c757d;
-        color: white;
-    }
-    .btn:hover {
-        opacity: 0.8;
-    }
-
-    .popup-message {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        z-index: 1000;
-        padding: 15px;
-        border-radius: 5px;
-        font-size: 16px;
-        color: #fff;
-        opacity: 0;
-        transition: opacity 0.5s ease-in-out;
-    }
-    .popup-message.success {
-        background-color: green;
-    }
-    .popup-message.error {
-        background-color: red;
-    }
-  </style>
 
 </head>
 
@@ -209,7 +156,7 @@ checkAccess('superadmin'); // Ensure only users with the 'admin' role can access
           <i class="bi bi-grid"></i>
           <span>Admission</span>
         </a>
-      </li>
+      </li><!-- End System Nav -->
 
       <li class="nav-item">
         <a class="nav-link " href="students.php">
@@ -269,167 +216,127 @@ checkAccess('superadmin'); // Ensure only users with the 'admin' role can access
   <main id="main" class="main">
 
     <div class="pagetitle">
-      <h1>Department</h1>
+      <h1>Admission</h1>
       <nav>
         <ol class="breadcrumb">
-          <li class="breadcrumb-item"><a href="index.html">Home</a></li>
-          <li class="breadcrumb-item active">Department</li>
+          <li class="breadcrumb-item"><a href="Adashboard.php">Dashboard</a></li>
+          <li class="breadcrumb-item">Enrolled BSIT</li>
+          <li class="breadcrumb-item active">1st Year</li>
         </ol>
       </nav>
     </div><!-- End Page Title -->
 
-  <div id="confirmationModal" class="modal">
-      <div class="modal-content">
-          <p id="confirmationMessage">Are you sure you want to delete this department?</p>
-          <div class="modal-buttons">
-              <button id="confirmDelete" class="btn btn-danger">Delete</button>
-              <button id="cancelDelete" class="btn btn-secondary">Cancel</button>
+    <section class="section">
+      <div class="col-lg-12">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">List of Student</h5>
+              <!-- Table with stripped rows -->
+              <table class="table datatable">
+                <thead>
+                  <tr>
+                    <th>Student Number</th>
+                    <th>Name</th>
+                    <th>Date Approved</th>
+                    <th>Academic Year</th>
+                    <th>Program</th>
+                    <th>Year Level</th>
+                    <th>Information</th>
+                    <th>Subjects</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <?php
+                  // Fetch students from the sms3_students table
+                  $students = $conn->query("SELECT * FROM sms3_students");
+                  while ($student = $students->fetch_assoc()):
+                  ?>
+                  <tr>
+                    <td><?= $student['student_number']; ?></td>
+                    <td>
+                      <?= htmlspecialchars($student['first_name']) . ' ' . 
+                          (!empty($student['middle_name']) ? htmlspecialchars($student['middle_name']) . ' ' : '') . 
+                          htmlspecialchars($student['last_name']); ?>
+                    </td>
+                    <td><?= date('Y/m/d', strtotime($student['created_at'])); ?></td>
+                    <td><?= $student['academic_year']; ?></td>
+                    <td><?= $student['program']; ?></td>
+                    <td><?= $student['year_level']; ?></td>
+                    <td>
+                      <button class="btn btn-info btn-sm" onclick="viewInformation(<?= $student['id'] ?>)">View Information</button>
+                    </td>
+                    <td>
+                      <button class="btn btn-info btn-sm" onclick="viewSubjects(<?= $student['id'] ?>)">View Subjects</button>
+                    </td>
+                    <td><span class="badge bg-success"><?= $student['status']; ?></span></td>
+                  </tr>
+                  <?php endwhile; ?>
+                </tbody>
+              </table>
+              <!-- End Table with stripped rows -->
+            </div>
           </div>
-      </div>
-  </div>
-
-    <section class="section dashboard">
-      <div class="card">
-        <div class="card-body">
-          <h5 class="card-title"><?php if (isset($_GET['edit_department_id'])): ?>
-          Edit Department
-          <?php else: ?>
-          Add Department
-          <?php endif; ?>
-          </h5>
-
-          <!-- Add/Edit Department Form -->
-          <form action="manage_departments.php" method="POST" class="mb-4">
-              <div class="form-group">
-                  <label for="department_name">Department Name:</label>
-                  <input type="text" class="form-control" name="department_name" id="department_name" required
-                  value="<?= isset($edit_department) ? $edit_department['department_name'] : ''; ?>">
-              </div>
-
-              <div class="form-group mt-2">
-                  <label for="department_name">Department Code:</label>
-                  <input type="text" class="form-control" name="department_code" id="department_code" required
-                  value="<?= isset($edit_department) ? $edit_department['department_code'] : ''; ?>">
-              </div>
-              <?php if (isset($edit_department)): ?>
-              <input type="hidden" name="department_id" value="<?= $edit_department['id']; ?>">
-              <button type="submit" name="update_department" class="btn btn-warning mt-3">Update Department</button>
-                <?php else: ?>
-              <button type="submit" name="add_department" class="btn btn-primary mt-3">Add Department</button>
-                <?php endif; ?>
-          </form>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-body">
-        <h5 class="card-title">Department List</h5>
-          <!-- List of Departments -->
-          <table class="table table-bordered">
-            <thead>
-                <tr>
-                    <th>Department Code</th>
-                    <th>Department Name</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-              <?php while ($department = $departments->fetch_assoc()): ?>
-              <tr>
-                <td><?= $department['department_code']; ?></td>
-                <td><?= $department['department_name']; ?></td>
-                <td>
-                  <a href="manage_departments.php?edit_department_id=<?= $department['id']; ?>" 
-                    class="btn btn-info btn-sm">Edit</a>
-                  <a href="manage_departments.php?delete_department_id=<?= $department['id']; ?>" 
-                    class="btn btn-danger btn-sm delete-link" 
-                    data-department-name="<?= $department['department_name']; ?>">Delete</a>
-                </td>
-              </tr>
-              <?php endwhile; ?>
-            </tbody>
-          </table>
-        </div>
       </div>
     </section>
 
   </main><!-- End #main -->
 
+  <div class="modal fade" id="informationModal" tabindex="-1" aria-labelledby="informationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="informationModalLabel">Admission Information</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" id="informationContent">
+            <!-- Information will be loaded here dynamically -->
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
-    function showConfirmationModal(message, onConfirm) {
-      const modal = document.getElementById('confirmationModal');
-      const confirmDeleteBtn = document.getElementById('confirmDelete');
-      const cancelDeleteBtn = document.getElementById('cancelDelete');
-      const confirmationMessage = document.getElementById('confirmationMessage');
-
-      confirmationMessage.innerText = message;
-      modal.style.display = 'flex';
-
-      confirmDeleteBtn.onclick = () => {
-          onConfirm();
-          closeModal();
-      };
-
-      cancelDeleteBtn.onclick = closeModal;
-
-      function closeModal() {
-          modal.style.display = 'none';
+    function viewInformation(id) {
+    // Fetch additional information using AJAX
+    fetch('get_student_info.php?id=' + id)
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        // Populate the modal content
+        const info = data.info;
+        const content = `
+          <p><strong>Birthdate:</strong> ${info.birthday || 'N/A'}</p>
+          <p><strong>Sex:</strong> ${info.sex || 'N/A'}</p>
+          <p><strong>Email:</strong> ${info.email || 'N/A'}</p>
+          <p><strong>Contact Number:</strong> ${info.contact_number || 'N/A'}</p>
+          <p><strong>Facebook Name:</strong> ${info.facebook_name || 'N/A'}</p>
+          <p><strong>Working Student:</strong> ${info.working_student === 'Yes' ? 'Yes' : 'No'}</p>
+          <p><strong>Address:</strong> ${info.address || 'N/A'}</p>
+          <p><strong>Civil Status:</strong> ${info.civil_status || 'N/A'}</p>
+          <p><strong>Religion:</strong> ${info.religion || 'N/A'}</p>
+          <p><strong>Father's Name:</strong> ${info.father_name || 'N/A'}</p>
+          <p><strong>Mother's Name:</strong> ${info.mother_name || 'N/A'}</p>
+          <p><strong>Guardian's Name:</strong> ${info.guardian_name || 'N/A'}</p>
+          <p><strong>Guardian's Contact:</strong> ${info.guardian_contact || 'N/A'}</p>
+          <p><strong>Member 4Ps:</strong> ${info.member4ps === 'Yes' ? 'Yes' : 'No'}</p>
+          <p><strong>Primary School:</strong> ${info.primary_school || 'N/A'} (${info.primary_year || 'N/A'})</p>
+          <p><strong>Secondary School:</strong> ${info.secondary_school || 'N/A'} (${info.secondary_year || 'N/A'})</p>
+          <p><strong>Last School Attended:</strong> ${info.last_school || 'N/A'} (${info.last_school_year || 'N/A'})</p>
+          <p><strong>Referral Source:</strong> ${info.referral_source || 'N/A'}</p>
+        `;
+        document.getElementById('informationContent').innerHTML = content;
+        // Show the modal
+        new bootstrap.Modal(document.getElementById('informationModal')).show();
+      } else {
+          alert('Failed to fetch admission information.');
       }
-    }
-
-    document.querySelectorAll('.delete-link').forEach(button => {
-      button.addEventListener('click', function(event) {
-          event.preventDefault();
-          const deleteUrl = this.href;
-          const departmentName = this.getAttribute('data-department-name');
-
-          showConfirmationModal(`Are you sure you want to delete the Department: ${departmentName}?`, () => {
-              window.location.href = deleteUrl;
-          });
-      });
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      alert('An error occurred while fetching the information.');
     });
-
-    function showPopupMessage(message, type = 'success') {
-      // Create the popup element
-      const popup = document.createElement('div');
-      popup.className = `popup-message ${type}`;
-      popup.innerText = message;
-
-      // Style the popup element
-      popup.style.position = 'fixed';
-      popup.style.top = '20px';
-      popup.style.right = '20px';
-      popup.style.padding = '15px';
-      popup.style.zIndex = '1000';
-      popup.style.borderRadius = '5px';
-      popup.style.color = '#fff';
-      popup.style.fontSize = '16px';
-      popup.style.backgroundColor = type === 'success' ? 'green' : 'red';
-      popup.style.opacity = '1';
-      popup.style.transition = 'opacity 0.5s ease';
-
-      // Add the popup to the document
-      document.body.appendChild(popup);
-
-      // Fade out after 3 seconds
-      setTimeout(() => {
-          popup.style.opacity = '0';
-          // Remove the element after the transition ends
-          setTimeout(() => {
-              popup.remove();
-          }, 500);
-      }, 3000);
-    }
-
-    // Trigger the popup based on the session message
-    window.onload = function() {
-      <?php if (isset($_SESSION['error_message'])): ?>
-          showPopupMessage('<?= $_SESSION['error_message']; ?>', 'error');
-          <?php unset($_SESSION['error_message']); ?>
-      <?php elseif (isset($_SESSION['success_message'])): ?>
-          showPopupMessage('<?= $_SESSION['success_message']; ?>', 'success');
-          <?php unset($_SESSION['success_message']); ?>
-      <?php endif; ?>
-    };
+  }
   </script>
 
   <!-- ======= Footer ======= -->

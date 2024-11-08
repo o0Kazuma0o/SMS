@@ -1,6 +1,6 @@
 <?php require('../database.php');
 require('../access_control.php'); // Include the file with the checkAccess function
-checkAccess('superadmin'); // Ensure only users with the 'admin' role can access this page
+checkAccess('admin'); // Ensure only users with the 'admin' role can access this page
 ?>
 
 <!DOCTYPE html>
@@ -10,7 +10,7 @@ checkAccess('superadmin'); // Ensure only users with the 'admin' role can access
   <meta charset="utf-8">
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
 
-  <title>Subjects</title>
+  <title>Sections</title>
   <meta content="" name="description">
   <meta content="" name="keywords">
 
@@ -33,6 +33,20 @@ checkAccess('superadmin'); // Ensure only users with the 'admin' role can access
 
   <!-- Template Main CSS File -->
   <link href="../assets/css/style.css" rel="stylesheet">
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script>
+    $(document).ready(function() {
+        // AJAX for toggling semester without page reload
+        $('#toggle-semester-btn').click(function(e) {
+            e.preventDefault(); // Prevent form submission
+
+            $.post("manage_sections.php", { ajax_toggle_semester: true }, function() {
+                location.reload(); // Reload page content after toggling
+            });
+        });
+    });
+  </script>
 
   <style>
     .modal {
@@ -269,11 +283,11 @@ checkAccess('superadmin'); // Ensure only users with the 'admin' role can access
   <main id="main" class="main">
 
     <div class="pagetitle">
-      <h1>Subjects</h1>
+      <h1>Section</h1>
       <nav>
         <ol class="breadcrumb">
           <li class="breadcrumb-item"><a href="index.html">Home</a></li>
-          <li class="breadcrumb-item active">Subjects</li>
+          <li class="breadcrumb-item active">Section</li>
         </ol>
       </nav>
     </div><!-- End Page Title -->
@@ -289,85 +303,103 @@ checkAccess('superadmin'); // Ensure only users with the 'admin' role can access
     </div>
 
     <section class="section dashboard">
-    
-    <div class="card">
-      <div class="card-body">
+      <div class="card">
+        <div class="card-body">
         <h5 class="card-title">
-        <?php if (isset($_GET['edit_subject_id'])): ?>
-          Edit Subject
+        <?php if (isset($_GET['edit_section_id'])): ?>
+          Edit Section
         <?php else: ?>
-          Add Subject
-        <?php endif; ?></h5>
-
-          <!-- Add Subject Form -->
-          <form action="manage_subjects.php" method="POST" class="mb-4">
+          Add Section
+        <?php endif; ?>
+        </h5>
+          <!-- Add Section Form -->
+          <form action="manage_sections.php" method="POST" class="mb-4">
             <div class="form-group">
-              <label for="subject_code">Subject Code:</label>
-              <input type="text" class="form-control" name="subject_code" id="subject_code" required
-              value="<?= isset($edit_subject) ? $edit_subject['subject_code'] : ''; ?>">
+              <label for="section_number">Section Number:</label>
+              <input type="number" class="form-control" name="section_number" id="section_number" required
+              value="<?= isset($edit_section) ? $edit_section['section_number'] : ''; ?>">
             </div>
             <div class="form-group mt-2">
-              <label for="subject_name">Subject Name:</label>
-              <input type="text" class="form-control" name="subject_name" id="subject_name" required
-              value="<?= isset($edit_subject) ? $edit_subject['subject_name'] : ''; ?>">
+                <label for="year_level">Year Level:</label>
+                <select class="form-control" name="year_level" id="year_level" required>
+                  <option value="1" <?= isset($edit_section) && $edit_section['year_level'] == '1' ? 'selected' : ''; ?>>1st Year</option>
+                  <option value="2" <?= isset($edit_section) && $edit_section['year_level'] == '2' ? 'selected' : ''; ?>>2nd Year</option>
+                  <option value="3" <?= isset($edit_section) && $edit_section['year_level'] == '3' ? 'selected' : ''; ?>>3rd Year</option>
+                  <option value="4" <?= isset($edit_section) && $edit_section['year_level'] == '4' ? 'selected' : ''; ?>>4th Year</option>
+              </select>
+            </div>
+            <div class="form-group mt-2">
+            <label for="semester">Semester:</label>
+              <select class="form-control" name="semester" id="semester" required>
+                <option value="1st Semester" <?= isset($edit_section) && $edit_section['semester'] == '1st Semester' ? 'selected' : ''; ?>>1st Semester</option>
+                <option value="2nd Semester" <?= isset($edit_section) && $edit_section['semester'] == '2nd Semester' ? 'selected' : ''; ?>>2nd Semester</option>
+              </select>
+            </div>
+            <div class="form-group mt-2">
+              <label for="capacity">Section Capacity:</label>
+              <input type="number" class="form-control" name="capacity" id="capacity" required
+              value="<?= isset($edit_section) ? $edit_section['capacity'] : ''; ?>" min="1" placeholder="Enter section capacity">
             </div>
             <div class="form-group mt-2">
               <label for="department_id">Assign to Department:</label>
               <select class="form-control" name="department_id" id="department_id" required>
-                <!-- Fetch Departments -->
-                <?php
-                $departments = $conn->query("SELECT * FROM sms3_departments");
-                while ($department = $departments->fetch_assoc()): ?>
-                    <option value="<?= $department['id']; ?>" <?= isset($edit_subject) && $edit_subject['department_id'] == $department['id'] ? 'selected' : ''; ?>>
-                      <?= $department['department_code']; ?>
-                    </option>
-                <?php endwhile; ?>
+                  <!-- Fetch Departments -->
+                  <?php
+                  $departments = $conn->query("SELECT * FROM sms3_departments");
+                  while ($department = $departments->fetch_assoc()): ?>
+                      <option value="<?= $department['id']; ?>" <?= isset($edit_section) && $edit_section['department_id'] == $department['id'] ? 'selected' : ''; ?>>
+                        <?= $department['department_code']; ?>
+                      </option>
+                  <?php endwhile; ?>
               </select>
             </div>
-            <?php if (isset($edit_subject)): ?>
-              <input type="hidden" name="subject_id" value="<?= $edit_subject['id']; ?>">
-              <button type="submit" name="update_subject" class="btn btn-warning mt-3">Update Subject</button>
-              <?php else: ?>
-              <button type="submit" name="add_subject" class="btn btn-primary mt-3">Add Subject</button>
-              <?php endif; ?>
-        </form>
-      </div>
-    </div>
+            <?php if (isset($edit_section)): ?>
+              <input type="hidden" name="section_id" value="<?= $edit_section['id']; ?>">
+              <button type="submit" name="update_section" class="btn btn-warning mt-3">Update Section</button>
+            <?php else: ?>
+                <button type="submit" name="add_section" class="btn btn-primary mt-3">Add Section</button>
+            <?php endif; ?>
+          </form>
 
-    <div class="card">
-      <div class="card-body">
-      <h5 class="card-title">List of Subject</h5>
-        <div class="row">
-          <!-- List of Subjects -->
-          <table class="table datatable">
-            <thead>
-              <tr>
-                  <th>Subject Code</th>
-                  <th>Subject Name</th>
-                  <th>Department</th>
-                  <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <?php while ($subject = $subjects->fetch_assoc()): ?>
-              <tr>
-                <td><?= $subject['subject_code']; ?></td>
-                <td><?= $subject['subject_name']; ?></td>
-                <td><?= $subject['department_code']; ?></td>
-                <td>
-                <a href="manage_subjects.php?edit_subject_id=<?= $subject['id']; ?>" 
-                    class="btn btn-info btn-sm">Edit</a>
-                <a href="manage_subjects.php?delete_subject_id=<?= $subject['id']; ?>" 
-                    class="btn btn-danger btn-sm delete-link"
-                    data-subject-code="<?= $subject['subject_code']; ?>">Delete</a>
-                </td>
-              </tr>
-              <?php endwhile; ?>
-            </tbody>
-          </table>
         </div>
       </div>
-    </div>
+
+      <div class="card">
+        <div class="card-body">
+        <h5 class="card-title">Section List</h5>
+          <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Section Number</th>
+                    <th>Year Level</th>
+                    <th>Semester</th>
+                    <th>Capacity</th>
+                    <th>Department</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php while ($section = $sections->fetch_assoc()): ?>
+                <tr>
+                    <td><?= $section['section_number']; ?></td>
+                    <td><?= $section['year_level']; ?></td>
+                    <td><?= $section['semester']; ?></td>
+                    <td><?= $section['capacity']; ?></td>
+                    <td><?= $section['department_code']; ?></td>
+                    <td>
+                        <a href="manage_sections.php?edit_section_id=<?= $section['id']; ?>" 
+                        class="btn btn-info btn-sm">Edit</a>
+                        <a href="manage_sections.php?delete_section_id=<?= $section['id']; ?>" 
+                           class="btn btn-danger btn-sm delete-link"
+                           data-section-number="<?= $section['section_number']; ?>">Delete</a>
+                    </td>
+                </tr>
+                <?php endwhile; ?>
+            </tbody>
+          </table>
+          <button id="toggle-semester-btn" class="btn btn-warning mt-3">Toggle All Semesters</button>
+        </div>
+      </div>
 
     </section>
 
@@ -399,9 +431,9 @@ checkAccess('superadmin'); // Ensure only users with the 'admin' role can access
       button.addEventListener('click', function(event) {
           event.preventDefault();
           const deleteUrl = this.href;
-          const subjectCode = this.getAttribute('data-subject-code');
+          const sectionNumber = this.getAttribute('data-section-number');
 
-          showConfirmationModal(`Are you sure you want to delete the Room: ${subjectCode}?`, () => {
+          showConfirmationModal(`Are you sure you want to delete the Room: ${sectionNumber}?`, () => {
               window.location.href = deleteUrl;
           });
       });

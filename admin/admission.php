@@ -1,7 +1,7 @@
 <?php
 require('../database.php');
 require('../access_control.php');
-checkAccess('superadmin'); // Ensure only 'superadmin' role has access
+checkAccess('admin'); // Ensure only 'admin' role has access
 
 // Function to generate student number
 function generateStudentNumber($conn) {

@@ -1,6 +1,21 @@
 <?php require('../database.php');
 require('../access_control.php'); // Include the file with the checkAccess function
-checkAccess('superadmin'); // Ensure only users with the 'admin' role can access this page
+checkAccess('admin'); // Ensure only users with the 'admin' role can access this page
+
+// Handle form submission to add an academic year
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['academic_year'])) {
+  $academicYear = $_POST['academic_year'];
+  $setCurrent = isset($_POST['set_current']) ? 1 : 0;
+  
+  if (addAcademicYear($academicYear, $setCurrent)) {
+      $success = "Academic year added successfully.";
+  } else {
+      $error = "Error adding academic year.";
+  }
+}
+
+// Get all academic years
+$academicYears = getAcademicYears();
 ?>
 
 <!DOCTYPE html>
@@ -10,7 +25,7 @@ checkAccess('superadmin'); // Ensure only users with the 'admin' role can access
   <meta charset="utf-8">
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
 
-  <title>Rooms</title>
+  <title>Academic</title>
   <meta content="" name="description">
   <meta content="" name="keywords">
 
@@ -35,59 +50,18 @@ checkAccess('superadmin'); // Ensure only users with the 'admin' role can access
   <link href="../assets/css/style.css" rel="stylesheet">
 
   <style>
-    .modal {
-        display: none; 
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.5);
-        justify-content: center;
-        align-items: center;
-        z-index: 1000;
+    .alert {
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 5px;
     }
-    .modal-content {
-        background-color: #fff;
-        padding: 20px;
-        border-radius: 5px;
-        text-align: center;
-        width: 300px;
+    .alert-success {
+      background-color: #d4edda;
+      color: #155724;
     }
-    .modal-buttons {
-        margin-top: 20px;
-        display: flex;
-        justify-content: space-between;
-    }
-    .btn-danger {
-        background-color: #dc3545;
-        color: white;
-    }
-    .btn-secondary {
-        background-color: #6c757d;
-        color: white;
-    }
-    .btn:hover {
-        opacity: 0.8;
-    }
-
-    .popup-message {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        z-index: 1000;
-        padding: 15px;
-        border-radius: 5px;
-        font-size: 16px;
-        color: #fff;
-        opacity: 0;
-        transition: opacity 0.5s ease-in-out;
-    }
-    .popup-message.success {
-        background-color: green;
-    }
-    .popup-message.error {
-        background-color: red;
+    .alert-danger {
+      background-color: #f8d7da;
+      color: #721c24;
     }
   </style>
 </head>
@@ -268,181 +242,122 @@ checkAccess('superadmin'); // Ensure only users with the 'admin' role can access
   <main id="main" class="main">
 
     <div class="pagetitle">
-      <h1>Rooms</h1>
+      <h1>Dashboard</h1>
       <nav>
         <ol class="breadcrumb">
           <li class="breadcrumb-item"><a href="index.html">Home</a></li>
-          <li class="breadcrumb-item active">Rooms</li>
+          <li class="breadcrumb-item active">Dashboard</li>
         </ol>
       </nav>
     </div><!-- End Page Title -->
 
-    <div id="confirmationModal" class="modal">
-      <div class="modal-content">
-          <p id="confirmationMessage">Are you sure you want to delete this room?</p>
-          <div class="modal-buttons">
-              <button id="confirmDelete" class="btn btn-danger">Delete</button>
-              <button id="cancelDelete" class="btn btn-secondary">Cancel</button>
+    <section class="section">
+      <div class="row">
+        <div class="col-lg-12">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">Add New Academic Year</h5>
+
+              <form action="manage_academic_year.php" method="POST">
+                <div class="mb-3">
+                  <label for="academicYear" class="form-label">Academic Year</label>
+                  <input type="text" class="form-control" id="academicYear" name="academic_year" placeholder="2023-2024" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Add Academic Year</button>
+              </form>
+            </div>
           </div>
-      </div>
-    </div>
+        </div>
 
+        <div class="col-lg-12">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">Academic Year List</h5>
 
-    <section class="section dashboard">
-    <div class="row">
-
-      <div class="card">
-        <div class="card-body">
-        <h5 class="card-title"><?php if (isset($_GET['edit_room_id'])): ?>
-          Edit Room
-        <?php else: ?>
-          Add Room
-        <?php endif; ?>
-        </h5>
-          <form action="manage_rooms.php" method="POST" class="mb-4">
-            <div class="form-group">
-              <label for="room_name">Room Name:</label>
-              <input type="text" class="form-control" name="room_name" id="room_name" required
-                    value="<?= isset($edit_room) ? $edit_room['room_name'] : ''; ?>">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th scope="col">Academic Year</th>
+                    <th scope="col">Set as Current</th>
+                    <th scope="col">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <?php
+                  $query = "SELECT * FROM sms3_academic_years ORDER BY id DESC";
+                  $result = $conn->query($query);
+                  if ($result->num_rows > 0) {
+                    $i = 1;
+                    while ($row = $result->fetch_assoc()) {
+                      $isCurrent = $row['is_current'] ? 'Yes' : 'No';
+                      echo "<tr>
+                              <td>" . $row['academic_year'] . "</td>
+                              <td>" . ($row['is_current'] ? '<span class="badge bg-success">Current</span>' : '<button class="btn btn-sm btn-primary" onclick="setCurrentAcademicYear(' . $row['id'] . ')">Set as Current</button>') . "</td>
+                              <td>
+                                <button class='btn btn-sm btn-danger' onclick='deleteAcademicYear(" . $row['id'] . ")'>Delete</button>
+                              </td>
+                            </tr>";
+                    }
+                  } else {
+                    echo "<tr><td colspan='4' class='text-center'>No academic years found</td></tr>";
+                  }
+                  ?>
+                </tbody>
+              </table>
             </div>
-
-            <div class="form-group mt-2">
-              <label for="location">Location:</label>
-              <input type="text" class="form-control" name="location" id="location" required
-                    value="<?= isset($edit_room) ? $edit_room['location'] : ''; ?>">
-            </div>
-
-            <div class="form-group mt-2">
-            <label for="department_id">Assign to Department:</label>
-            <select class="form-control" name="department_id" id="department_id" required>
-              <!-- Fetch Departments -->
-              <?php
-              $departments = $conn->query("SELECT * FROM sms3_departments");
-              while ($department = $departments->fetch_assoc()): ?>
-                <option value="<?= $department['id']; ?>" <?= isset($edit_room) && $edit_room['department_id'] == $department['id'] ? 'selected' : ''; ?>>
-                  <?= $department['department_code']; ?>
-                </option>
-              <?php endwhile; ?>
-            </select>
-            </div>
-
-            <?php if (isset($edit_room)): ?>
-              <input type="hidden" name="room_id" value="<?= $edit_room['id']; ?>">
-              <button type="submit" name="update_room" class="btn btn-warning mt-3">Update Room</button>
-            <?php else: ?>
-              <button type="submit" name="add_room" class="btn btn-primary mt-3">Add Room</button>
-            <?php endif; ?>
-          </form>
+          </div>
         </div>
       </div>
-
-      <div class="card">
-        <div class="card-body">
-        <h5 class="card-title">Room List</h5>
-          <table class="table datatable">
-            <thead>
-                <tr>
-                    <th>Room Name</th>
-                    <th>Location</th>
-                    <th>Department</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-              <?php while ($room = $rooms->fetch_assoc()): ?>
-                <tr>
-                    <td><?= $room['room_name']; ?></td>
-                    <td><?= $room['location']; ?></td>
-                    <td><?= $room['department_code']; ?></td>
-                    <td>
-                    <a href="manage_rooms.php?edit_room_id=<?= $room['id']; ?>" 
-                      class="btn btn-info btn-sm">Edit</a>
-                    <a href="manage_rooms.php?delete_room_id=<?= $room['id']; ?>" 
-                      class="btn btn-danger btn-sm delete-link" 
-                      data-room-name="<?= $room['room_name']; ?>">Delete</a>
-                    </td>
-                </tr>
-              <?php endwhile; ?>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-    </div>
     </section>
 
   </main><!-- End #main -->
 
   <script>
-    function showConfirmationModal(message, onConfirm) {
-      const modal = document.getElementById('confirmationModal');
-      const confirmDeleteBtn = document.getElementById('confirmDelete');
-      const cancelDeleteBtn = document.getElementById('cancelDelete');
-      const confirmationMessage = document.getElementById('confirmationMessage');
-
-      confirmationMessage.innerText = message;
-      modal.style.display = 'flex';
-
-      confirmDeleteBtn.onclick = () => {
-          onConfirm();
-          closeModal();
-      };
-
-      cancelDeleteBtn.onclick = closeModal;
-
-      function closeModal() {
-          modal.style.display = 'none';
-      }
-    }
-
-    document.querySelectorAll('.delete-link').forEach(button => {
-      button.addEventListener('click', function(event) {
-          event.preventDefault();
-          const deleteUrl = this.href;
-          const roomName = this.getAttribute('data-room-name');
-
-          showConfirmationModal(`Are you sure you want to delete the Room: ${roomName}?`, () => {
-              window.location.href = deleteUrl;
-          });
+  function setCurrentAcademicYear(id) {
+    if (confirm('Are you sure you want to set this academic year as current?')) {
+      fetch('set_academic_year.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+            alert('Academic year set as current successfully.');
+            location.reload();
+        } else {
+            alert('Failed to set the academic year.');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while setting the academic year.');
       });
-    });
-
-    function showPopupMessage(message, type = 'success') {
-      const popup = document.createElement('div');
-      popup.className = `popup-message ${type}`;
-      popup.innerText = message;
-
-      popup.style.position = 'fixed';
-      popup.style.top = '20px';
-      popup.style.right = '20px';
-      popup.style.padding = '15px';
-      popup.style.zIndex = '1000';
-      popup.style.borderRadius = '5px';
-      popup.style.color = '#fff';
-      popup.style.fontSize = '16px';
-      popup.style.backgroundColor = type === 'success' ? 'green' : 'red';
-      popup.style.opacity = '1';
-      popup.style.transition = 'opacity 0.5s ease';
-
-      document.body.appendChild(popup);
-
-      setTimeout(() => {
-          popup.style.opacity = '0';
-          setTimeout(() => {
-              popup.remove();
-          }, 500);
-      }, 3000);
     }
+  }
 
-    window.onload = function() {
-      <?php if (isset($_SESSION['error_message'])): ?>
-          showPopupMessage('<?= $_SESSION['error_message']; ?>', 'error');
-          <?php unset($_SESSION['error_message']); ?>
-      <?php elseif (isset($_SESSION['success_message'])): ?>
-          showPopupMessage('<?= $_SESSION['success_message']; ?>', 'success');
-          <?php unset($_SESSION['success_message']); ?>
-      <?php endif; ?>
-    };
+  function deleteAcademicYear(id) {
+    if (confirm('Are you sure you want to delete this academic year?')) {
+      fetch('delete_academic_year.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+      })
+      .then(response => response.json())
+      .then(data => {
+          if (data.success) {
+              alert('Academic year deleted successfully.');
+              location.reload();
+          } else {
+              alert('Failed to delete the academic year.');
+          }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while deleting the academic year.');
+      });
+    }
+  }
   </script>
 
   <!-- ======= Footer ======= -->

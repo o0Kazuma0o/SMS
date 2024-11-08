@@ -1,21 +1,6 @@
 <?php require('../database.php');
 require('../access_control.php'); // Include the file with the checkAccess function
-checkAccess('superadmin'); // Ensure only users with the 'admin' role can access this page
-
-// Handle form submission to add an academic year
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['academic_year'])) {
-  $academicYear = $_POST['academic_year'];
-  $setCurrent = isset($_POST['set_current']) ? 1 : 0;
-  
-  if (addAcademicYear($academicYear, $setCurrent)) {
-      $success = "Academic year added successfully.";
-  } else {
-      $error = "Error adding academic year.";
-  }
-}
-
-// Get all academic years
-$academicYears = getAcademicYears();
+checkAccess('admin'); // Ensure only users with the 'admin' role can access this page
 ?>
 
 <!DOCTYPE html>
@@ -25,7 +10,7 @@ $academicYears = getAcademicYears();
   <meta charset="utf-8">
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
 
-  <title>Academic</title>
+  <title>Subjects</title>
   <meta content="" name="description">
   <meta content="" name="keywords">
 
@@ -50,20 +35,62 @@ $academicYears = getAcademicYears();
   <link href="../assets/css/style.css" rel="stylesheet">
 
   <style>
-    .alert {
-      padding: 10px;
-      margin: 10px 0;
-      border-radius: 5px;
+    .modal {
+        display: none; 
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
     }
-    .alert-success {
-      background-color: #d4edda;
-      color: #155724;
+    .modal-content {
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 5px;
+        text-align: center;
+        width: 300px;
     }
-    .alert-danger {
-      background-color: #f8d7da;
-      color: #721c24;
+    .modal-buttons {
+        margin-top: 20px;
+        display: flex;
+        justify-content: space-between;
+    }
+    .btn-danger {
+        background-color: #dc3545;
+        color: white;
+    }
+    .btn-secondary {
+        background-color: #6c757d;
+        color: white;
+    }
+    .btn:hover {
+        opacity: 0.8;
+    }
+
+    .popup-message {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1000;
+        padding: 15px;
+        border-radius: 5px;
+        font-size: 16px;
+        color: #fff;
+        opacity: 0;
+        transition: opacity 0.5s ease-in-out;
+    }
+    .popup-message.success {
+        background-color: green;
+    }
+    .popup-message.error {
+        background-color: red;
     }
   </style>
+
 </head>
 
 <body>
@@ -242,122 +269,180 @@ $academicYears = getAcademicYears();
   <main id="main" class="main">
 
     <div class="pagetitle">
-      <h1>Dashboard</h1>
+      <h1>Subjects</h1>
       <nav>
         <ol class="breadcrumb">
           <li class="breadcrumb-item"><a href="index.html">Home</a></li>
-          <li class="breadcrumb-item active">Dashboard</li>
+          <li class="breadcrumb-item active">Subjects</li>
         </ol>
       </nav>
     </div><!-- End Page Title -->
 
-    <section class="section">
-      <div class="row">
-        <div class="col-lg-12">
-          <div class="card">
-            <div class="card-body">
-              <h5 class="card-title">Add New Academic Year</h5>
-
-              <form action="manage_academic_year.php" method="POST">
-                <div class="mb-3">
-                  <label for="academicYear" class="form-label">Academic Year</label>
-                  <input type="text" class="form-control" id="academicYear" name="academic_year" placeholder="2023-2024" required>
-                </div>
-                <button type="submit" class="btn btn-primary">Add Academic Year</button>
-              </form>
-            </div>
+    <div id="confirmationModal" class="modal">
+      <div class="modal-content">
+          <p id="confirmationMessage">Are you sure you want to delete this department?</p>
+          <div class="modal-buttons">
+              <button id="confirmDelete" class="btn btn-danger">Delete</button>
+              <button id="cancelDelete" class="btn btn-secondary">Cancel</button>
           </div>
-        </div>
+      </div>
+    </div>
 
-        <div class="col-lg-12">
-          <div class="card">
-            <div class="card-body">
-              <h5 class="card-title">Academic Year List</h5>
+    <section class="section dashboard">
+    
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title">
+        <?php if (isset($_GET['edit_subject_id'])): ?>
+          Edit Subject
+        <?php else: ?>
+          Add Subject
+        <?php endif; ?></h5>
 
-              <table class="table">
-                <thead>
-                  <tr>
-                    <th scope="col">Academic Year</th>
-                    <th scope="col">Set as Current</th>
-                    <th scope="col">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <?php
-                  $query = "SELECT * FROM sms3_academic_years ORDER BY id DESC";
-                  $result = $conn->query($query);
-                  if ($result->num_rows > 0) {
-                    $i = 1;
-                    while ($row = $result->fetch_assoc()) {
-                      $isCurrent = $row['is_current'] ? 'Yes' : 'No';
-                      echo "<tr>
-                              <td>" . $row['academic_year'] . "</td>
-                              <td>" . ($row['is_current'] ? '<span class="badge bg-success">Current</span>' : '<button class="btn btn-sm btn-primary" onclick="setCurrentAcademicYear(' . $row['id'] . ')">Set as Current</button>') . "</td>
-                              <td>
-                                <button class='btn btn-sm btn-danger' onclick='deleteAcademicYear(" . $row['id'] . ")'>Delete</button>
-                              </td>
-                            </tr>";
-                    }
-                  } else {
-                    echo "<tr><td colspan='4' class='text-center'>No academic years found</td></tr>";
-                  }
-                  ?>
-                </tbody>
-              </table>
+          <!-- Add Subject Form -->
+          <form action="manage_subjects.php" method="POST" class="mb-4">
+            <div class="form-group">
+              <label for="subject_code">Subject Code:</label>
+              <input type="text" class="form-control" name="subject_code" id="subject_code" required
+              value="<?= isset($edit_subject) ? $edit_subject['subject_code'] : ''; ?>">
             </div>
-          </div>
+            <div class="form-group mt-2">
+              <label for="subject_name">Subject Name:</label>
+              <input type="text" class="form-control" name="subject_name" id="subject_name" required
+              value="<?= isset($edit_subject) ? $edit_subject['subject_name'] : ''; ?>">
+            </div>
+            <div class="form-group mt-2">
+              <label for="department_id">Assign to Department:</label>
+              <select class="form-control" name="department_id" id="department_id" required>
+                <!-- Fetch Departments -->
+                <?php
+                $departments = $conn->query("SELECT * FROM sms3_departments");
+                while ($department = $departments->fetch_assoc()): ?>
+                    <option value="<?= $department['id']; ?>" <?= isset($edit_subject) && $edit_subject['department_id'] == $department['id'] ? 'selected' : ''; ?>>
+                      <?= $department['department_code']; ?>
+                    </option>
+                <?php endwhile; ?>
+              </select>
+            </div>
+            <?php if (isset($edit_subject)): ?>
+              <input type="hidden" name="subject_id" value="<?= $edit_subject['id']; ?>">
+              <button type="submit" name="update_subject" class="btn btn-warning mt-3">Update Subject</button>
+              <?php else: ?>
+              <button type="submit" name="add_subject" class="btn btn-primary mt-3">Add Subject</button>
+              <?php endif; ?>
+        </form>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-body">
+      <h5 class="card-title">List of Subject</h5>
+        <div class="row">
+          <!-- List of Subjects -->
+          <table class="table datatable">
+            <thead>
+              <tr>
+                  <th>Subject Code</th>
+                  <th>Subject Name</th>
+                  <th>Department</th>
+                  <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <?php while ($subject = $subjects->fetch_assoc()): ?>
+              <tr>
+                <td><?= $subject['subject_code']; ?></td>
+                <td><?= $subject['subject_name']; ?></td>
+                <td><?= $subject['department_code']; ?></td>
+                <td>
+                <a href="manage_subjects.php?edit_subject_id=<?= $subject['id']; ?>" 
+                    class="btn btn-info btn-sm">Edit</a>
+                <a href="manage_subjects.php?delete_subject_id=<?= $subject['id']; ?>" 
+                    class="btn btn-danger btn-sm delete-link"
+                    data-subject-code="<?= $subject['subject_code']; ?>">Delete</a>
+                </td>
+              </tr>
+              <?php endwhile; ?>
+            </tbody>
+          </table>
         </div>
       </div>
+    </div>
+
     </section>
 
   </main><!-- End #main -->
 
   <script>
-  function setCurrentAcademicYear(id) {
-    if (confirm('Are you sure you want to set this academic year as current?')) {
-      fetch('set_academic_year.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id })
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-            alert('Academic year set as current successfully.');
-            location.reload();
-        } else {
-            alert('Failed to set the academic year.');
-        }
-      })
-      .catch(error => {
-        console.error('Error:', error);
-        alert('An error occurred while setting the academic year.');
-      });
-    }
-  }
+    function showConfirmationModal(message, onConfirm) {
+      const modal = document.getElementById('confirmationModal');
+      const confirmDeleteBtn = document.getElementById('confirmDelete');
+      const cancelDeleteBtn = document.getElementById('cancelDelete');
+      const confirmationMessage = document.getElementById('confirmationMessage');
 
-  function deleteAcademicYear(id) {
-    if (confirm('Are you sure you want to delete this academic year?')) {
-      fetch('delete_academic_year.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id })
-      })
-      .then(response => response.json())
-      .then(data => {
-          if (data.success) {
-              alert('Academic year deleted successfully.');
-              location.reload();
-          } else {
-              alert('Failed to delete the academic year.');
-          }
-      })
-      .catch(error => {
-        console.error('Error:', error);
-        alert('An error occurred while deleting the academic year.');
-      });
+      confirmationMessage.innerText = message;
+      modal.style.display = 'flex';
+
+      confirmDeleteBtn.onclick = () => {
+          onConfirm();
+          closeModal();
+      };
+
+      cancelDeleteBtn.onclick = closeModal;
+
+      function closeModal() {
+          modal.style.display = 'none';
+      }
     }
-  }
+
+    document.querySelectorAll('.delete-link').forEach(button => {
+      button.addEventListener('click', function(event) {
+          event.preventDefault();
+          const deleteUrl = this.href;
+          const subjectCode = this.getAttribute('data-subject-code');
+
+          showConfirmationModal(`Are you sure you want to delete the Room: ${subjectCode}?`, () => {
+              window.location.href = deleteUrl;
+          });
+      });
+    });
+
+    function showPopupMessage(message, type = 'success') {
+      const popup = document.createElement('div');
+      popup.className = `popup-message ${type}`;
+      popup.innerText = message;
+
+      popup.style.position = 'fixed';
+      popup.style.top = '20px';
+      popup.style.right = '20px';
+      popup.style.padding = '15px';
+      popup.style.zIndex = '1000';
+      popup.style.borderRadius = '5px';
+      popup.style.color = '#fff';
+      popup.style.fontSize = '16px';
+      popup.style.backgroundColor = type === 'success' ? 'green' : 'red';
+      popup.style.opacity = '1';
+      popup.style.transition = 'opacity 0.5s ease';
+
+      document.body.appendChild(popup);
+
+      setTimeout(() => {
+          popup.style.opacity = '0';
+          setTimeout(() => {
+              popup.remove();
+          }, 500);
+      }, 3000);
+    }
+
+    window.onload = function() {
+      <?php if (isset($_SESSION['error_message'])): ?>
+          showPopupMessage('<?= $_SESSION['error_message']; ?>', 'error');
+          <?php unset($_SESSION['error_message']); ?>
+      <?php elseif (isset($_SESSION['success_message'])): ?>
+          showPopupMessage('<?= $_SESSION['success_message']; ?>', 'success');
+          <?php unset($_SESSION['success_message']); ?>
+      <?php endif; ?>
+    };
   </script>
 
   <!-- ======= Footer ======= -->
