@@ -1,22 +1,3 @@
-<?php
-require('../database.php');
-session_start();
-
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'Student') {
-    header("Location: ../index.php");
-    exit;
-}
-
-$userId = $_SESSION['user_id'];
-$query = $conn->prepare("SELECT program, year_level FROM sms3_students WHERE id = ?");
-$query->bind_param("i", $userId);
-$query->execute();
-$result = $query->get_result();
-$studentData = $result->fetch_assoc();
-$studentDepartment = $studentData['program'];
-$studentYearLevel = $studentData['year_level'];
-?>
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -24,7 +5,7 @@ $studentYearLevel = $studentData['year_level'];
   <meta charset="utf-8">
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
 
-  <title>Upcoming Enrollment</title>
+  <title>Dashboard - Title</title>
   <meta content="" name="description">
   <meta content="" name="keywords">
 
@@ -188,34 +169,17 @@ $studentYearLevel = $studentData['year_level'];
   <main id="main" class="main">
 
     <div class="pagetitle">
-      <h1>Current Enrollment</h1>
+      <h1>Dashboard</h1>
       <nav>
         <ol class="breadcrumb">
           <li class="breadcrumb-item"><a href="index.html">Home</a></li>
-          <li class="breadcrumb-item">Enrollment</li>
-          <li class="breadcrumb-item active">Current Enrollment</li>
+          <li class="breadcrumb-item active">Dashboard</li>
         </ol>
       </nav>
     </div><!-- End Page Title -->
 
     <section class="section dashboard">
-    <div class="row">
-
-      <div class="card">
-        <div class="card-body">
-        <h5 class="card-title">??</h5>
-          
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-body">
-        <h5 class="card-title">??</h5>
-          
-        </div>
-      </div>
-
-    </div>
+      
     </section>
 
   </main><!-- End #main -->

@@ -176,6 +176,12 @@ $result = $conn->query($query);
         </a>
       </li>
       <li class="nav-item">
+        <a class="nav-link " href="manage_semesters.php">
+          <i class="bi bi-grid"></i>
+          <span>Semester</span>
+        </a>
+      </li>
+      <li class="nav-item">
         <a class="nav-link " href="manage_departments.php">
           <i class="bi bi-grid"></i>
           <span>Department</span>

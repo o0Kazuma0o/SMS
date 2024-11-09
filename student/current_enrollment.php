@@ -133,7 +133,7 @@
     <hr class="sidebar-divider">
 
       <li class="nav-item">
-        <a class="nav-link " href="index.html">
+        <a class="nav-link " href="Dashboard.php">
           <i class="bi bi-grid"></i>
           <span>Dashboard</span>
         </a>
@@ -149,12 +149,12 @@
         </a>
         <ul id="system-nav" class="nav-content collapse " data-bs-parent="#sidebar-nav">
           <li>
-            <a href="modules.html">
+            <a href="current_enrollment.php">
               <i class="bi bi-circle"></i><span>Current Enrollemnt</span>
             </a>
           </li>
           <li>
-            <a href="upcoming_enrollment.html">
+            <a href="upcoming_enrollment.php">
               <i class="bi bi-circle"></i><span>Upcoming Enrollment</span>
             </a>
           </li>
@@ -169,17 +169,34 @@
   <main id="main" class="main">
 
     <div class="pagetitle">
-      <h1>Dashboard</h1>
+      <h1>Current Enrollment</h1>
       <nav>
         <ol class="breadcrumb">
           <li class="breadcrumb-item"><a href="index.html">Home</a></li>
-          <li class="breadcrumb-item active">Dashboard</li>
+          <li class="breadcrumb-item">Enrollment</li>
+          <li class="breadcrumb-item active">Current Enrollment</li>
         </ol>
       </nav>
     </div><!-- End Page Title -->
 
     <section class="section dashboard">
-      
+    <div class="row">
+
+      <div class="card">
+        <div class="card-body">
+        <h5 class="card-title">??</h5>
+          
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-body">
+        <h5 class="card-title">??</h5>
+          
+        </div>
+      </div>
+
+    </div>
     </section>
 
   </main><!-- End #main -->

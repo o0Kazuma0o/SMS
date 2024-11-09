@@ -1,6 +1,69 @@
 <?php require('../database.php');
 require('../access_control.php'); // Include the file with the checkAccess function
 checkAccess('admin'); // Ensure only users with the 'admin' role can access this page
+
+// Edit section
+$edit_section = null;
+if (isset($_GET['edit_section_id'])) {
+    $edit_section_id = $_GET['edit_section_id'];
+    $stmt = $conn->prepare("SELECT * FROM sms3_sections WHERE id = ?");
+    $stmt->bind_param("i", $edit_section_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $edit_section = $result->fetch_assoc();
+    $stmt->close();
+}
+
+// Add or update section
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST['add_section']) || isset($_POST['update_section']))) {
+    $section_number = $_POST['section_number'];
+    $year_level = $_POST['year_level'];
+    $capacity = $_POST['capacity'];
+    $available = $_POST['available'];
+    $department_id = $_POST['department_id'];
+
+    try {
+        if (isset($_POST['add_section'])) {
+            $stmt = $conn->prepare("INSERT INTO sms3_sections (section_number, year_level, capacity, available, department_id) VALUES (?, ?, ?, ?, ?)");
+            $stmt->bind_param("iiiii", $section_number, $year_level, $capacity, $available, $department_id);
+        } elseif (isset($_POST['update_section'])) {
+            $section_id = $_POST['section_id'];
+            $stmt = $conn->prepare("UPDATE sms3_sections SET section_number = ?, year_level = ?, capacity = ?, available = ?, department_id = ? WHERE id = ?");
+            $stmt->bind_param("iiiiii", $section_number, $year_level, $capacity, $available, $department_id, $section_id);
+        }
+
+        $stmt->execute();
+        $stmt->close();
+        $_SESSION['success_message'] = isset($_POST['add_section']) ? "Section added successfully!" : "Section updated successfully!";
+        header("Location: manage_sections.php");
+        exit;
+    } catch (mysqli_sql_exception $e) {
+        $_SESSION['error_message'] = $e->getCode() == 1062 ? "Error: Duplicate section number." : "Error: " . $e->getMessage();
+        header("Location: manage_sections.php");
+        exit;
+    }
+}
+
+// Delete section
+if (isset($_GET['delete_section_id'])) {
+    $delete_id = $_GET['delete_section_id'];
+    try {
+        $stmt = $conn->prepare("DELETE FROM sms3_sections WHERE id = ?");
+        $stmt->bind_param("i", $delete_id);
+        $stmt->execute();
+        $stmt->close();
+        $_SESSION['success_message'] = "Section deleted successfully!";
+        header("Location: manage_sections.php");
+        exit;
+    } catch (mysqli_sql_exception $e) {
+        $_SESSION['error_message'] = $e->getCode() == 1451 ? "Error: This section is linked to other data." : "Error: " . $e->getMessage();
+        header("Location: manage_sections.php");
+        exit;
+    }
+}
+
+// Fetch sections for display
+$sections = $conn->query("SELECT s.*, d.department_code FROM sms3_sections s JOIN sms3_departments d ON s.department_id = d.id");
 ?>
 
 <!DOCTYPE html>
@@ -243,6 +306,12 @@ checkAccess('admin'); // Ensure only users with the 'admin' role can access this
         </a>
       </li>
       <li class="nav-item">
+        <a class="nav-link " href="manage_semesters.php">
+          <i class="bi bi-grid"></i>
+          <span>Semester</span>
+        </a>
+      </li>
+      <li class="nav-item">
         <a class="nav-link " href="manage_departments.php">
           <i class="bi bi-grid"></i>
           <span>Department</span>
@@ -294,7 +363,7 @@ checkAccess('admin'); // Ensure only users with the 'admin' role can access this
 
     <div id="confirmationModal" class="modal">
       <div class="modal-content">
-          <p id="confirmationMessage">Are you sure you want to delete this department?</p>
+          <p id="confirmationMessage">Are you sure you want to delete this section?</p>
           <div class="modal-buttons">
               <button id="confirmDelete" class="btn btn-danger">Delete</button>
               <button id="cancelDelete" class="btn btn-secondary">Cancel</button>
@@ -329,16 +398,14 @@ checkAccess('admin'); // Ensure only users with the 'admin' role can access this
               </select>
             </div>
             <div class="form-group mt-2">
-            <label for="semester">Semester:</label>
-              <select class="form-control" name="semester" id="semester" required>
-                <option value="1st Semester" <?= isset($edit_section) && $edit_section['semester'] == '1st Semester' ? 'selected' : ''; ?>>1st Semester</option>
-                <option value="2nd Semester" <?= isset($edit_section) && $edit_section['semester'] == '2nd Semester' ? 'selected' : ''; ?>>2nd Semester</option>
-              </select>
-            </div>
-            <div class="form-group mt-2">
               <label for="capacity">Section Capacity:</label>
               <input type="number" class="form-control" name="capacity" id="capacity" required
               value="<?= isset($edit_section) ? $edit_section['capacity'] : ''; ?>" min="1" placeholder="Enter section capacity">
+            </div>
+            <div class="form-group mt-2">
+              <label for="available">Available Slots:</label>
+              <input type="number" class="form-control" name="available" id="available" required
+              value="<?= isset($edit_section) ? $edit_section['available'] : ''; ?>" min="1" placeholder="Enter section available slots">
             </div>
             <div class="form-group mt-2">
               <label for="department_id">Assign to Department:</label>
@@ -372,8 +439,8 @@ checkAccess('admin'); // Ensure only users with the 'admin' role can access this
                 <tr>
                     <th>Section Number</th>
                     <th>Year Level</th>
-                    <th>Semester</th>
                     <th>Capacity</th>
+                    <th>Available Slots</th>
                     <th>Department</th>
                     <th>Actions</th>
                 </tr>
@@ -383,8 +450,8 @@ checkAccess('admin'); // Ensure only users with the 'admin' role can access this
                 <tr>
                     <td><?= $section['section_number']; ?></td>
                     <td><?= $section['year_level']; ?></td>
-                    <td><?= $section['semester']; ?></td>
                     <td><?= $section['capacity']; ?></td>
+                    <td><?= $section['available']; ?></td>
                     <td><?= $section['department_code']; ?></td>
                     <td>
                         <a href="manage_sections.php?edit_section_id=<?= $section['id']; ?>" 
@@ -433,7 +500,7 @@ checkAccess('admin'); // Ensure only users with the 'admin' role can access this
           const deleteUrl = this.href;
           const sectionNumber = this.getAttribute('data-section-number');
 
-          showConfirmationModal(`Are you sure you want to delete the Room: ${sectionNumber}?`, () => {
+          showConfirmationModal(`Are you sure you want to delete the Section: ${sectionNumber}?`, () => {
               window.location.href = deleteUrl;
           });
       });

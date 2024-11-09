@@ -65,14 +65,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $_SESSION['role'] = $user['role'];
 
         // Redirect based on role
-        if ($user['role'] === 'admin') {
-            header('Location: admin/Adashboard.php');
+        if ($user['role'] === 'superAdmin') {
+            header('Location: superAdmin/Adashboard.php');
         } elseif ($user['role'] === 'admin') {
             header('Location: admin/Adashboard.php');
         } elseif ($user['role'] === 'staff') {
             header('Location: staff_dashboard.php');
-        } elseif ($user['role'] === 'student') {
-            header('Location: student_dashboard.php');
+        } elseif ($user['role'] === 'Student') {
+            header('Location: student/Dashboard.php');
         } else {
             $_SESSION['error_message'] = 'Invalid user role.';
             header('Location: index.php');

@@ -228,6 +228,12 @@ checkAccess('admin'); // Ensure only users with the 'admin' role can access this
         </a>
       </li>
       <li class="nav-item">
+        <a class="nav-link " href="manage_semesters.php">
+          <i class="bi bi-grid"></i>
+          <span>Semester</span>
+        </a>
+      </li>
+      <li class="nav-item">
         <a class="nav-link " href="manage_departments.php">
           <i class="bi bi-grid"></i>
           <span>Department</span>
@@ -339,7 +345,7 @@ checkAccess('admin'); // Ensure only users with the 'admin' role can access this
       <div class="card">
         <div class="card-body">
         <h5 class="card-title">Room List</h5>
-          <table class="table datatable">
+          <table class="table table-bordered">
             <thead>
                 <tr>
                     <th>Room Name</th>
