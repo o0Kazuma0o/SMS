@@ -6,7 +6,7 @@ $data = json_decode(file_get_contents('php://input'), true);
 
 // Prepare the SQL statement to insert the data
 $sql = "INSERT INTO sms3_pending_admission (
-    first_name, middle_name, last_name, program, admission_type, year_level, sex, civil_status, religion, 
+    first_name, middle_name, last_name, department_id, admission_type, year_level, sex, civil_status, religion, 
     birthday, email, contact_number, facebook_name, working_student, address, father_name, mother_name, 
     guardian_name, guardian_contact, member4ps, primary_school, primary_year, secondary_school, 
     secondary_year, last_school, last_school_year, referral_source, status

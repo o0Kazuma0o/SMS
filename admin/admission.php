@@ -5,88 +5,76 @@ checkAccess('Admin'); // Ensure only users with the 'admin' role can access this
 
 // Function to generate student number
 function generateStudentNumber($conn) {
-  // Get the current year and take the last two digits (e.g., 2024 -> 24)
-  $yearPrefix = date('y');  // 'y' gives the last two digits of the year
+  $yearPrefix = date('y'); // e.g., '24' for 2024
 
-  // Get the last student number
   $result = $conn->query("SELECT student_number FROM sms3_students ORDER BY id DESC LIMIT 1");
   $lastStudentNumber = $result->fetch_assoc();
 
   if ($lastStudentNumber) {
-      $lastNumber = intval(substr($lastStudentNumber['student_number'], 2)); // Extract the last 6 digits
+      $lastNumber = intval(substr($lastStudentNumber['student_number'], 2)); // Extract last 6 digits
       $newNumber = $lastNumber + 1;
   } else {
       $newNumber = 100001; // Starting number for first student
   }
 
-  // Return the new student number, e.g., "24100001"
-  return $yearPrefix . str_pad($newNumber, 6, '0', STR_PAD_LEFT);
+  return $yearPrefix . str_pad($newNumber, 6, '0', STR_PAD_LEFT); // e.g., "24100001"
 }
 
-// Function to generate password
+// Function to generate and bcrypt hash password
 function generatePassword($lastName) {
-  // Use the first 2 letters of the last name
-  $surname = substr($lastName, 0, 2); 
-  return '#' . $surname . '8080';
+  $passwordPlain = '#' . substr($lastName, 0, 2) . '8080'; // e.g., "#Ca8080" for "Capati"
+  return password_hash($passwordPlain, PASSWORD_BCRYPT); // Use bcrypt algorithm
 }
 
 // Fetch current academic year
 function getCurrentAcademicYear($conn) {
-    $result = $conn->query("SELECT academic_year FROM sms3_academic_years WHERE is_current = 1 LIMIT 1");
-    if ($result && $result->num_rows > 0) {
-        return $result->fetch_assoc()['academic_year'];
-    }
-    return null;
+  $result = $conn->query("SELECT academic_year FROM sms3_academic_years WHERE is_current = 1 LIMIT 1");
+  return ($result && $result->num_rows > 0) ? $result->fetch_assoc()['academic_year'] : null;
 }
 
 // Handle status update requests
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_id'], $_POST['status'])) {
-    $admissionId = intval($_POST['admission_id']);
-    $status = $_POST['status'];
+  $admissionId = intval($_POST['admission_id']);
+  $status = $_POST['status'];
 
-    if ($status === 'Rejected') {
-        // Delete admission record on rejection
-        $stmt = $conn->prepare("DELETE FROM sms3_pending_admission WHERE id = ?");
-        $stmt->bind_param("i", $admissionId);
-        if ($stmt->execute()) {
-            echo json_encode(['success' => true, 'message' => 'Admission record deleted successfully.']);
-        } else {
-            echo json_encode(['success' => false, 'message' => 'Failed to delete admission record.']);
-        }
-    } elseif ($status === 'Approved') {
-        // Move record to sms3_students on approval
-        $stmt = $conn->prepare("SELECT * FROM sms3_pending_admission WHERE id = ?");
-        $stmt->bind_param('i', $admissionId);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $admissionData = $result->fetch_assoc();
-        $stmt->close();
+  if ($status === 'Rejected') {
+      // Delete admission record on rejection
+      $stmt = $conn->prepare("DELETE FROM sms3_pending_admission WHERE id = ?");
+      $stmt->bind_param("i", $admissionId);
+      echo json_encode($stmt->execute() ? ['success' => true, 'message' => 'Admission record deleted successfully.'] : ['success' => false, 'message' => 'Failed to delete admission record.']);
+  } elseif ($status === 'Approved') {
+      // Move record to sms3_students on approval
+      $stmt = $conn->prepare("SELECT * FROM sms3_pending_admission WHERE id = ?");
+      $stmt->bind_param('i', $admissionId);
+      $stmt->execute();
+      $result = $stmt->get_result();
+      $admissionData = $result->fetch_assoc();
+      $stmt->close();
 
-        if ($admissionData) {
-            // Get current academic year
-            $academicYear = getCurrentAcademicYear($conn);
-            if (!$academicYear) {
-                echo json_encode(['success' => false, 'message' => 'Error: No current academic year set.']);
-                exit;
-            }
+      if ($admissionData) {
+          $academicYear = getCurrentAcademicYear($conn);
+          if (!$academicYear) {
+              echo json_encode(['success' => false, 'message' => 'Error: No current academic year set.']);
+              exit;
+          }
 
-            // Generate student number and password
-            $studentNumber = generateStudentNumber($conn);
-            $password = generatePassword($admissionData['last_name']);
+          // Generate student number and hashed password
+          $studentNumber = generateStudentNumber($conn);
+          $password = generatePassword($admissionData['last_name']);
 
-            // Insert data into sms3_students
-            $stmt = $conn->prepare("INSERT INTO sms3_students (
+          // Insert data into sms3_students
+          $stmt = $conn->prepare("INSERT INTO sms3_students (
               student_number, first_name, middle_name, last_name, academic_year, username, password, role, program, admission_type, 
               year_level, sex, civil_status, religion, birthday, email, contact_number, facebook_name, 
               address, father_name, mother_name, guardian_name, guardian_contact, primary_school, primary_year, 
               secondary_school, secondary_year, last_school, last_school_year, referral_source, working_student, member4ps, status
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
-            $username = 's' . $studentNumber;
-            $role = 'Student';
-            $status = 'Not Enrolled';
+          $username = 's' . $studentNumber;
+          $role = 'Student';
+          $status = 'Not Enrolled';
 
-            $stmt->bind_param(
+          $stmt->bind_param(
               "sssssssssssssssssssssssssssssssss",
               $studentNumber, $admissionData['first_name'], $admissionData['middle_name'], $admissionData['last_name'], 
               $academicYear, $username, $password, $role, 
@@ -98,35 +86,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_id'], $_POS
               $admissionData['primary_year'], $admissionData['secondary_school'], $admissionData['secondary_year'], 
               $admissionData['last_school'], $admissionData['last_school_year'], $admissionData['referral_source'], 
               $admissionData['working_student'], $admissionData['member4ps'], $status
-            );
+          );
 
-
-            if ($stmt->execute()) {
-                // Delete record from sms3_pending_admission after insertion
-                $deleteStmt = $conn->prepare("DELETE FROM sms3_pending_admission WHERE id = ?");
-                $deleteStmt->bind_param('i', $admissionId);
-                $deleteStmt->execute();
-                $deleteStmt->close();
-
-                echo json_encode(['success' => true, 'message' => 'Student approved and moved to students table successfully!']);
-            } else {
-                echo json_encode(['success' => false, 'message' => 'Failed to insert student record.']);
-            }
-            $stmt->close();
-        } else {
-            echo json_encode(['success' => false, 'message' => 'Admission record not found.']);
-        }
-    } else {
-        // Update the status if it's not 'Rejected' or 'Approved'
-        $stmt = $conn->prepare("UPDATE sms3_pending_admission SET status = ? WHERE id = ?");
-        $stmt->bind_param("si", $status, $admissionId);
-        if ($stmt->execute()) {
-            echo json_encode(['success' => true, 'message' => 'Admission status updated successfully.']);
-        } else {
-            echo json_encode(['success' => false, 'message' => 'Failed to update admission status.']);
-        }
-    }
-    exit;
+          if ($stmt->execute()) {
+              $deleteStmt = $conn->prepare("DELETE FROM sms3_pending_admission WHERE id = ?");
+              $deleteStmt->bind_param('i', $admissionId);
+              $deleteStmt->execute();
+              $deleteStmt->close();
+              echo json_encode(['success' => true, 'message' => 'Student approved and moved to students table successfully!']);
+          } else {
+              echo json_encode(['success' => false, 'message' => 'Failed to insert student record.']);
+          }
+          $stmt->close();
+      } else {
+          echo json_encode(['success' => false, 'message' => 'Admission record not found.']);
+      }
+  } else {
+      $stmt = $conn->prepare("UPDATE sms3_pending_admission SET status = ? WHERE id = ?");
+      $stmt->bind_param("si", $status, $admissionId);
+      echo json_encode($stmt->execute() ? ['success' => true, 'message' => 'Admission status updated successfully.'] : ['success' => false, 'message' => 'Failed to update admission status.']);
+  }
+  exit;
 }
 
 // Fetch all pending admissions

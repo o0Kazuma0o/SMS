@@ -76,8 +76,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             case 'Superadmin':
                 header("Location: Superdashboard.php");
                 break;
-            case 'student':
+            case 'Student':
                 header("Location: student/Dashboard.php");
+                break;
             default:
                 header("Location: index.php"); // Redirect to a default page if role not matched
         }
@@ -242,7 +243,7 @@ button:hover {
             <input type="password" id="password" name="password" required>
 
             <button type="submit">LOGIN</button>
-            <a href="registration_basic_info.php" class="admission-button">ADMISSION</a>
+            <a href="admission.php" class="admission-button">ADMISSION</a>
         </form>
     </div>
 

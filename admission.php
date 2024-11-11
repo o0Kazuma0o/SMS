@@ -1,3 +1,16 @@
+<?php
+require('database.php'); // Adjust the path as needed
+
+// Fetch all departments from the database
+$departmentss = $conn->query("SELECT * FROM sms3_departments");
+
+$departments = $conn->query("SELECT id, department_name, department_code FROM sms3_departments");
+$departmentNames = [];
+while ($department = $departments->fetch_assoc()) {
+    $departmentNames[$department['id']] = $department['department_name'];
+}
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -133,17 +146,18 @@
                 </h2>
                 <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#admission">
                   <div class="accordion-body">
-                    <form action="registration_basic_info.php" id="basic-info-form" method="POST" class="mb-4">
+                    <form action="admission.php" id="basic-info-form" method="POST" class="mb-4">
                       <!-- Row 1: Admission Type and Working Student -->
                       <div class="row form-row">
                         <div class="col-md-6">
-                          <label for="program" class="form-label">Program</label>
+                        <label for="program" class="form-label">Program</label>
                           <select class="form-select" id="program" name="program" required>
-                            <option value=""disabled selected></option>
-                            <!-- Options here -->
-                            <option value="BSIT">Bachelor of Science in Information Technology</option>
-                            <option value="BSIS">Bachelor of Science in Information Systems</option>
-                            <option value="CRIM">Criminology</option>
+                            <option value="" disabled selected>Select a Program</option>
+                            <?php while ($department = $departmentss->fetch_assoc()): ?>
+                              <option value="<?= htmlspecialchars($department['id']); ?>">
+                                  <?= htmlspecialchars($department['department_name']); ?>
+                              </option>
+                            <?php endwhile; ?>
                           </select>
                           <div class="text-danger" id="program-error"></div>
                         </div>
@@ -266,7 +280,7 @@
                 </h2>
                 <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#admission">
                   <div class="accordion-body">
-                    <form action="registration_basic_info.php" id="address-form" method="post" class="mb-4">
+                    <form action="admission.php" id="address-form" method="post" class="mb-4">
                       <!-- Row 1: Address -->
                       <div class="row form-row">
                         <div class="col-md-3">
@@ -326,7 +340,7 @@
                 </h2>
                 <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#admission">
                   <div class="accordion-body">
-                    <form action="registration_basic_info.php" id="guardian-form" method="post" class="mb-4">
+                    <form action="admission.php" id="guardian-form" method="post" class="mb-4">
                       <!-- Row 1: Father's Name -->
                       <div class="row form-row">
                         <div class="col-md-3">
@@ -416,7 +430,7 @@
                 </h2>
                 <div id="collapseFour" class="accordion-collapse collapse" aria-labelledby="headingFour" data-bs-parent="#admission">
                   <div class="accordion-body">
-                    <form action="registration_basic_info.php" id="education-form" method="post" class="mb-4">
+                    <form action="admission.php" id="education-form" method="post" class="mb-4">
                       <!-- Row 1: Primary School -->
                       <div class="row form-row">
                         <div class="col-md-9">
@@ -470,7 +484,7 @@
                 </h2>
                 <div id="collapseFive" class="accordion-collapse collapse" aria-labelledby="headingFive" data-bs-parent="#admission">
                   <div class="accordion-body">
-                    <form action="registration_basic_info.php" id="referral-form" method="POST" class="mb-4">
+                    <form action="admission.php" id="referral-form" method="POST" class="mb-4">
                       <div class="row form-row">
                         <div class="col-md-3">
                           <label for="how" class="form-label">Options</label>
@@ -499,7 +513,7 @@
                 </h2>
                 <div id="collapseSix" class="accordion-collapse collapse" aria-labelledby="headingSix" data-bs-parent="#admission">
                   <div class="accordion-body">
-                    <form action="registration_basic_info.php" id="summary" method="POST" class="mb-4">
+                    <form action="admission.php" id="summary" method="POST" class="mb-4">
                       <!--Summary of all the information -->
                       
                     </form>
@@ -928,6 +942,11 @@
     const summaryElement = document.getElementById('summary');
     let summaryHtml = '';
 
+    // Pass PHP array to JavaScript
+    const departmentNames = <?= json_encode($departmentNames); ?>;
+    const departmentId = basicInfo.program; // ID stored in the program field
+    const departmentName = departmentNames[departmentId] || "Unknown Program";
+
     // Combine Last Name, First Name, and Middle Name
     const fullName = `${basicInfo.firstname} ${basicInfo.middlename} ${basicInfo.lastname}` + (basicInfo.suffix ? ` ${basicInfo.suffix}` : '');
 
@@ -953,7 +972,7 @@
         </div>
         <div class="col-md-6">
           <p><strong>Admission Type:</strong> ${basicInfo.admissiontype}</p>
-          <p><strong>Program:</strong> ${basicInfo.program}</p>
+          <p><strong>Program:</strong> ${departmentName}</p>
           <p><strong>Year Level:</strong> ${basicInfo.yrlvl}</p>
           <p><strong>Working Student:</strong> ${basicInfo.workingstudent}</p>
           <p><strong>Civil Status:</strong> ${basicInfo.civilstatus}</p>

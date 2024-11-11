@@ -33,7 +33,7 @@ function checkAccess($requiredRole) {
     //}
 
     // Update last activity time
-    $_SESSION['last_activity'] = time();
+    //$_SESSION['last_activity'] = time();
 
     // Check if the user's role matches the required role
     if ($_SESSION['role'] !== $requiredRole) {
@@ -71,14 +71,6 @@ function loginUser($username, $password) {
         $_SESSION['email'] = $user['email'];
         $_SESSION['phone'] = $user['phone'];
 
-        // Redirect based on role
-        switch ($user['role']) {
-            case 'Admin':
-                header("Location: Adashboard.php");
-                break;
-            default:
-                header("Location: ../index.php"); // Redirect to a default page if role not matched
-        }
         exit; // Ensure script stops after redirect
     } else {
         return false; // Invalid login

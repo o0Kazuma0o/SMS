@@ -1,7 +1,7 @@
 <?php
 require('../database.php');
-require('../access_control.php'); // Include the file with the checkAccess function
-checkAccess('student'); // Ensure only users with the 'student' role can access this page
+require_once 'session.php';
+checkAccess('Student'); // Ensure only users with the 'student' role can access this page
 ?>
 
 <!DOCTYPE html>
