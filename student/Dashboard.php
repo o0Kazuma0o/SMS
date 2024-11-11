@@ -1,3 +1,9 @@
+<?php
+require('../database.php');
+require('../access_control.php'); // Include the file with the checkAccess function
+checkAccess('student'); // Ensure only users with the 'student' role can access this page
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -90,8 +96,8 @@
               <hr class="dropdown-divider">
             </li>
 
-            <li>
-              <a class="dropdown-item d-flex align-items-center" href="#">
+<li>
+              <a class="dropdown-item d-flex align-items-center" href="../logout.php">
                 <i class="bi bi-box-arrow-right"></i>
                 <span>Sign Out</span>
               </a>

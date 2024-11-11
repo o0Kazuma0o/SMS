@@ -1,6 +1,109 @@
-<?php require('../database.php');
-require('../access_control.php'); // Include the file with the checkAccess function
-checkAccess('admin'); // Ensure only users with the 'admin' role can access this page
+<?php 
+require('../database.php');
+require_once 'session.php';
+checkAccess('Admin'); // Ensure only users with the 'admin' role can access this page
+
+// Edit subject
+$edit_subject = null;
+if (isset($_GET['edit_subject_id'])) {
+    $edit_subject_id = $_GET['edit_subject_id'];
+
+    // Fetch the subject details to pre-fill the form for editing
+    $stmt = $conn->prepare("SELECT * FROM sms3_subjects WHERE id = ?");
+    $stmt->bind_param("i", $edit_subject_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $edit_subject = $result->fetch_assoc();
+    $stmt->close();
+}
+
+// Add subject
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_subject'])) {
+    $subject_code = $_POST['subject_code'];
+    $subject_name = $_POST['subject_name'];
+    $department_id = $_POST['department_id'];
+
+    try{
+    // Insert subject
+    $stmt = $conn->prepare("INSERT INTO sms3_subjects (subject_code, subject_name, department_id) VALUES (?, ?, ?)");
+    $stmt->bind_param("ssi", $subject_code, $subject_name, $department_id);
+    $stmt->execute();
+    $stmt->close();
+
+    $_SESSION['success_message'] = "Subject added successfully!";
+
+    // Redirect to manage_subjects.php
+    header('Location: manage_subjects.php');
+    exit;
+    } catch (mysqli_sql_exception $e) {
+        if ($e->getCode() == 1062) { // Duplicate entry error code
+            $_SESSION['error_message'] = "Error: Duplicate entry for subject code or name.";
+        } else {
+            $_SESSION['error_message'] = "Error: " . $e->getMessage();
+        }
+        header('Location: manage_subjects.php'); // Redirect to show error
+        exit;
+    }
+}
+
+// Update subject
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_subject'])) {
+    $subject_id = $_POST['subject_id'];  // The ID of the subject being updated
+    $subject_code = $_POST['subject_code'];
+    $subject_name = $_POST['subject_name'];
+    $department_id = $_POST['department_id'];
+
+    try{
+    // Update the subject in the database
+    $stmt = $conn->prepare("UPDATE sms3_subjects SET subject_code = ?, subject_name = ?, department_id = ? WHERE id = ?");
+    $stmt->bind_param("ssii", $subject_code, $subject_name, $department_id, $subject_id);
+    $stmt->execute();
+    $stmt->close();
+
+    $_SESSION['success_message'] = "Subject updated successfully!";
+
+    // Redirect to manage_subjects.php after updating
+    header('Location: manage_subjects.php');
+    exit;
+    } catch (mysqli_sql_exception $e) {
+        if ($e->getCode() == 1062) { // Duplicate entry error code
+            $_SESSION['error_message'] = "Error: Duplicate entry for subject code or name.";
+        } else {
+            $_SESSION['error_message'] = "Error: " . $e->getMessage();
+        }
+        header('Location: manage_subjects.php'); // Redirect to show error
+        exit;
+    }
+}
+
+// Delete subject
+if (isset($_GET['delete_subject_id'])) {
+    $delete_id = $_GET['delete_subject_id'];
+    try{
+    $stmt = $conn->prepare("DELETE FROM sms3_subjects WHERE id = ?");
+    $stmt->bind_param("i", $delete_id);
+    $stmt->execute();
+    $stmt->close();
+
+    $_SESSION['success_message'] = "Subject deleted successfully!";
+
+    // Redirect to manage_subjects.php
+    header('Location: manage_subjects.php');
+    exit;
+    } catch (mysqli_sql_exception $e) {
+        if ($e->getCode() == 1451) { // Foreign key constraint error code
+            $_SESSION['error_message'] = "Error: This room is still connected to other data.";
+        } else {
+            $_SESSION['error_message'] = "Error: " . $e->getMessage();
+        }
+        header('Location: manage_subjects.php'); // Redirect to show error
+        exit;
+    }
+}
+
+// Fetch all subjects
+$subjects = $conn->query("SELECT s.*, d.department_code FROM sms3_subjects s JOIN sms3_departments d ON s.department_id = d.id");
+
 ?>
 
 <!DOCTYPE html>
@@ -152,7 +255,7 @@ checkAccess('admin'); // Ensure only users with the 'admin' role can access this
             </li>
 
             <li>
-              <a class="dropdown-item d-flex align-items-center" href="#">
+              <a class="dropdown-item d-flex align-items-center" href="../logout.php">
                 <i class="bi bi-box-arrow-right"></i>
                 <span>Sign Out</span>
               </a>
@@ -229,7 +332,7 @@ checkAccess('admin'); // Ensure only users with the 'admin' role can access this
         </a>
       </li>
       <li class="nav-item">
-        <a class="nav-link " href="manage_semesters.php">
+        <a class="nav-link " href="manage_semester.php">
           <i class="bi bi-grid"></i>
           <span>Semester</span>
         </a>
@@ -264,10 +367,19 @@ checkAccess('admin'); // Ensure only users with the 'admin' role can access this
           <span>Timetable</span>
         </a>
       </li>
-      <!-- End System Nav -->
 
       <hr class="sidebar-divider">
 
+      <li class="nav-heading">MANAGE USER</li>
+
+      <li class="nav-item">
+        <a class="nav-link " href="manage_user.php">
+          <i class="bi bi-grid"></i>
+          <span>Users</span>
+        </a>
+      </li>
+
+      <hr class="sidebar-divider">
     </ul>
 
   </aside><!-- End Sidebar-->

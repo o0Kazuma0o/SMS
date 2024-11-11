@@ -1,7 +1,7 @@
 <?php
 require('../database.php');
-require('../access_control.php'); // Include the file with the checkAccess function
-checkAccess('admin'); // Ensure only users with the 'admin' role can access this page
+require_once 'session.php';
+checkAccess('Admin'); // Ensure only users with the 'admin' role can access this page
 
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);

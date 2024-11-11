@@ -1,6 +1,7 @@
-<?php require('../database.php');
-require('../access_control.php'); // Include the file with the checkAccess function
-checkAccess('admin'); // Ensure only users with the 'admin' role can access this page
+<?php
+require('../database.php');
+require_once 'session.php';
+checkAccess('Admin'); // Ensure only users with the 'admin' role can access this page
 
 // Edit section
 $edit_section = null;
@@ -19,17 +20,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST['add_section']) || is
     $section_number = $_POST['section_number'];
     $year_level = $_POST['year_level'];
     $capacity = $_POST['capacity'];
+    $semester = $_POST['semester_id'];
     $available = $_POST['available'];
     $department_id = $_POST['department_id'];
 
     try {
         if (isset($_POST['add_section'])) {
-            $stmt = $conn->prepare("INSERT INTO sms3_sections (section_number, year_level, capacity, available, department_id) VALUES (?, ?, ?, ?, ?)");
-            $stmt->bind_param("iiiii", $section_number, $year_level, $capacity, $available, $department_id);
+            $stmt = $conn->prepare("INSERT INTO sms3_sections (section_number, year_level, capacity, semester_id, available, department_id) VALUES (?, ?, ?, ?, ?, ?)");
+            $stmt->bind_param("iiiiii", $section_number, $year_level, $capacity, $semester, $available, $department_id);
         } elseif (isset($_POST['update_section'])) {
             $section_id = $_POST['section_id'];
-            $stmt = $conn->prepare("UPDATE sms3_sections SET section_number = ?, year_level = ?, capacity = ?, available = ?, department_id = ? WHERE id = ?");
-            $stmt->bind_param("iiiiii", $section_number, $year_level, $capacity, $available, $department_id, $section_id);
+            $stmt = $conn->prepare("UPDATE sms3_sections SET section_number = ?, year_level = ?, capacity = ?, semester_id = ?, available = ?, department_id = ? WHERE id = ?");
+            $stmt->bind_param("iiiiiii", $section_number, $year_level, $capacity, $semester, $available, $department_id, $section_id);
         }
 
         $stmt->execute();
@@ -63,7 +65,12 @@ if (isset($_GET['delete_section_id'])) {
 }
 
 // Fetch sections for display
-$sections = $conn->query("SELECT s.*, d.department_code FROM sms3_sections s JOIN sms3_departments d ON s.department_id = d.id");
+$sections = $conn->query("
+    SELECT s.*, d.department_code, sem.name
+    FROM sms3_sections s
+    JOIN sms3_departments d ON s.department_id = d.id
+    JOIN sms3_semesters sem ON s.semester_id = sem.id
+");
 ?>
 
 <!DOCTYPE html>
@@ -98,75 +105,6 @@ $sections = $conn->query("SELECT s.*, d.department_code FROM sms3_sections s JOI
   <link href="../assets/css/style.css" rel="stylesheet">
 
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script>
-    $(document).ready(function() {
-        // AJAX for toggling semester without page reload
-        $('#toggle-semester-btn').click(function(e) {
-            e.preventDefault(); // Prevent form submission
-
-            $.post("manage_sections.php", { ajax_toggle_semester: true }, function() {
-                location.reload(); // Reload page content after toggling
-            });
-        });
-    });
-  </script>
-
-  <style>
-    .modal {
-        display: none; 
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.5);
-        justify-content: center;
-        align-items: center;
-        z-index: 1000;
-    }
-    .modal-content {
-        background-color: #fff;
-        padding: 20px;
-        border-radius: 5px;
-        text-align: center;
-        width: 300px;
-    }
-    .modal-buttons {
-        margin-top: 20px;
-        display: flex;
-        justify-content: space-between;
-    }
-    .btn-danger {
-        background-color: #dc3545;
-        color: white;
-    }
-    .btn-secondary {
-        background-color: #6c757d;
-        color: white;
-    }
-    .btn:hover {
-        opacity: 0.8;
-    }
-
-    .popup-message {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        z-index: 1000;
-        padding: 15px;
-        border-radius: 5px;
-        font-size: 16px;
-        color: #fff;
-        opacity: 0;
-        transition: opacity 0.5s ease-in-out;
-    }
-    .popup-message.success {
-        background-color: green;
-    }
-    .popup-message.error {
-        background-color: red;
-    }
-  </style>
 
 </head>
 
@@ -229,7 +167,7 @@ $sections = $conn->query("SELECT s.*, d.department_code FROM sms3_sections s JOI
             </li>
 
             <li>
-              <a class="dropdown-item d-flex align-items-center" href="#">
+              <a class="dropdown-item d-flex align-items-center" href="../logout.php">
                 <i class="bi bi-box-arrow-right"></i>
                 <span>Sign Out</span>
               </a>
@@ -306,7 +244,7 @@ $sections = $conn->query("SELECT s.*, d.department_code FROM sms3_sections s JOI
         </a>
       </li>
       <li class="nav-item">
-        <a class="nav-link " href="manage_semesters.php">
+        <a class="nav-link " href="manage_semester.php">
           <i class="bi bi-grid"></i>
           <span>Semester</span>
         </a>
@@ -341,10 +279,19 @@ $sections = $conn->query("SELECT s.*, d.department_code FROM sms3_sections s JOI
           <span>Timetable</span>
         </a>
       </li>
-      <!-- End System Nav -->
 
       <hr class="sidebar-divider">
 
+      <li class="nav-heading">MANAGE USER</li>
+
+      <li class="nav-item">
+        <a class="nav-link " href="manage_user.php">
+          <i class="bi bi-grid"></i>
+          <span>Users</span>
+        </a>
+      </li>
+
+      <hr class="sidebar-divider">
     </ul>
 
   </aside><!-- End Sidebar-->
@@ -403,6 +350,19 @@ $sections = $conn->query("SELECT s.*, d.department_code FROM sms3_sections s JOI
               value="<?= isset($edit_section) ? $edit_section['capacity'] : ''; ?>" min="1" placeholder="Enter section capacity">
             </div>
             <div class="form-group mt-2">
+              <label for="semester_id">Assign to semester:</label>
+              <select class="form-control" name="semester_id" id="semester_id" required>
+                  <!-- Fetch semesters -->
+                  <?php
+                  $semesters = $conn->query("SELECT * FROM sms3_semesters");
+                  while ($semester = $semesters->fetch_assoc()): ?>
+                      <option value="<?= $semester['id']; ?>" <?= isset($edit_section) && $edit_section['semester_id'] == $semester['id'] ? 'selected' : ''; ?>>
+                        <?= $semester['name']; ?>
+                      </option>
+                  <?php endwhile; ?>
+              </select>
+            </div>
+            <div class="form-group mt-2">
               <label for="available">Available Slots:</label>
               <input type="number" class="form-control" name="available" id="available" required
               value="<?= isset($edit_section) ? $edit_section['available'] : ''; ?>" min="1" placeholder="Enter section available slots">
@@ -440,6 +400,7 @@ $sections = $conn->query("SELECT s.*, d.department_code FROM sms3_sections s JOI
                     <th>Section Number</th>
                     <th>Year Level</th>
                     <th>Capacity</th>
+                    <th>Semester</th>
                     <th>Available Slots</th>
                     <th>Department</th>
                     <th>Actions</th>
@@ -451,6 +412,7 @@ $sections = $conn->query("SELECT s.*, d.department_code FROM sms3_sections s JOI
                     <td><?= $section['section_number']; ?></td>
                     <td><?= $section['year_level']; ?></td>
                     <td><?= $section['capacity']; ?></td>
+                    <td><?= $section['name']; ?></td>
                     <td><?= $section['available']; ?></td>
                     <td><?= $section['department_code']; ?></td>
                     <td>

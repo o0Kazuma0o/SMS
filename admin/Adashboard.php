@@ -1,7 +1,7 @@
 <?php
 require('../database.php');
-require('../access_control.php'); // Include the file with the checkAccess function
-checkAccess('admin'); // Ensure only users with the 'admin' role can access this page
+require_once 'session.php';
+checkAccess('Admin'); // Ensure only users with the 'admin' role can access this page
 ?>
 
 <!DOCTYPE html>
@@ -117,7 +117,7 @@ checkAccess('admin'); // Ensure only users with the 'admin' role can access this
 
       <div class="flex items-center w-full p-1 pl-6" style="display: flex; align-items: center; padding: 3px; width: 40px; background-color: transparent; height: 4rem;">
         <div class="flex items-center justify-center" style="display: flex; align-items: center; justify-content: center;">
-            <img src="https://elc-public-images.s3.ap-southeast-1.amazonaws.com/bcp-olp-logo-mini2.png" alt="Logo" style="width: 30px; height: auto;">
+          <img src="https://elc-public-images.s3.ap-southeast-1.amazonaws.com/bcp-olp-logo-mini2.png" alt="Logo" style="width: 30px; height: auto;">
         </div>
       </div>
 
@@ -126,14 +126,14 @@ checkAccess('admin'); // Ensure only users with the 'admin' role can access this
             LC
         </div>
         <div style="display: flex; flex-direction: column; align-items: center; margin-top: 24px; text-align: center;">
-            <div style="font-weight: 500; color: #fff;">
-                Name
-            </div>
-            <div style="margin-top: 4px; font-size: 14px; color: #fff;">
-                ID
-            </div>
+          <div style="font-weight: 500; color: #fff;">
+            Name
+          </div>
+          <div style="margin-top: 4px; font-size: 14px; color: #fff;">
+            ID
+          </div>
         </div>
-    </div>
+      </div>
 
     <hr class="sidebar-divider">
 
@@ -173,7 +173,7 @@ checkAccess('admin'); // Ensure only users with the 'admin' role can access this
         </a>
       </li>
       <li class="nav-item">
-        <a class="nav-link " href="manage_semesters.php">
+        <a class="nav-link " href="manage_semester.php">
           <i class="bi bi-grid"></i>
           <span>Semester</span>
         </a>
@@ -209,6 +209,17 @@ checkAccess('admin'); // Ensure only users with the 'admin' role can access this
         </a>
       </li>
       <!-- End System Nav -->
+
+      <hr class="sidebar-divider">
+
+      <li class="nav-heading">MANAGE USER</li>
+
+      <li class="nav-item">
+        <a class="nav-link " href="manage_user.php">
+          <i class="bi bi-grid"></i>
+          <span>Users</span>
+        </a>
+      </li>
 
       <hr class="sidebar-divider">
 

@@ -1,20 +1,28 @@
 <?php
 require('../database.php');
-session_start();
+require_once 'session.php';
 
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'Student') {
     header("Location: ../index.php");
     exit;
 }
 
-$userId = $_SESSION['user_id'];
-$query = $conn->prepare("SELECT program, year_level FROM sms3_students WHERE id = ?");
-$query->bind_param("i", $userId);
-$query->execute();
-$result = $query->get_result();
-$studentData = $result->fetch_assoc();
-$studentDepartment = $studentData['program'];
-$studentYearLevel = $studentData['year_level'];
+// Get the active semester details from the session
+$activeSemesterId = $_SESSION['active_semester_id'];
+$activeSemesterName = $_SESSION['active_semester_name'];
+
+// Fetch sections for the current active semester, and relevant year level and department
+$studentDepartmentId = 1; // Example: Set dynamically based on logged-in student's department
+$studentYearLevel = 1; // Example: Set based on student's year level
+$sections = $conn->query("
+    SELECT s.section_number, s.capacity, s.available, d.department_code, sem.name AS semester_name
+    FROM sms3_sections s
+    JOIN sms3_departments d ON s.department_id = d.id
+    JOIN sms3_semesters sem ON s.semester_id = sem.id
+    WHERE s.semester_id = $activeSemesterId
+      AND s.year_level = $studentYearLevel
+      AND s.department_id = $studentDepartmentId
+");
 ?>
 
 <!DOCTYPE html>
@@ -109,8 +117,8 @@ $studentYearLevel = $studentData['year_level'];
               <hr class="dropdown-divider">
             </li>
 
-            <li>
-              <a class="dropdown-item d-flex align-items-center" href="#">
+<li>
+              <a class="dropdown-item d-flex align-items-center" href="../logout.php">
                 <i class="bi bi-box-arrow-right"></i>
                 <span>Sign Out</span>
               </a>

@@ -1,6 +1,108 @@
-<?php require('../database.php');
-require('../access_control.php'); // Include the file with the checkAccess function
-checkAccess('admin'); // Ensure only users with the 'admin' role can access this page
+<?php
+require('../database.php');
+require_once 'session.php';
+checkAccess('Admin'); // Ensure only users with the 'admin' role can access this page
+
+// Edit department
+$edit_department = null;
+if (isset($_GET['edit_department_id'])) {
+    $edit_department_id = $_GET['edit_department_id'];
+
+    // Fetch the department details to pre-fill the form for editing
+    $stmt = $conn->prepare("SELECT * FROM sms3_departments WHERE id = ?");
+    $stmt->bind_param("i", $edit_department_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $edit_department = $result->fetch_assoc();
+    $stmt->close();
+}
+
+// Add department
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_department'])) {
+    $department_code = $_POST['department_code'];
+    $department_name = $_POST['department_name'];
+
+    try{
+    // Insert department if department code is unique
+    $stmt = $conn->prepare("INSERT INTO sms3_departments (department_code, department_name) VALUES (?, ?)");
+    $stmt->bind_param("ss", $department_code, $department_name);
+    $stmt->execute();
+    $stmt->close();
+
+    $_SESSION['success_message'] = "Department added successfully!";
+    // Redirect to manage_departments.php
+    header('Location: manage_departments.php');
+    exit;
+    }
+    catch (mysqli_sql_exception $e) {
+        if ($e->getCode() == 1062) { // Duplicate entry error code
+            $_SESSION['error_message'] = "Error: Duplicate entry for department code or name.";
+        } else {
+            $_SESSION['error_message'] = "Error: " . $e->getMessage();
+        }
+        header('Location: manage_departments.php'); // Redirect to show error
+        exit;
+    }
+}
+
+// Update department
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_department'])) {
+    $department_id = $_POST['department_id'];  // The ID of the department being updated
+    $department_code = $_POST['department_code'];
+    $department_name = $_POST['department_name'];
+
+    try{
+    // Update the department in the database
+    $stmt = $conn->prepare("UPDATE sms3_departments SET department_code = ?, department_name = ? WHERE id = ?");
+    $stmt->bind_param("ssi", $department_code, $department_name, $department_id);
+    $stmt->execute();
+    $stmt->close();
+
+    $_SESSION['success_message'] = "Department updated successfully!";
+
+    // Redirect to manage_departments.php after updating
+    header('Location: manage_departments.php');
+    exit;
+    }
+    catch (mysqli_sql_exception $e) {
+        if ($e->getCode() == 1062) { // Duplicate entry error code
+            $_SESSION['error_message'] = "Error: Duplicate entry for department code or name.";
+        } else {
+            $_SESSION['error_message'] = "Error: " . $e->getMessage();
+        }
+        header('Location: manage_departments.php'); // Redirect to show error
+        exit;
+    }
+}
+
+// Delete department
+if (isset($_GET['delete_department_id'])) {
+    $delete_id = $_GET['delete_department_id'];
+    try{
+    $stmt = $conn->prepare("DELETE FROM sms3_departments WHERE id = ?");
+    $stmt->bind_param("i", $delete_id);
+    $stmt->execute();
+    $stmt->close();
+
+    $_SESSION['success_message'] = "Department deleted successfully!";
+
+    // Redirect to manage_departments.php
+    header('Location: manage_departments.php');
+    exit;
+    }
+    catch (mysqli_sql_exception $e) {
+        if ($e->getCode() == 1451) { // Foreign key constraint error code
+            $_SESSION['error_message'] = "Error: This department is still connected to other data.";
+        } else {
+            $_SESSION['error_message'] = "Error: " . $e->getMessage();
+        }
+        header('Location: manage_departments.php'); // Redirect to show error
+        exit;
+    }
+}
+
+// Fetch all departments
+$departments = $conn->query("SELECT * FROM sms3_departments");
 ?>
 
 <!DOCTYPE html>
@@ -152,7 +254,7 @@ checkAccess('admin'); // Ensure only users with the 'admin' role can access this
             </li>
 
             <li>
-              <a class="dropdown-item d-flex align-items-center" href="#">
+              <a class="dropdown-item d-flex align-items-center" href="../logout.php">
                 <i class="bi bi-box-arrow-right"></i>
                 <span>Sign Out</span>
               </a>
@@ -229,7 +331,7 @@ checkAccess('admin'); // Ensure only users with the 'admin' role can access this
         </a>
       </li>
       <li class="nav-item">
-        <a class="nav-link " href="manage_semesters.php">
+        <a class="nav-link " href="manage_semester.php">
           <i class="bi bi-grid"></i>
           <span>Semester</span>
         </a>
@@ -264,10 +366,19 @@ checkAccess('admin'); // Ensure only users with the 'admin' role can access this
           <span>Timetable</span>
         </a>
       </li>
-      <!-- End System Nav -->
 
       <hr class="sidebar-divider">
 
+      <li class="nav-heading">MANAGE USER</li>
+
+      <li class="nav-item">
+        <a class="nav-link " href="manage_user.php">
+          <i class="bi bi-grid"></i>
+          <span>Users</span>
+        </a>
+      </li>
+
+      <hr class="sidebar-divider">
     </ul>
 
   </aside><!-- End Sidebar-->

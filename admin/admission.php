@@ -1,7 +1,7 @@
 <?php
 require('../database.php');
-require('../access_control.php');
-checkAccess('admin'); // Ensure only 'admin' role has access
+require_once 'session.php';
+checkAccess('Admin'); // Ensure only users with the 'admin' role can access this page
 
 // Function to generate student number
 function generateStudentNumber($conn) {
@@ -229,8 +229,8 @@ if (!$result) {
               <hr class="dropdown-divider">
             </li>
 
-            <li>
-              <a class="dropdown-item d-flex align-items-center" href="#">
+<li>
+              <a class="dropdown-item d-flex align-items-center" href="../logout.php">
                 <i class="bi bi-box-arrow-right"></i>
                 <span>Sign Out</span>
               </a>
@@ -307,7 +307,7 @@ if (!$result) {
         </a>
       </li>
       <li class="nav-item">
-        <a class="nav-link " href="manage_semesters.php">
+        <a class="nav-link " href="manage_semester.php">
           <i class="bi bi-grid"></i>
           <span>Semester</span>
         </a>

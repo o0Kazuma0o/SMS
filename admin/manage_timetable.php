@@ -1,6 +1,252 @@
-<?php require('../database.php');
-require('../access_control.php'); // Include the file with the checkAccess function
-checkAccess('admin'); // Ensure only users with the 'admin' role can access this page
+<?php
+require('../database.php');
+require_once 'session.php';
+checkAccess('Admin'); // Ensure only users with the 'admin' role can access this page
+
+// Edit timetable
+$edit_timetable = null;
+if (isset($_GET['edit_timetable_id'])) {
+    $edit_timetable_id = $_GET['edit_timetable_id'];
+
+    // Fetch the timetable details for editing (fetch multiple entries based on timetable id)
+    $stmt = $conn->prepare("
+        SELECT t.id, t.subject_id, s.subject_code, t.day_of_week, t.start_time, t.end_time 
+        FROM sms3_timetable t 
+        JOIN sms3_subjects s ON t.subject_id = s.id 
+        WHERE t.id = ?");
+    $stmt->bind_param("i", $edit_timetable_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $edit_timetable = $result->fetch_all(MYSQLI_ASSOC); // Fetch multiple rows for the timetable
+    $stmt->close();
+}
+
+// Add timetable with multiple subjects, rooms, and times
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_timetable'])) {
+    $section_id = $_POST['section_id'];  // The selected section
+    $subjects = $_POST['subjects'];  // Array of subject IDs
+    $rooms = $_POST['rooms'];  // Array of room IDs
+    $days = $_POST['days'];  // Array of days
+    $start_times = $_POST['start_times'];  // Array of start times
+    $end_times = $_POST['end_times'];  // Array of end times
+
+    // Ensure all arrays have the same number of entries
+    if (count($subjects) == count($rooms) && count($rooms) == count($days) && count($days) == count($start_times) && count($start_times) == count($end_times)) {
+        try {
+            $conn->begin_transaction();  // Start a transaction
+
+            for ($i = 0; $i < count($subjects); $i++) {
+                $subject_id = $subjects[$i];
+                $room_id = $rooms[$i];
+                $day_of_week = $days[$i];
+                $start_time = $start_times[$i];
+                $end_time = $end_times[$i];
+
+                // 1. Check if the subject already exists in the same section (ignoring the day)
+                $stmt = $conn->prepare("
+                    SELECT COUNT(*) 
+                    FROM sms3_timetable 
+                    WHERE section_id = ? 
+                    AND subject_id = ?");
+                $stmt->bind_param("ii", $section_id, $subject_id);
+                $stmt->execute();
+                $stmt->bind_result($subject_count);
+                $stmt->fetch();
+                $stmt->close();
+
+                if ($subject_count > 0) {
+                    // Duplicate subject detected in the section
+                    $_SESSION['error_message'] = "Error: Duplicate subject in this section.";
+                    $conn->rollback();  // Rollback the transaction
+                    header('Location: manage_timetable.php');
+                    exit;
+                }
+
+                // 2. Check for time conflicts within the section on the same day
+                $stmt = $conn->prepare("
+                    SELECT COUNT(*) 
+                    FROM sms3_timetable 
+                    WHERE section_id = ? 
+                    AND day_of_week = ? 
+                    AND ((start_time < ? AND end_time > ?) OR (start_time < ? AND end_time > ?))
+                    AND NOT (end_time = ?)");
+                $stmt->bind_param("issssss", $section_id, $day_of_week, $end_time, $start_time, $end_time, $start_time, $start_time);
+                $stmt->execute();
+                $stmt->bind_result($time_conflict_count);
+                $stmt->fetch();
+                $stmt->close();
+
+                if ($time_conflict_count > 0) {
+                    // Time conflict detected
+                    $_SESSION['error_message'] = "Error: Time conflict on {$day_of_week} between {$start_time} and {$end_time}.";
+                    $conn->rollback();  // Rollback the transaction
+                    header('Location: manage_timetable.php');
+                    exit;
+                }
+
+                // 3. Insert timetable for each subject, room, day, and time combination
+                $stmt = $conn->prepare("
+                    INSERT INTO sms3_timetable (subject_id, section_id, room_id, day_of_week, start_time, end_time)
+                    VALUES (?, ?, ?, ?, ?, ?)");
+                $stmt->bind_param("iiisss", $subject_id, $section_id, $room_id, $day_of_week, $start_time, $end_time);
+                $stmt->execute();
+            }
+
+            $conn->commit();  // Commit the transaction
+            $_SESSION['success_message'] = "Timetable added successfully!";
+            header('Location: manage_timetable.php');
+            exit;
+
+        } catch (mysqli_sql_exception $e) {
+            $conn->rollback();  // Rollback transaction on error
+            $_SESSION['error_message'] = "Error: " . $e->getMessage();
+            header('Location: manage_timetable.php');
+            exit;
+        }
+    } else {
+        // If the array sizes don't match, return an error
+        $_SESSION['error_message'] = "Error: Mismatch in subject, room, day, or time fields.";
+        header('Location: manage_timetable.php');
+        exit;
+    }
+}
+
+// Update a single timetable entry
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_single_timetable'])) {
+    $timetable_id = $_POST['timetable_id'];  // ID of the timetable being updated
+    $section_id = $_POST['section_id'];  // The section ID
+    $subject_code = $_POST['subject'];  // Subject code from the form
+    $room_name = $_POST['room'];  // Room name from the form
+    $day_of_week = $_POST['day'];  // Day from the form
+    $start_time = $_POST['start_time'];  // Start time from the form
+    $end_time = $_POST['end_time'];  // End time from the form
+
+    try {
+        // Fetch the subject_id based on subject_code
+        $subject_id = getSubjectIdByCode($subject_code);
+
+        // Fetch the room_id based on room_name
+        $room_id = getRoomIdByName($room_name);
+
+        // Check if both IDs are valid
+        if ($subject_id && $room_id) {
+            // 1. Ensure no duplicate subjects in the same section
+            $stmt = $conn->prepare("
+                SELECT COUNT(*) 
+                FROM sms3_timetable 
+                WHERE section_id = ? 
+                AND subject_id = ? 
+                AND id != ?");
+            $stmt->bind_param("iii", $section_id, $subject_id, $timetable_id);
+            $stmt->execute();
+            $stmt->bind_result($duplicate_subject_count);
+            $stmt->fetch();
+            $stmt->close();
+
+            if ($duplicate_subject_count > 0) {
+                // Subject already exists in the section
+                $_SESSION['error_message'] = "Error: Duplicate subject in this section.";
+                header('Location: manage_timetable.php');
+                exit;
+            }
+
+            // 2. Ensure no time conflicts within the section on the same day
+            $stmt = $conn->prepare("
+                SELECT COUNT(*) 
+                FROM sms3_timetable 
+                WHERE section_id = ? 
+                AND day_of_week = ? 
+                AND ((start_time < ? AND end_time > ?) OR (start_time < ? AND end_time > ?)) 
+                AND id != ?
+                AND NOT (end_time = ?)");
+            $stmt->bind_param("issssssi", $section_id, $day_of_week, $end_time, $start_time, $end_time, $start_time, $timetable_id, $start_time);
+            $stmt->execute();
+            $stmt->bind_result($time_conflict_count);
+            $stmt->fetch();
+            $stmt->close();
+
+            if ($time_conflict_count > 0) {
+                // Time conflict detected
+                $_SESSION['error_message'] = "Error: Time conflict on {$day_of_week} between {$start_time} and {$end_time}.";
+                header('Location: manage_timetable.php');
+                exit;
+            }
+
+            // 3. If no conflicts, update the single timetable entry
+            $stmt = $conn->prepare("
+                UPDATE sms3_timetable
+                SET subject_id = ?, room_id = ?, day_of_week = ?, start_time = ?, end_time = ?
+                WHERE id = ?");
+            $stmt->bind_param("iisssi", $subject_id, $room_id, $day_of_week, $start_time, $end_time, $timetable_id);
+            $stmt->execute();
+
+            $_SESSION['success_message'] = "Timetable updated successfully!";
+            header('Location: manage_timetable.php');
+            exit;
+        } else {
+            // Handle error if subject_id or room_id is invalid
+            $_SESSION['error_message'] = "Invalid subject or room.";
+            header('Location: manage_timetable.php');
+            exit;
+        }
+    } catch (mysqli_sql_exception $e) {
+        $_SESSION['error_message'] = "Error: " . $e->getMessage();
+        header('Location: manage_timetable.php');
+        exit;
+    }
+}
+
+// Delete entire timetable for a section (or group of timetables)
+if (isset($_GET['delete_timetable_id'])) {
+    $delete_id = $_GET['delete_timetable_id'];
+    
+    try {
+        // Delete all timetable entries for a section based on the timetable ID
+        $stmt = $conn->prepare("DELETE FROM sms3_timetable WHERE section_id = (SELECT section_id FROM sms3_timetable WHERE id = ?)");
+        $stmt->bind_param("i", $delete_id);
+        $stmt->execute();
+        $stmt->close();
+
+        $_SESSION['success_message'] = "Entire timetable deleted successfully!";
+        header('Location: manage_timetable.php');
+        exit;
+    } catch (mysqli_sql_exception $e) {
+        $_SESSION['error_message'] = "Error: " . $e->getMessage();
+        header('Location: manage_timetable.php');
+        exit;
+    }
+}
+
+// Delete a single row from the timetable
+if (isset($_GET['delete_row_id'])) {
+    $delete_row_id = $_GET['delete_row_id'];
+
+    try {
+        $stmt = $conn->prepare("DELETE FROM sms3_timetable WHERE id = ?");
+        $stmt->bind_param("i", $delete_row_id);
+        $stmt->execute();
+        $stmt->close();
+
+        $_SESSION['success_message'] = "Timetable entry deleted successfully!";
+        header('Location: manage_timetable.php');
+        exit;
+    } catch (mysqli_sql_exception $e) {
+        $_SESSION['error_message'] = "Error: " . $e->getMessage();
+        header('Location: manage_timetable.php');
+        exit;
+    }
+}
+
+
+// Fetch all timetables (adjust to join all relevant data)
+$timetables = $conn->query("
+    SELECT t.*, s.subject_code, sec.section_number, r.room_name, d.department_code
+    FROM sms3_timetable t 
+    JOIN sms3_subjects s ON t.subject_id = s.id 
+    JOIN sms3_sections sec ON t.section_id = sec.id 
+    JOIN sms3_rooms r ON t.room_id = r.id
+    JOIN sms3_departments d ON sec.department_id = d.id");
+
 ?>
 
 <!DOCTYPE html>
@@ -151,7 +397,7 @@ checkAccess('admin'); // Ensure only users with the 'admin' role can access this
             </li>
 
             <li>
-              <a class="dropdown-item d-flex align-items-center" href="#">
+              <a class="dropdown-item d-flex align-items-center" href="../logout.php">
                 <i class="bi bi-box-arrow-right"></i>
                 <span>Sign Out</span>
               </a>
@@ -228,7 +474,7 @@ checkAccess('admin'); // Ensure only users with the 'admin' role can access this
         </a>
       </li>
       <li class="nav-item">
-        <a class="nav-link " href="manage_semesters.php">
+        <a class="nav-link " href="manage_semester.php">
           <i class="bi bi-grid"></i>
           <span>Semester</span>
         </a>
@@ -263,10 +509,19 @@ checkAccess('admin'); // Ensure only users with the 'admin' role can access this
           <span>Timetable</span>
         </a>
       </li>
-      <!-- End System Nav -->
 
       <hr class="sidebar-divider">
 
+      <li class="nav-heading">MANAGE USER</li>
+
+      <li class="nav-item">
+        <a class="nav-link " href="manage_user.php">
+          <i class="bi bi-grid"></i>
+          <span>Users</span>
+        </a>
+      </li>
+
+      <hr class="sidebar-divider">
     </ul>
 
   </aside><!-- End Sidebar-->

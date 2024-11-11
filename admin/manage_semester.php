@@ -1,7 +1,7 @@
 <?php
 require('../database.php');
-require('../access_control.php'); // Include the file with the checkAccess function
-checkAccess('admin'); // Ensure only users with the 'admin' role can access this page
+require_once 'session.php';
+checkAccess('Admin'); // Ensure only users with the 'admin' role can access this page
 
 // Add a new semester
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_semester'])) {
@@ -136,7 +136,7 @@ $semesters = $conn->query("SELECT * FROM sms3_semesters ORDER BY id DESC");
             </li>
 
             <li>
-              <a class="dropdown-item d-flex align-items-center" href="#">
+              <a class="dropdown-item d-flex align-items-center" href="../logout.php">
                 <i class="bi bi-box-arrow-right"></i>
                 <span>Sign Out</span>
               </a>
@@ -213,7 +213,7 @@ $semesters = $conn->query("SELECT * FROM sms3_semesters ORDER BY id DESC");
         </a>
       </li>
       <li class="nav-item">
-        <a class="nav-link " href="manage_semesters.php">
+        <a class="nav-link " href="manage_semester.php">
           <i class="bi bi-grid"></i>
           <span>Semester</span>
         </a>
@@ -248,10 +248,19 @@ $semesters = $conn->query("SELECT * FROM sms3_semesters ORDER BY id DESC");
           <span>Timetable</span>
         </a>
       </li>
-      <!-- End System Nav -->
 
       <hr class="sidebar-divider">
 
+      <li class="nav-heading">MANAGE USER</li>
+
+      <li class="nav-item">
+        <a class="nav-link " href="manage_user.php">
+          <i class="bi bi-grid"></i>
+          <span>Users</span>
+        </a>
+      </li>
+
+      <hr class="sidebar-divider">
     </ul>
 
   </aside><!-- End Sidebar-->
@@ -287,7 +296,33 @@ $semesters = $conn->query("SELECT * FROM sms3_semesters ORDER BY id DESC");
       <div class="card">
         <div class="card-body">
         <h5 class="card-title">??</h5>
-          
+        <table class="table table-bordered">
+          <thead>
+            <tr>
+              <th>Semester Name</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+          <?php while ($semester = $semesters->fetch_assoc()): ?>
+            <tr>
+              <td><?= htmlspecialchars($semester['name']); ?></td>
+              <td><?= htmlspecialchars($semester['status']); ?></td>
+              <td>
+              <?php if ($semester['status'] !== 'Active'): ?>
+                <form action="manage_semester.php" method="POST" style="display:inline;">
+                  <input type="hidden" name="semester_id" value="<?= $semester['id']; ?>">
+                  <button type="submit" name="set_active" class="btn btn-warning btn-sm">Set as Active</button>
+                </form>
+                <?php else: ?>
+                  <span class="badge bg-success">Active</Wspan>
+                <?php endif; ?>
+              </td>
+            </tr>
+            <?php endwhile; ?>
+            </tbody>
+          </table>
         </div>
       </div>
 

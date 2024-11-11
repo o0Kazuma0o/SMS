@@ -1,4 +1,5 @@
 <?php
+session_start();
 require('database.php');
 
 //$timeoutMessage = '';
@@ -36,7 +37,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $user = $result->fetch_assoc();
 
             // Plain text password verification (not recommended for production)
-            if ($user['password'] === $password) {
+            if (password_verify($password, $user['password'])) {
                 return $user;
             } else {
                 // Debugging output for password verification failure
@@ -65,19 +66,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $_SESSION['role'] = $user['role'];
 
         // Redirect based on role
-        if ($user['role'] === 'superAdmin') {
-            header('Location: superAdmin/Adashboard.php');
-        } elseif ($user['role'] === 'admin') {
-            header('Location: admin/Adashboard.php');
-        } elseif ($user['role'] === 'staff') {
-            header('Location: staff_dashboard.php');
-        } elseif ($user['role'] === 'Student') {
-            header('Location: student/Dashboard.php');
-        } else {
-            $_SESSION['error_message'] = 'Invalid user role.';
-            header('Location: index.php');
+        switch ($user['role']) {
+            case 'Admin':
+                header("Location: admin/Adashboard.php");
+                break;
+            case 'staff':
+                header("Location: Sdashboard.php");
+                break;
+            case 'Superadmin':
+                header("Location: Superdashboard.php");
+                break;
+            case 'student':
+                header("Location: student/Dashboard.php");
+            default:
+                header("Location: index.php"); // Redirect to a default page if role not matched
         }
-        exit;
+        exit; // Ensure script stops after redirect
     } else {
         // If login fails, set an error message
         $_SESSION['error_message'] = 'Invalid username or password.';

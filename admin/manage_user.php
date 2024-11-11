@@ -3,106 +3,96 @@ require('../database.php');
 require_once 'session.php';
 checkAccess('Admin'); // Ensure only users with the 'admin' role can access this page
 
-// Edit room
-$edit_room = null;
-if (isset($_GET['edit_room_id'])) {
-    $edit_room_id = $_GET['edit_room_id'];
+// Initialize the edit user variable
+$edit_user = null;
 
-    // Fetch the room details to pre-fill the form for editing
-    $stmt = $conn->prepare("SELECT * FROM sms3_rooms WHERE id = ?");
-    $stmt->bind_param("i", $edit_room_id);
+// Edit user
+if (isset($_GET['edit_user_id'])) {
+    $edit_user_id = $_GET['edit_user_id'];
+
+    // Fetch user details to pre-fill the form
+    $stmt = $conn->prepare("SELECT * FROM sms3_user WHERE id = ?");
+    $stmt->bind_param("i", $edit_user_id);
     $stmt->execute();
     $result = $stmt->get_result();
-    $edit_room = $result->fetch_assoc();
+    $edit_user = $result->fetch_assoc();
     $stmt->close();
 }
 
-// Add room
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_room'])) {
-    $room_name = $_POST['room_name'];
-    $location = $_POST['location'];
-    $department_id = $_POST['department_id'];
+// Add user
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_user'])) {
+    $username = $_POST['username'];
+    $password = password_hash($_POST['password'], PASSWORD_BCRYPT);
+    $name = $_POST['name'];
+    $role = $_POST['role'];
+    $phone = $_POST['phone'];
+    $email = $_POST['email'];
 
-    try{
-    // Insert room
-    $stmt = $conn->prepare("INSERT INTO sms3_rooms (room_name, location, department_id) VALUES (?, ?, ?)");
-    $stmt->bind_param("ssi", $room_name, $location, $department_id);
-    $stmt->execute();
-    $stmt->close();
+    try {
+        // Insert user if username and email are unique
+        $stmt = $conn->prepare("INSERT INTO sms3_user (username, password, name, role, phone, email) VALUES (?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("ssssss", $username, $password, $name, $role, $phone, $email);
+        $stmt->execute();
+        $stmt->close();
 
-    $_SESSION['success_message'] = "Room added successfully!";
-    // Redirect to manage_rooms.php
-    header('Location: manage_rooms.php');
-    exit;
+        $_SESSION['success_message'] = "User added successfully!";
+        header('Location: manage_user.php');
+        exit;
     } catch (mysqli_sql_exception $e) {
-        if ($e->getCode() == 1062) { // Duplicate entry error code
-            $_SESSION['error_message'] = "Error: Duplicate entry for department code or name.";
-        } else {
-            $_SESSION['error_message'] = "Error: " . $e->getMessage();
-        }
-        header('Location: manage_rooms.php'); // Redirect to show error
+        $_SESSION['error_message'] = $e->getCode() === 1062 ? "Error: Duplicate entry for username or email." : "Error: " . $e->getMessage();
+        header('Location: manage_user.php');
         exit;
     }
 }
 
-// Update room
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_room'])) {
-    $room_id = $_POST['room_id'];  // The ID of the room being updated
-    $room_name = $_POST['room_name'];
-    $location = $_POST['location'];
-    $department_id = $_POST['department_id'];
+// Update user
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_user'])) {
+    $user_id = $_POST['user_id'];
+    $username = $_POST['username'];
+    $name = $_POST['name'];
+    $role = $_POST['role'];
+    $phone = $_POST['phone'];
+    $email = $_POST['email'];
 
-    try{
-    // Update the room in the database
-    $stmt = $conn->prepare("UPDATE sms3_rooms SET room_name = ?, location = ?, department_id = ? WHERE id = ?");
-    $stmt->bind_param("ssii", $room_name, $location, $department_id, $room_id);
-    $stmt->execute();
-    $stmt->close();
+    try {
+        $stmt = $conn->prepare("UPDATE sms3_user SET username = ?, name = ?, role = ?, phone = ?, email = ? WHERE id = ?");
+        $stmt->bind_param("sssssi", $username, $name, $role, $phone, $email, $user_id);
+        $stmt->execute();
+        $stmt->close();
 
-    $_SESSION['success_message'] = "Room updated successfully!";
-
-    // Redirect to manage_rooms.php after updating
-    header('Location: manage_rooms.php');
-    exit;
+        $_SESSION['success_message'] = "User updated successfully!";
+        header('Location: manage_user.php');
+        exit;
     } catch (mysqli_sql_exception $e) {
-        if ($e->getCode() == 1062) { // Duplicate entry error code
-            $_SESSION['error_message'] = "Error: Duplicate entry for department code or name.";
-        } else {
-            $_SESSION['error_message'] = "Error: " . $e->getMessage();
-        }
-        header('Location: manage_rooms.php'); // Redirect to show error
+        $_SESSION['error_message'] = $e->getCode() === 1062 ? "Error: Duplicate entry for username or email." : "Error: " . $e->getMessage();
+        header('Location: manage_user.php');
         exit;
     }
 }
 
-// Delete room
-if (isset($_GET['delete_room_id'])) {
-    $delete_id = $_GET['delete_room_id'];
-    try{
-    $stmt = $conn->prepare("DELETE FROM sms3_rooms WHERE id = ?");
-    $stmt->bind_param("i", $delete_id);
-    $stmt->execute();
-    $stmt->close();
+// Delete user
+if (isset($_GET['delete_user_id'])) {
+    $delete_id = $_GET['delete_user_id'];
+    try {
+        $stmt = $conn->prepare("DELETE FROM sms3_user WHERE id = ?");
+        $stmt->bind_param("i", $delete_id);
+        $stmt->execute();
+        $stmt->close();
 
-    $_SESSION['success_message'] = "Room deleted successfully!";
-
-    // Redirect to manage_rooms.php
-    header('Location: manage_rooms.php');
-    exit;
+        $_SESSION['success_message'] = "User deleted successfully!";
+        header('Location: manage_user.php');
+        exit;
     } catch (mysqli_sql_exception $e) {
-        if ($e->getCode() == 1451) { // Foreign key constraint error code
-            $_SESSION['error_message'] = "Error: This room is still connected to other data.";
-        } else {
-            $_SESSION['error_message'] = "Error: " . $e->getMessage();
-        }
-        header('Location: manage_rooms.php'); // Redirect to show error
+        $_SESSION['error_message'] = $e->getCode() === 1451 ? "Error: This user is still connected to other data." : "Error: " . $e->getMessage();
+        header('Location: manage_user.php');
         exit;
     }
 }
 
-// Fetch all rooms
-$rooms = $conn->query("SELECT r.*, d.department_code FROM sms3_rooms r JOIN sms3_departments d ON r.department_id = d.id");
-
+// Fetch all users
+$users = $conn->query("SELECT * FROM sms3_user");
+$sql = "SELECT id, username, name, role, phone, email FROM sms3_user";
+$result = $conn->query($sql);
 ?>
 
 <!DOCTYPE html>
@@ -112,7 +102,7 @@ $rooms = $conn->query("SELECT r.*, d.department_code FROM sms3_rooms r JOIN sms3
   <meta charset="utf-8">
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
 
-  <title>Rooms</title>
+  <title>Dashboard - Title</title>
   <meta content="" name="description">
   <meta content="" name="keywords">
 
@@ -135,10 +125,9 @@ $rooms = $conn->query("SELECT r.*, d.department_code FROM sms3_rooms r JOIN sms3
 
   <!-- Template Main CSS File -->
   <link href="../assets/css/style.css" rel="stylesheet">
-
   <style>
     .modal {
-        display: none; 
+        display: none;
         position: fixed;
         top: 0;
         left: 0;
@@ -156,23 +145,6 @@ $rooms = $conn->query("SELECT r.*, d.department_code FROM sms3_rooms r JOIN sms3
         text-align: center;
         width: 300px;
     }
-    .modal-buttons {
-        margin-top: 20px;
-        display: flex;
-        justify-content: space-between;
-    }
-    .btn-danger {
-        background-color: #dc3545;
-        color: white;
-    }
-    .btn-secondary {
-        background-color: #6c757d;
-        color: white;
-    }
-    .btn:hover {
-        opacity: 0.8;
-    }
-
     .popup-message {
         position: fixed;
         top: 20px;
@@ -180,17 +152,12 @@ $rooms = $conn->query("SELECT r.*, d.department_code FROM sms3_rooms r JOIN sms3
         z-index: 1000;
         padding: 15px;
         border-radius: 5px;
-        font-size: 16px;
         color: #fff;
         opacity: 0;
         transition: opacity 0.5s ease-in-out;
     }
-    .popup-message.success {
-        background-color: green;
-    }
-    .popup-message.error {
-        background-color: red;
-    }
+    .popup-message.success { background-color: green; }
+    .popup-message.error { background-color: red; }
   </style>
 </head>
 
@@ -252,7 +219,7 @@ $rooms = $conn->query("SELECT r.*, d.department_code FROM sms3_rooms r JOIN sms3
               <hr class="dropdown-divider">
             </li>
 
-<li>
+            <li>
               <a class="dropdown-item d-flex align-items-center" href="../logout.php">
                 <i class="bi bi-box-arrow-right"></i>
                 <span>Sign Out</span>
@@ -385,18 +352,18 @@ $rooms = $conn->query("SELECT r.*, d.department_code FROM sms3_rooms r JOIN sms3
   <main id="main" class="main">
 
     <div class="pagetitle">
-      <h1>Rooms</h1>
+      <h1>Dashboard</h1>
       <nav>
         <ol class="breadcrumb">
           <li class="breadcrumb-item"><a href="index.html">Home</a></li>
-          <li class="breadcrumb-item active">Rooms</li>
+          <li class="breadcrumb-item active">Dashboard</li>
         </ol>
       </nav>
     </div><!-- End Page Title -->
 
     <div id="confirmationModal" class="modal">
       <div class="modal-content">
-          <p id="confirmationMessage">Are you sure you want to delete this room?</p>
+          <p id="confirmationMessage">Are you sure you want to delete this user?</p>
           <div class="modal-buttons">
               <button id="confirmDelete" class="btn btn-danger">Delete</button>
               <button id="cancelDelete" class="btn btn-secondary">Cancel</button>
@@ -404,82 +371,89 @@ $rooms = $conn->query("SELECT r.*, d.department_code FROM sms3_rooms r JOIN sms3
       </div>
     </div>
 
-
     <section class="section dashboard">
     <div class="row">
 
-      <div class="card">
+      <!-- Add/Edit User Form -->
+      <div class="card my-4">
         <div class="card-body">
-        <h5 class="card-title"><?php if (isset($_GET['edit_room_id'])): ?>
-          Edit Room
-        <?php else: ?>
-          Add Room
-        <?php endif; ?>
-        </h5>
-          <form action="manage_rooms.php" method="POST" class="mb-4">
+          <h5 class="card-title"><?= isset($edit_user) ? 'Edit User' : 'Add User'; ?></h5>
+          <form action="manage_user.php" method="POST" class="mb-4">
             <div class="form-group">
-              <label for="room_name">Room Name:</label>
-              <input type="text" class="form-control" name="room_name" id="room_name" required
-                    value="<?= isset($edit_room) ? $edit_room['room_name'] : ''; ?>">
+              <label for="username">Username:</label>
+              <input type="text" class="form-control" name="username" id="username" required
+              value="<?= isset($edit_user) ? $edit_user['username'] : ''; ?>">
             </div>
-
+            <?php if (!isset($edit_user)): ?>
+              <div class="form-group mt-2">
+                <label for="password">Password:</label>
+                <input type="password" class="form-control" name="password" id="password" required>
+              </div>
+            <?php endif; ?>
             <div class="form-group mt-2">
-              <label for="location">Location:</label>
-              <input type="text" class="form-control" name="location" id="location" required
-                    value="<?= isset($edit_room) ? $edit_room['location'] : ''; ?>">
+              <label for="name">Name:</label>
+              <input type="text" class="form-control" name="name" id="name" required
+              value="<?= isset($edit_user) ? $edit_user['name'] : ''; ?>">
             </div>
-
             <div class="form-group mt-2">
-            <label for="department_id">Assign to Department:</label>
-            <select class="form-control" name="department_id" id="department_id" required>
-              <!-- Fetch Departments -->
-              <?php
-              $departments = $conn->query("SELECT * FROM sms3_departments");
-              while ($department = $departments->fetch_assoc()): ?>
-                <option value="<?= $department['id']; ?>" <?= isset($edit_room) && $edit_room['department_id'] == $department['id'] ? 'selected' : ''; ?>>
-                  <?= $department['department_code']; ?>
-                </option>
-              <?php endwhile; ?>
-            </select>
+              <label for="role">Role:</label>
+              <select class="form-control" name="role" id="role" required>
+                <option value="staff" <?= isset($edit_user) && $edit_user['role'] == 'staff' ? 'selected' : ''; ?>>Staff</option>
+                <option value="registrar" <?= isset($edit_user) && $edit_user['role'] == 'registrar' ? 'selected' : ''; ?>>Registrar</option>
+                <option value="Admin" <?= isset($edit_user) && $edit_user['role'] == 'Admin' ? 'selected' : ''; ?>>Admin</option>
+                <option value="Superadmin" <?= isset($edit_user) && $edit_user['role'] == 'Superadmin' ? 'selected' : ''; ?>>Superadmin</option>
+              </select>
             </div>
-
-            <?php if (isset($edit_room)): ?>
-              <input type="hidden" name="room_id" value="<?= $edit_room['id']; ?>">
-              <button type="submit" name="update_room" class="btn btn-warning mt-3">Update Room</button>
+            <div class="form-group mt-2">
+              <label for="phone">Phone:</label>
+              <input type="text" class="form-control" name="phone" id="phone" 
+              value="<?= isset($edit_user) ? $edit_user['phone'] : ''; ?>">
+            </div>
+            <div class="form-group mt-2">
+              <label for="email">Email:</label>
+              <input type="email" class="form-control" name="email" id="email" required
+              value="<?= isset($edit_user) ? $edit_user['email'] : ''; ?>">
+            </div>
+            <?php if (isset($edit_user)): ?>
+              <input type="hidden" name="user_id" value="<?= $edit_user['id']; ?>">
+              <button type="submit" name="update_user" class="btn btn-warning mt-3">Update User</button>
             <?php else: ?>
-              <button type="submit" name="add_room" class="btn btn-primary mt-3">Add Room</button>
+              <button type="submit" name="add_user" class="btn btn-primary mt-3">Add User</button>
             <?php endif; ?>
           </form>
         </div>
       </div>
 
+      <!-- User List Table -->
       <div class="card">
         <div class="card-body">
-        <h5 class="card-title">Room List</h5>
+          <h5 class="card-title">User List</h5>
           <table class="table table-bordered">
             <thead>
-                <tr>
-                    <th>Room Name</th>
-                    <th>Location</th>
-                    <th>Department</th>
-                    <th>Actions</th>
-                </tr>
+              <tr>
+                <th>Username</th>
+                <th>Name</th>
+                <th>Role</th>
+                <th>Phone</th>
+                <th>Email</th>
+                <th>Actions</th>
+              </tr>
             </thead>
             <tbody>
-              <?php while ($room = $rooms->fetch_assoc()): ?>
-                <tr>
-                    <td><?= $room['room_name']; ?></td>
-                    <td><?= $room['location']; ?></td>
-                    <td><?= $room['department_code']; ?></td>
-                    <td>
-                    <a href="manage_rooms.php?edit_room_id=<?= $room['id']; ?>" 
-                      class="btn btn-info btn-sm">Edit</a>
-                    <a href="manage_rooms.php?delete_room_id=<?= $room['id']; ?>" 
-                      class="btn btn-danger btn-sm delete-link" 
-                      data-room-name="<?= $room['room_name']; ?>">Delete</a>
-                    </td>
-                </tr>
-              <?php endwhile; ?>
+            <?php while ($user = $users->fetch_assoc()): ?>
+              <tr>
+                <td><?= $user['username']; ?></td>
+                <td><?= $user['name']; ?></td>
+                <td><?= $user['role']; ?></td>
+                <td><?= $user['phone']; ?></td>
+                <td><?= $user['email']; ?></td>
+                <td>
+                  <a href="manage_user.php?edit_user_id=<?= $user['id']; ?>" class="btn btn-info btn-sm">Edit</a>
+                  <a href="manage_user.php?delete_user_id=<?= $user['id']; ?>" class="btn btn-danger btn-sm delete-link" 
+                      data-username="<?= $user['username']; ?>">Delete</a>
+                </td>
+              </tr>
+            <?php endwhile; ?>
             </tbody>
           </table>
         </div>
@@ -491,74 +465,67 @@ $rooms = $conn->query("SELECT r.*, d.department_code FROM sms3_rooms r JOIN sms3
   </main><!-- End #main -->
 
   <script>
-    function showConfirmationModal(message, onConfirm) {
-      const modal = document.getElementById('confirmationModal');
-      const confirmDeleteBtn = document.getElementById('confirmDelete');
-      const cancelDeleteBtn = document.getElementById('cancelDelete');
-      const confirmationMessage = document.getElementById('confirmationMessage');
+    function showPopupMessage(message, type = 'success') {
+        const popup = document.createElement('div');
+        popup.className = `popup-message ${type}`;
+        popup.innerText = message;
+        document.body.appendChild(popup);
 
-      confirmationMessage.innerText = message;
-      modal.style.display = 'flex';
-
-      confirmDeleteBtn.onclick = () => {
-          onConfirm();
-          closeModal();
-      };
-
-      cancelDeleteBtn.onclick = closeModal;
-
-      function closeModal() {
-          modal.style.display = 'none';
-      }
+        popup.style.opacity = '1';
+        setTimeout(() => {
+            popup.style.opacity = '0';
+            setTimeout(() => popup.remove(), 500);
+        }, 3000);
     }
 
+    // Confirmation modal for deletion
     document.querySelectorAll('.delete-link').forEach(button => {
-      button.addEventListener('click', function(event) {
-          event.preventDefault();
-          const deleteUrl = this.href;
-          const roomName = this.getAttribute('data-room-name');
+        button.addEventListener('click', function(event) {
+            event.preventDefault();
+            const deleteUrl = this.href;
+            const username = this.getAttribute('data-username');
 
-          showConfirmationModal(`Are you sure you want to delete the Room: ${roomName}?`, () => {
-              window.location.href = deleteUrl;
-          });
-      });
+            const modal = document.getElementById('confirmationModal');
+            const confirmDeleteBtn = document.getElementById('confirmDelete');
+            const cancelDeleteBtn = document.getElementById('cancelDelete');
+            const confirmationMessage = document.getElementById('confirmationMessage');
+
+            confirmationMessage.innerText = `Are you sure you want to delete the user: ${name}?`;
+            modal.style.display = 'flex';
+
+            confirmDeleteBtn.onclick = () => {
+                window.location.href = deleteUrl;
+                modal.style.display = 'none';
+            };
+
+            cancelDeleteBtn.onclick = () => modal.style.display = 'none';
+        });
     });
 
+
+    // Popup message function
     function showPopupMessage(message, type = 'success') {
-      const popup = document.createElement('div');
-      popup.className = `popup-message ${type}`;
-      popup.innerText = message;
+        const popup = document.createElement('div');
+        popup.className = `popup-message ${type}`;
+        popup.innerText = message;
+        document.body.appendChild(popup);
 
-      popup.style.position = 'fixed';
-      popup.style.top = '20px';
-      popup.style.right = '20px';
-      popup.style.padding = '15px';
-      popup.style.zIndex = '1000';
-      popup.style.borderRadius = '5px';
-      popup.style.color = '#fff';
-      popup.style.fontSize = '16px';
-      popup.style.backgroundColor = type === 'success' ? 'green' : 'red';
-      popup.style.opacity = '1';
-      popup.style.transition = 'opacity 0.5s ease';
-
-      document.body.appendChild(popup);
-
-      setTimeout(() => {
-          popup.style.opacity = '0';
-          setTimeout(() => {
-              popup.remove();
-          }, 500);
-      }, 3000);
+        popup.style.opacity = '1';
+        setTimeout(() => {
+            popup.style.opacity = '0';
+            setTimeout(() => popup.remove(), 500);
+        }, 3000);
     }
 
+    // Show popup on load if a session message exists
     window.onload = function() {
-      <?php if (isset($_SESSION['error_message'])): ?>
-          showPopupMessage('<?= $_SESSION['error_message']; ?>', 'error');
-          <?php unset($_SESSION['error_message']); ?>
-      <?php elseif (isset($_SESSION['success_message'])): ?>
-          showPopupMessage('<?= $_SESSION['success_message']; ?>', 'success');
-          <?php unset($_SESSION['success_message']); ?>
-      <?php endif; ?>
+        <?php if (isset($_SESSION['error_message'])): ?>
+            showPopupMessage('<?= $_SESSION['error_message']; ?>', 'error');
+            <?php unset($_SESSION['error_message']); ?>
+        <?php elseif (isset($_SESSION['success_message'])): ?>
+            showPopupMessage('<?= $_SESSION['success_message']; ?>', 'success');
+            <?php unset($_SESSION['success_message']); ?>
+        <?php endif; ?>
     };
   </script>
 
