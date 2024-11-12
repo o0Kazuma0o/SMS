@@ -64,7 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_id'], $_POS
 
           // Insert data into sms3_students
           $stmt = $conn->prepare("INSERT INTO sms3_students (
-              student_number, first_name, middle_name, last_name, academic_year, username, password, role, program, admission_type, 
+              student_number, first_name, middle_name, last_name, academic_year, username, password, role, department_id, admission_type, 
               year_level, sex, civil_status, religion, birthday, email, contact_number, facebook_name, 
               address, father_name, mother_name, guardian_name, guardian_contact, primary_school, primary_year, 
               secondary_school, secondary_year, last_school, last_school_year, referral_source, working_student, member4ps, status
@@ -78,7 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_id'], $_POS
               "sssssssssssssssssssssssssssssssss",
               $studentNumber, $admissionData['first_name'], $admissionData['middle_name'], $admissionData['last_name'], 
               $academicYear, $username, $password, $role, 
-              $admissionData['program'], $admissionData['admission_type'], $admissionData['year_level'],
+              $admissionData['department_id'], $admissionData['admission_type'], $admissionData['year_level'],
               $admissionData['sex'], $admissionData['civil_status'], $admissionData['religion'], $admissionData['birthday'],
               $admissionData['email'], $admissionData['contact_number'], $admissionData['facebook_name'], 
               $admissionData['address'], $admissionData['father_name'], $admissionData['mother_name'], 
@@ -110,7 +110,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_id'], $_POS
 }
 
 // Fetch all pending admissions
-$query = "SELECT * FROM sms3_pending_admission WHERE status = 'Pending' ORDER BY created_at DESC";
+$query = "SELECT a.*, d.department_code AS department 
+          FROM sms3_pending_admission a
+          LEFT JOIN sms3_departments d ON a.department_id = d.id
+          WHERE a.status = 'Pending'
+          ORDER BY a.created_at DESC";
+          
 $result = $conn->query($query);
 
 if (!$result) {
@@ -375,7 +380,7 @@ if (!$result) {
                           </td>
                           <td><?= htmlspecialchars($row['birthday']) ?></td>
                           <td><?= htmlspecialchars($row['admission_type']) ?></td>
-                          <td><?= htmlspecialchars($row['program']) ?></td>
+                          <td><?= htmlspecialchars($row['department']) ?></td>
                           <td><?= htmlspecialchars($row['year_level']) ?></td>
                           <td>
                               <button class="btn btn-info btn-sm" onclick="viewInformation(<?= $row['id'] ?>)">View Information</button>

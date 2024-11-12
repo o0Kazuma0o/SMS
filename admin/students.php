@@ -3,7 +3,11 @@ require('../database.php');
 require_once 'session.php';
 checkAccess('Admin'); // Ensure only users with the 'admin' role can access this page
 
-$query = "SELECT * FROM sms3_students ORDER BY created_at DESC";
+$query = "SELECT s.*, d.department_code AS department 
+          FROM sms3_students s
+          LEFT JOIN sms3_departments d ON s.department_id = d.id
+          ORDER BY s.created_at DESC";
+
 $result = $conn->query($query);
 ?>
 
@@ -262,31 +266,37 @@ $result = $conn->query($query);
                   </tr>
                 </thead>
                 <tbody>
-                  <?php
-                  // Fetch students from the sms3_students table
-                  $students = $conn->query("SELECT * FROM sms3_students");
-                  while ($student = $students->fetch_assoc()):
-                  ?>
-                  <tr>
-                    <td><?= $student['student_number']; ?></td>
-                    <td>
-                      <?= htmlspecialchars($student['first_name']) . ' ' . 
-                          (!empty($student['middle_name']) ? htmlspecialchars($student['middle_name']) . ' ' : '') . 
-                          htmlspecialchars($student['last_name']); ?>
-                    </td>
-                    <td><?= date('Y/m/d', strtotime($student['created_at'])); ?></td>
-                    <td><?= $student['academic_year']; ?></td>
-                    <td><?= $student['program']; ?></td>
-                    <td><?= $student['year_level']; ?></td>
-                    <td>
-                      <button class="btn btn-info btn-sm" onclick="viewInformation(<?= $student['id'] ?>)">View Information</button>
-                    </td>
-                    <td>
-                      <button class="btn btn-info btn-sm" onclick="viewSubjects(<?= $student['id'] ?>)">View Subjects</button>
-                    </td>
-                    <td><span class="badge bg-success"><?= $student['status']; ?></span></td>
-                  </tr>
-                  <?php endwhile; ?>
+                  <?php if ($result && $result->num_rows > 0): ?>
+                    <?php while ($row = $result->fetch_assoc()): ?>
+                      <tr>
+                        <td><?= htmlspecialchars($row['student_number']); ?></td>
+                        <td>
+                          <?= htmlspecialchars($row['first_name']) . ' ' . 
+                              (!empty($row['middle_name']) ? htmlspecialchars($row['middle_name']) . ' ' : '') . 
+                              htmlspecialchars($row['last_name']); ?>
+                        </td>
+                        <td><?= htmlspecialchars(date('Y/m/d', strtotime($row['created_at']))); ?></td>
+                        <td><?= htmlspecialchars($row['academic_year']); ?></td>
+                        <td><?= htmlspecialchars($row['department']); ?></td>
+                        <td><?= htmlspecialchars($row['year_level']); ?></td>
+                        <td>
+                          <button class="btn btn-info btn-sm" onclick="viewInformation(<?= $row['id'] ?>)">View Information</button>
+                        </td>
+                        <td>
+                          <button class="btn btn-info btn-sm" onclick="viewSubjects(<?= $student['id'] ?>)">View Subjects</button>
+                        </td>
+                        <td>
+                          <span class="badge bg-<?= $row['status'] == 'Not Enrolled' ? 'warning' : ($row['status'] == 'Approved' ? 'success' : 'danger') ?>">
+                              <?= htmlspecialchars($row['status']); ?>
+                          </span>
+                        </td>
+                      </tr>
+                    <?php endwhile; ?>
+                  <?php else: ?>
+                    <tr>
+                        <td colspan="9" class="text-center">No students found</td>
+                    </tr>
+                  <?php endif; ?>
                 </tbody>
               </table>
               <!-- End Table with stripped rows -->
