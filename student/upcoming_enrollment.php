@@ -4,12 +4,13 @@ require_once 'session.php';
 checkAccess('Student'); // Ensure only users with the 'student' role can access this page
 
 // Fetch sections based on student's department, year level, and semester
+$studentId = $_SESSION['user_id'];
 $studentDepartment = $_SESSION['department'];
 $studentYearLevel = $_SESSION['year_level'];
 $currentSemester = $_SESSION['semester'];
 $departmentCodePrefix = substr($studentYearLevel, 0, 1) . ($currentSemester === '1st Semester' ? '1' : '2');
 
-$query = "SELECT s.id, s.section_number, s.available, tt.day_of_week, tt.start_time, tt.end_time, subj.subject_name
+$query = "SELECT s.id, s.section_number, s.available, tt.id AS timetable_id, tt.day_of_week, tt.start_time, tt.end_time, subj.subject_name
           FROM sms3_sections s
           JOIN sms3_timetable tt ON s.id = tt.section_id
           JOIN sms3_subjects subj ON tt.subject_id = subj.id
@@ -72,8 +73,12 @@ $stmt->close();
         margin-right: 10px;
         padding: 5px 10px;
     }
-    .day-button.active {
+    .day-button.active, .section-button.active {
         background-color: #007bff;
+        color: #fff;
+    }
+    .day-button:hover, .section-button:hover {
+        background-color: gray;
         color: #fff;
     }
   </style>
@@ -231,47 +236,42 @@ $stmt->close();
 
       <div class="card mb-4">
         <div class="card-body">
-          <h5 class="card-title">Enrollment</h5>
-          <div class="row mb-3">
-            <div class="col-md-12">
-              <label class="form-label">Select Weekdays:</label>
-              <div id="weekday-buttons" class="d-flex">
-                <?php foreach (['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as $day): ?>
-                    <button type="button" class="btn btn-outline-primary day-button" data-day="<?= $day ?>" onclick="toggleDay(this)"><?= $day ?></button>
-                <?php endforeach; ?>
-              </div>
+            <h5 class="card-title">Filter Sections by Days</h5>
+            <div class="mb-3">
+                <label class="form-label">Select Weekdays:</label>
+                <div id="weekday-buttons" class="d-flex flex-wrap">
+                    <?php foreach (['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as $day): ?>
+                        <button type="button" class="btn btn-outline-primary day-button" data-day="<?= $day ?>" onclick="toggleDay(this)">
+                            <?= $day ?>
+                        </button>
+                    <?php endforeach; ?>
+                </div>
             </div>
-            <div class="col-md-12 mt-3">
-              <label for="section" class="form-label">Available Sections:</label>
-              <select id="section" class="form-select" onchange="displaySectionDetails(this)">
-                <option value="" disabled selected>Select a section</option>
-                <?php foreach ($sections as $sectionId => $section): ?>
-                  <option value="<?= $sectionId ?>" data-section="<?= $section['section_number'] ?>">
-                      Section <?= $section['section_number'] ?> (Available slots: <?= $section['available'] ?>)
-                  </option>
-                <?php endforeach; ?>
-              </select>
+            <div id="section-buttons" class="d-flex flex-wrap">
+                <!-- Section buttons populated here -->
             </div>
-          </div>
         </div>
       </div>
 
       <div class="card">
         <div class="card-body">
-          <h5 class="card-title">Section Schedule</h5>
-          <table id="schedule-table" class="table table-striped" style="display: none;">
-            <thead>
-              <tr>
-                <th>Subject</th>
-                <th>Day</th>
-                <th>Start Time</th>
-                <th>End Time</th>
-              </tr>
-            </thead>
-            <tbody id="schedule-body"></tbody>
-          </table>
+            <h5 class="card-title">Section Schedule</h5>
+            <table id="schedule-table" class="table table-striped" style="display: none;">
+                <thead>
+                    <tr>
+                        <th>Section</th>
+                        <th>Subject</th>
+                        <th>Day</th>
+                        <th>Start Time</th>
+                        <th>End Time</th>
+                    </tr>
+                </thead>
+                <tbody id="schedule-body"></tbody>
+            </table>
+            <button id="enroll-button" class="btn btn-success" style="display: none;" onclick="enrollInSection()">Enroll</button>
         </div>
       </div>
+
     </div>
     </section>
 
@@ -282,60 +282,87 @@ $stmt->close();
     const scheduleTable = document.getElementById('schedule-table');
     const scheduleBody = document.getElementById('schedule-body');
     let selectedDays = [];
+    let selectedSection = null;
 
     function toggleDay(button) {
-        const day = button.getAttribute('data-day');
-        if (button.classList.contains('active')) {
-            button.classList.remove('active');
-            selectedDays = selectedDays.filter(d => d !== day);
-        } else {
-            if (selectedDays.length < 3) {
-                button.classList.add('active');
-                selectedDays.push(day);
-            } else {
-                alert("You can select up to 3 days.");
-            }
-        }
-        filterSectionsByDays();
+      const day = button.getAttribute('data-day');
+      if (button.classList.contains('active')) {
+          button.classList.remove('active');
+          selectedDays = selectedDays.filter(d => d !== day);
+      } else {
+          if (selectedDays.length < 3) {
+              button.classList.add('active');
+              selectedDays.push(day);
+          } else {
+              alert("You can select up to 3 days.");
+          }
+      }
+      
+      // Clear sections if no days are selected
+      if (selectedDays.length === 0) {
+          document.getElementById('section-buttons').innerHTML = '';
+      } else {
+          filterSectionsByDays();
+      }
     }
 
     function filterSectionsByDays() {
-        const sectionSelect = document.getElementById('section');
-        sectionSelect.innerHTML = '<option value="" disabled selected>Select a section</option>';
+      const sectionButtons = document.getElementById('section-buttons');
+      sectionButtons.innerHTML = '';
 
-        for (const [sectionId, sectionData] of Object.entries(sectionsData)) {
-            const sectionDays = sectionData.subjects.map(subject => subject.day_of_week);
-            const containsAllSelectedDays = selectedDays.every(day => sectionDays.includes(day));
+      for (const [sectionId, sectionData] of Object.entries(sectionsData)) {
+          const sectionDays = sectionData.subjects.map(subject => subject.day_of_week);
+          const containsAllSelectedDays = selectedDays.every(day => sectionDays.includes(day));
 
-            if (selectedDays.length === 0 || containsAllSelectedDays) {
-                const option = document.createElement('option');
-                option.value = sectionId;
-                option.textContent = 'Section ' + sectionData.section_number + ' (Available slots: ' + sectionData.available + ')';
-                sectionSelect.appendChild(option);
-            }
-        }
+          if (containsAllSelectedDays) {
+              const button = document.createElement('button');
+              button.classList.add('btn', 'btn-outline-primary', 'section-button');
+              button.textContent = `Section ${sectionData.section_number} (Available slots: ${sectionData.available})`;
+              button.setAttribute('data-section-id', sectionId);
+              button.onclick = () => selectSection(button);
+              sectionButtons.appendChild(button);
+          }
+      }
     }
 
-    function displaySectionDetails(select) {
-        const selectedSectionId = select.value;
-        const selectedSection = sectionsData[selectedSectionId];
-        scheduleBody.innerHTML = '';
+    function selectSection(button) {
+        document.querySelectorAll('.section-button').forEach(btn => btn.classList.remove('active'));
+        button.classList.add('active');
+        selectedSection = button.getAttribute('data-section-id');
+        displaySectionDetails(selectedSection);
+    }
 
-        if (selectedSection) {
-            selectedSection.subjects.forEach(subject => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${subject.subject_name}</td>
-                    <td>${subject.day_of_week}</td>
-                    <td>${subject.start_time}</td>
-                    <td>${subject.end_time}</td>
-                `;
-                scheduleBody.appendChild(row);
-            });
-            scheduleTable.style.display = 'table';
-        } else {
-            scheduleTable.style.display = 'none';
-        }
+    function displaySectionDetails(sectionId) {
+        scheduleBody.innerHTML = '';
+        const section = sectionsData[sectionId];
+        section.subjects.forEach(subject => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${section.section_number}</td>
+                <td>${subject.subject_name}</td>
+                <td>${subject.day_of_week}</td>
+                <td>${subject.start_time}</td>
+                <td>${subject.end_time}</td>
+            `;
+            scheduleBody.appendChild(row);
+        });
+        scheduleTable.style.display = section.subjects.length ? 'table' : 'none';
+        document.getElementById('enroll-button').style.display = section.subjects.length ? 'block' : 'none';
+    }
+
+    function enrollInSection() {
+        if (!selectedSection) return;
+
+        fetch('enroll.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ student_id: <?= $studentId ?>, section_id: selectedSection })
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message);
+        })
+        .catch(error => console.error('Enrollment error:', error));
     }
   </script>
 
