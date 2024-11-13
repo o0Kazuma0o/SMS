@@ -8,7 +8,9 @@ $query = "SELECT s.*, d.department_code AS department
           LEFT JOIN sms3_departments d ON s.department_id = d.id
           ORDER BY s.created_at DESC";
 
-$result = $conn->query($query);
+$stmt = $conn->prepare($query);
+$stmt->execute();
+$result = $stmt->get_result();
 ?>
 
 <!DOCTYPE html>

@@ -672,7 +672,11 @@ while ($department = $departments->fetch_assoc()) {
 
       // Validate email format
       const email = document.getElementById('email');
-      if (email.value && !emailRegex.test(email.value)) {
+      if (!email.value.trim()) {
+        document.getElementById('email-error').innerText = 'Email is required';
+        email.style.border = '2px solid red';
+        valid = false;
+      } else if (!emailRegex.test(email.value)) {
         document.getElementById('email-error').innerText = 'Please enter a valid email address';
         email.style.border = '2px solid red';
         valid = false;

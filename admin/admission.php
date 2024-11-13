@@ -22,8 +22,8 @@ function generateStudentNumber($conn) {
 
 // Function to generate and bcrypt hash password
 function generatePassword($lastName) {
-  $passwordPlain = '#' . substr($lastName, 0, 2) . '8080'; // e.g., "#Ca8080" for "Capati"
-  return password_hash($passwordPlain, PASSWORD_BCRYPT); // Use bcrypt algorithm
+  $passwordPlain = '#' . substr($lastName, 0, 2) . '8080';
+  return password_hash($passwordPlain, PASSWORD_BCRYPT);
 }
 
 // Fetch current academic year
@@ -214,7 +214,7 @@ if (!$result) {
               <hr class="dropdown-divider">
             </li>
 
-<li>
+            <li>
               <a class="dropdown-item d-flex align-items-center" href="../logout.php">
                 <i class="bi bi-box-arrow-right"></i>
                 <span>Sign Out</span>

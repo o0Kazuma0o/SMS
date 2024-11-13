@@ -631,7 +631,7 @@ $timetables = $conn->query("
                     <td><?= $timetable['department_code']; ?></td>
                     <td><?= $timetable['section_number']; ?></td>
                     <td>
-                        <button class="btn btn-info btn-sm" onclick="viewTimetableDetails(<?= $timetable['id']; ?>)">View Timetable</button>
+                      <button class="btn btn-info btn-sm" onclick="viewTimetableDetails('<?= $timetable['section_number']; ?>', '<?= $timetable['department_code']; ?>')">View Timetable</button>
                     </td>
                     <td>
                     <a href="manage_timetable.php?delete_timetable_id=<?= $timetable['id']; ?>" class="btn btn-danger btn-sm delete-link" data-timetable-id="<?= $timetable['section_number']; ?>">Delete</a>
@@ -639,9 +639,9 @@ $timetables = $conn->query("
                 </tr>
                 <?php endwhile; ?>
             </tbody>
-        </table>
+          </table>
+        </div>
       </div>
-    </div>
 
     </div>
     </section>
@@ -738,14 +738,13 @@ $timetables = $conn->query("
   <script>
 
   // Fetch and display timetable details in a modal
-  function viewTimetableDetails(timetableId) {
-    fetch('fetch_timetable_details.php?timetable_id=' + timetableId)
+  function viewTimetableDetails(sectionNumber, departmentCode) {
+    fetch(`fetch_timetable_details.php?section_number=${sectionNumber}&department_code=${departmentCode}`)
       .then(response => response.json())
       .then(data => {
         var timetableDetails = document.getElementById('timetable-details').getElementsByTagName('tbody')[0];
         timetableDetails.innerHTML = ''; // Clear any previous content
 
-        // Loop through the fetched data and add rows to the table
         data.forEach(row => {
           var newRow = `
             <tr>
@@ -762,7 +761,6 @@ $timetables = $conn->query("
           timetableDetails.insertAdjacentHTML('beforeend', newRow);
         });
 
-        // Show the "View Timetable" modal
         var timetableModal = new bootstrap.Modal(document.getElementById('timetableModal'));
         timetableModal.show();
       });

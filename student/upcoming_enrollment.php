@@ -1,28 +1,35 @@
 <?php
 require('../database.php');
 require_once 'session.php';
+checkAccess('Student'); // Ensure only users with the 'student' role can access this page
 
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'Student') {
-    header("Location: ../index.php");
-    exit;
+// Fetch sections based on student's department, year level, and semester
+$studentDepartment = $_SESSION['department'];
+$studentYearLevel = $_SESSION['year_level'];
+$currentSemester = $_SESSION['semester'];
+$departmentCodePrefix = substr($studentYearLevel, 0, 1) . ($currentSemester === '1st Semester' ? '1' : '2');
+
+$query = "SELECT s.id, s.section_number, tt.day_of_week, tt.start_time, tt.end_time, subj.subject_name
+          FROM sms3_sections s
+          JOIN sms3_timetable tt ON s.id = tt.section_id
+          JOIN sms3_subjects subj ON tt.subject_id = subj.id
+          WHERE s.department_id = (SELECT id FROM sms3_departments WHERE department_name = ?) 
+          AND s.year_level = ? 
+          AND s.section_number LIKE ?
+          ORDER BY s.section_number";
+
+$stmt = $conn->prepare($query);
+$sectionPattern = $departmentCodePrefix . '%';
+$stmt->bind_param("sis", $studentDepartment, $studentYearLevel, $sectionPattern);
+$stmt->execute();
+$sectionsResult = $stmt->get_result();
+
+$sections = [];
+while ($row = $sectionsResult->fetch_assoc()) {
+    $sections[$row['id']]['section_number'] = $row['section_number'];
+    $sections[$row['id']]['subjects'][] = $row;
 }
-
-// Get the active semester details from the session
-$activeSemesterId = $_SESSION['active_semester_id'];
-$activeSemesterName = $_SESSION['active_semester_name'];
-
-// Fetch sections for the current active semester, and relevant year level and department
-$studentDepartmentId = 1; // Example: Set dynamically based on logged-in student's department
-$studentYearLevel = 1; // Example: Set based on student's year level
-$sections = $conn->query("
-    SELECT s.section_number, s.capacity, s.available, d.department_code, sem.name AS semester_name
-    FROM sms3_sections s
-    JOIN sms3_departments d ON s.department_id = d.id
-    JOIN sms3_semesters sem ON s.semester_id = sem.id
-    WHERE s.semester_id = $activeSemesterId
-      AND s.year_level = $studentYearLevel
-      AND s.department_id = $studentDepartmentId
-");
+$stmt->close();
 ?>
 
 <!DOCTYPE html>
@@ -199,7 +206,7 @@ $sections = $conn->query("
       <h1>Current Enrollment</h1>
       <nav>
         <ol class="breadcrumb">
-          <li class="breadcrumb-item"><a href="index.html">Home</a></li>
+          <li class="breadcrumb-item"><a href="Dashboard.php">Home</a></li>
           <li class="breadcrumb-item">Enrollment</li>
           <li class="breadcrumb-item active">Current Enrollment</li>
         </ol>
@@ -209,24 +216,102 @@ $sections = $conn->query("
     <section class="section dashboard">
     <div class="row">
 
-      <div class="card">
+      <div class="card mb-4">
         <div class="card-body">
-        <h5 class="card-title">??</h5>
-          
+          <h5 class="card-title">Enrollment</h5>
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="weekday" class="form-label">Select Weekday:</label>
+              <select id="weekday" class="form-select">
+                <option value="">All Days</option>
+                <option value="Monday">Monday</option>
+                <option value="Tuesday">Tuesday</option>
+                <option value="Wednesday">Wednesday</option>
+                <option value="Thursday">Thursday</option>
+                <option value="Friday">Friday</option>
+                <option value="Saturday">Saturday</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label for="section" class="form-label">Available Sections:</label>
+              <select id="section" class="form-select" onchange="displaySectionDetails(this)">
+                <option value="" disabled selected>Select a section</option>
+                <?php foreach ($sections as $sectionId => $section): ?>
+                  <option value="<?= $sectionId ?>" data-section="<?= $section['section_number'] ?>">
+                    Section <?= $section['section_number'] ?>
+                  </option>
+                <?php endforeach; ?>
+              </select>
+            </div>
+          </div>
         </div>
       </div>
 
       <div class="card">
         <div class="card-body">
-        <h5 class="card-title">??</h5>
-          
+          <h5 class="card-title">Section Schedule</h5>
+          <table id="schedule-table" class="table table-striped" style="display: none;">
+            <thead>
+              <tr>
+                <th>Subject</th>
+                <th>Day</th>
+                <th>Start Time</th>
+                <th>End Time</th>
+              </tr>
+            </thead>
+            <tbody id="schedule-body"></tbody>
+          </table>
         </div>
       </div>
-
     </div>
     </section>
 
   </main><!-- End #main -->
+
+  <script>
+    const sectionsData = <?= json_encode($sections) ?>;
+    const scheduleTable = document.getElementById('schedule-table');
+    const scheduleBody = document.getElementById('schedule-body');
+
+    document.getElementById('weekday').addEventListener('change', function () {
+      const selectedDay = this.value;
+      const sectionSelect = document.getElementById('section');
+      sectionSelect.innerHTML = '<option value="" disabled selected>Select a section</option>';
+      
+      for (const [sectionId, sectionData] of Object.entries(sectionsData)) {
+        const subjectsOnDay = sectionData.subjects.filter(subject => !selectedDay || subject.day_of_week === selectedDay);
+        if (subjectsOnDay.length > 0) {
+            const option = document.createElement('option');
+            option.value = sectionId;
+            option.textContent = 'Section ' + sectionData.section_number;
+            option.setAttribute('data-section', sectionData.section_number);
+            sectionSelect.appendChild(option);
+        }
+      }
+    });
+
+    function displaySectionDetails(select) {
+      const selectedSectionId = select.value;
+      const selectedSection = sectionsData[selectedSectionId];
+      scheduleBody.innerHTML = '';
+      
+      if (selectedSection) {
+        selectedSection.subjects.forEach(subject => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${subject.subject_name}</td>
+            <td>${subject.day_of_week}</td>
+            <td>${subject.start_time}</td>
+            <td>${subject.end_time}</td>
+          `;
+          scheduleBody.appendChild(row);
+        });
+        scheduleTable.style.display = 'table';
+      } else {
+        scheduleTable.style.display = 'none';
+      }
+    }
+  </script>
 
   <!-- ======= Footer ======= -->
   <footer id="footer" class="footer">

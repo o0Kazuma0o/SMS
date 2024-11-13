@@ -12,6 +12,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $username = $_POST['username'];
     $password = $_POST['password'];
 
+    if (!preg_match('/^[a-zA-Z0-9._]+$/', $username)) {
+        $_SESSION['error_message'] = 'Invalid username format. Only letters, numbers, dots, and underscores are allowed.';
+        header('Location: index.php');
+        exit;
+    }
+
     // Validate input
     if (empty($username) || empty($password)) {
         $_SESSION['error_message'] = 'Please fill in both fields.';
@@ -220,6 +226,25 @@ button:hover {
 .admission-button:hover {
     background-color: #0056b3; /* Darker blue on hover */
 }
+
+.popup-message {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1000;
+        padding: 15px;
+        border-radius: 5px;
+        font-size: 16px;
+        color: #fff;
+        opacity: 0;
+        transition: opacity 0.5s ease-in-out;
+    }
+    .popup-message.success {
+        background-color: green;
+    }
+    .popup-message.error {
+        background-color: red;
+    }
 </style>
 <body>
     <div class="logo">
@@ -229,15 +254,9 @@ button:hover {
     
     <div class="login-container">
     <h2>Log Into Your Account</h2>
-    <?php if (isset($_SESSION['error_message'])): ?>
-        <div class="alert alert-danger">
-            <?php echo $_SESSION['error_message']; ?>
-        </div>
-        <?php unset($_SESSION['error_message']); ?>
-    <?php endif; ?>
         <form id="loginForm" action="index.php" method="post">
-            <label for="username">Username</label>
-            <input type="text" id="username" name="username" required>
+            <label for="username" class="form-label">Username</label>
+            <input type="text" class="form-control" id="username" name="username" required oninput="validateUsername(this)" pattern="[a-zA-Z0-9._]+" >
 
             <label for="password">Password</label>
             <input type="password" id="password" name="password" required>
@@ -246,6 +265,56 @@ button:hover {
             <a href="admission.php" class="admission-button">ADMISSION</a>
         </form>
     </div>
+
+    <script>
+        function validateUsername(input) {
+        // Allow only letters, numbers, dots, and underscores
+        input.value = input.value.replace(/[^a-zA-Z0-9._]/g, '');
+        }
+
+        function showPopupMessage(message, type = 'success') {
+      // Create the popup element
+      const popup = document.createElement('div');
+      popup.className = `popup-message ${type}`;
+      popup.innerText = message;
+
+      // Style the popup element
+      popup.style.position = 'fixed';
+      popup.style.top = '20px';
+      popup.style.right = '20px';
+      popup.style.padding = '15px';
+      popup.style.zIndex = '1000';
+      popup.style.borderRadius = '5px';
+      popup.style.color = '#fff';
+      popup.style.fontSize = '16px';
+      popup.style.backgroundColor = type === 'success' ? 'green' : 'red';
+      popup.style.opacity = '1';
+      popup.style.transition = 'opacity 0.5s ease';
+
+      // Add the popup to the document
+      document.body.appendChild(popup);
+
+      // Fade out after 3 seconds
+      setTimeout(() => {
+          popup.style.opacity = '0';
+          // Remove the element after the transition ends
+          setTimeout(() => {
+              popup.remove();
+          }, 500);
+      }, 3000);
+    }
+
+    // Trigger the popup based on the session message
+    window.onload = function() {
+      <?php if (isset($_SESSION['error_message'])): ?>
+          showPopupMessage('<?= $_SESSION['error_message']; ?>', 'error');
+          <?php unset($_SESSION['error_message']); ?>
+      <?php elseif (isset($_SESSION['success_message'])): ?>
+          showPopupMessage('<?= $_SESSION['success_message']; ?>', 'success');
+          <?php unset($_SESSION['success_message']); ?>
+      <?php endif; ?>
+    };
+    </script>
 
 </body>
 </html>
