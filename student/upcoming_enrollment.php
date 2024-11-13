@@ -9,7 +9,7 @@ $studentYearLevel = $_SESSION['year_level'];
 $currentSemester = $_SESSION['semester'];
 $departmentCodePrefix = substr($studentYearLevel, 0, 1) . ($currentSemester === '1st Semester' ? '1' : '2');
 
-$query = "SELECT s.id, s.section_number, tt.day_of_week, tt.start_time, tt.end_time, subj.subject_name
+$query = "SELECT s.id, s.section_number, s.available, tt.day_of_week, tt.start_time, tt.end_time, subj.subject_name
           FROM sms3_sections s
           JOIN sms3_timetable tt ON s.id = tt.section_id
           JOIN sms3_subjects subj ON tt.subject_id = subj.id
@@ -26,8 +26,11 @@ $sectionsResult = $stmt->get_result();
 
 $sections = [];
 while ($row = $sectionsResult->fetch_assoc()) {
-    $sections[$row['id']]['section_number'] = $row['section_number'];
-    $sections[$row['id']]['subjects'][] = $row;
+    if ($row['available'] > 0) {
+        $sections[$row['id']]['section_number'] = $row['section_number'];
+        $sections[$row['id']]['available'] = $row['available'];
+        $sections[$row['id']]['subjects'][] = $row;
+    }
 }
 $stmt->close();
 ?>
@@ -64,6 +67,16 @@ $stmt->close();
   <!-- Template Main CSS File -->
   <link href="../assets/css/style.css" rel="stylesheet">
 
+  <style>
+    .day-button {
+        margin-right: 10px;
+        padding: 5px 10px;
+    }
+    .day-button.active {
+        background-color: #007bff;
+        color: #fff;
+    }
+  </style>
 </head>
 
 <body>
@@ -208,7 +221,7 @@ $stmt->close();
         <ol class="breadcrumb">
           <li class="breadcrumb-item"><a href="Dashboard.php">Home</a></li>
           <li class="breadcrumb-item">Enrollment</li>
-          <li class="breadcrumb-item active">Current Enrollment</li>
+          <li class="breadcrumb-item active">Upcoming Enrollment</li>
         </ol>
       </nav>
     </div><!-- End Page Title -->
@@ -220,25 +233,21 @@ $stmt->close();
         <div class="card-body">
           <h5 class="card-title">Enrollment</h5>
           <div class="row mb-3">
-            <div class="col-md-6">
-              <label for="weekday" class="form-label">Select Weekday:</label>
-              <select id="weekday" class="form-select">
-                <option value="">All Days</option>
-                <option value="Monday">Monday</option>
-                <option value="Tuesday">Tuesday</option>
-                <option value="Wednesday">Wednesday</option>
-                <option value="Thursday">Thursday</option>
-                <option value="Friday">Friday</option>
-                <option value="Saturday">Saturday</option>
-              </select>
+            <div class="col-md-12">
+              <label class="form-label">Select Weekdays:</label>
+              <div id="weekday-buttons" class="d-flex">
+                <?php foreach (['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as $day): ?>
+                    <button type="button" class="btn btn-outline-primary day-button" data-day="<?= $day ?>" onclick="toggleDay(this)"><?= $day ?></button>
+                <?php endforeach; ?>
+              </div>
             </div>
-            <div class="col-md-6">
+            <div class="col-md-12 mt-3">
               <label for="section" class="form-label">Available Sections:</label>
               <select id="section" class="form-select" onchange="displaySectionDetails(this)">
                 <option value="" disabled selected>Select a section</option>
                 <?php foreach ($sections as $sectionId => $section): ?>
                   <option value="<?= $sectionId ?>" data-section="<?= $section['section_number'] ?>">
-                    Section <?= $section['section_number'] ?>
+                      Section <?= $section['section_number'] ?> (Available slots: <?= $section['available'] ?>)
                   </option>
                 <?php endforeach; ?>
               </select>
@@ -272,44 +281,61 @@ $stmt->close();
     const sectionsData = <?= json_encode($sections) ?>;
     const scheduleTable = document.getElementById('schedule-table');
     const scheduleBody = document.getElementById('schedule-body');
+    let selectedDays = [];
 
-    document.getElementById('weekday').addEventListener('change', function () {
-      const selectedDay = this.value;
-      const sectionSelect = document.getElementById('section');
-      sectionSelect.innerHTML = '<option value="" disabled selected>Select a section</option>';
-      
-      for (const [sectionId, sectionData] of Object.entries(sectionsData)) {
-        const subjectsOnDay = sectionData.subjects.filter(subject => !selectedDay || subject.day_of_week === selectedDay);
-        if (subjectsOnDay.length > 0) {
-            const option = document.createElement('option');
-            option.value = sectionId;
-            option.textContent = 'Section ' + sectionData.section_number;
-            option.setAttribute('data-section', sectionData.section_number);
-            sectionSelect.appendChild(option);
+    function toggleDay(button) {
+        const day = button.getAttribute('data-day');
+        if (button.classList.contains('active')) {
+            button.classList.remove('active');
+            selectedDays = selectedDays.filter(d => d !== day);
+        } else {
+            if (selectedDays.length < 3) {
+                button.classList.add('active');
+                selectedDays.push(day);
+            } else {
+                alert("You can select up to 3 days.");
+            }
         }
-      }
-    });
+        filterSectionsByDays();
+    }
+
+    function filterSectionsByDays() {
+        const sectionSelect = document.getElementById('section');
+        sectionSelect.innerHTML = '<option value="" disabled selected>Select a section</option>';
+
+        for (const [sectionId, sectionData] of Object.entries(sectionsData)) {
+            const sectionDays = sectionData.subjects.map(subject => subject.day_of_week);
+            const containsAllSelectedDays = selectedDays.every(day => sectionDays.includes(day));
+
+            if (selectedDays.length === 0 || containsAllSelectedDays) {
+                const option = document.createElement('option');
+                option.value = sectionId;
+                option.textContent = 'Section ' + sectionData.section_number + ' (Available slots: ' + sectionData.available + ')';
+                sectionSelect.appendChild(option);
+            }
+        }
+    }
 
     function displaySectionDetails(select) {
-      const selectedSectionId = select.value;
-      const selectedSection = sectionsData[selectedSectionId];
-      scheduleBody.innerHTML = '';
-      
-      if (selectedSection) {
-        selectedSection.subjects.forEach(subject => {
-          const row = document.createElement('tr');
-          row.innerHTML = `
-            <td>${subject.subject_name}</td>
-            <td>${subject.day_of_week}</td>
-            <td>${subject.start_time}</td>
-            <td>${subject.end_time}</td>
-          `;
-          scheduleBody.appendChild(row);
-        });
-        scheduleTable.style.display = 'table';
-      } else {
-        scheduleTable.style.display = 'none';
-      }
+        const selectedSectionId = select.value;
+        const selectedSection = sectionsData[selectedSectionId];
+        scheduleBody.innerHTML = '';
+
+        if (selectedSection) {
+            selectedSection.subjects.forEach(subject => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${subject.subject_name}</td>
+                    <td>${subject.day_of_week}</td>
+                    <td>${subject.start_time}</td>
+                    <td>${subject.end_time}</td>
+                `;
+                scheduleBody.appendChild(row);
+            });
+            scheduleTable.style.display = 'table';
+        } else {
+            scheduleTable.style.display = 'none';
+        }
     }
   </script>
 
