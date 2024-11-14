@@ -236,20 +236,23 @@ $stmt->close();
 
       <div class="card mb-4">
         <div class="card-body">
-            <h5 class="card-title">Filter Sections by Days</h5>
-            <div class="mb-3">
-                <label class="form-label">Select Weekdays:</label>
-                <div id="weekday-buttons" class="d-flex flex-wrap">
-                    <?php foreach (['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as $day): ?>
-                        <button type="button" class="btn btn-outline-primary day-button" data-day="<?= $day ?>" onclick="toggleDay(this)">
-                            <?= $day ?>
-                        </button>
-                    <?php endforeach; ?>
-                </div>
-            </div>
+          <h5 class="card-title">Filter Sections by Days</h5>
+          <div class="mb-3">
+              <label class="form-label">Select Weekdays:</label>
+              <div id="weekday-buttons" class="d-flex flex-wrap">
+                  <?php foreach (['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as $day): ?>
+                      <button type="button" class="btn btn-outline-primary day-button" data-day="<?= $day ?>" onclick="toggleDay(this)">
+                          <?= $day ?>
+                      </button>
+                  <?php endforeach; ?>
+              </div>
+          </div>
+          <div class="mb-3">
+          <label class="form-label">Available Sections:</label>
             <div id="section-buttons" class="d-flex flex-wrap">
-                <!-- Section buttons populated here -->
+              <!-- Section buttons populated here -->
             </div>
+          </div>
         </div>
       </div>
 
@@ -285,51 +288,57 @@ $stmt->close();
     let selectedSection = null;
 
     function toggleDay(button) {
-      const day = button.getAttribute('data-day');
-      if (button.classList.contains('active')) {
-          button.classList.remove('active');
-          selectedDays = selectedDays.filter(d => d !== day);
-      } else {
-          if (selectedDays.length < 3) {
-              button.classList.add('active');
-              selectedDays.push(day);
-          } else {
-              alert("You can select up to 3 days.");
-          }
-      }
-      
-      // Clear sections if no days are selected
-      if (selectedDays.length === 0) {
-          document.getElementById('section-buttons').innerHTML = '';
-      } else {
-          filterSectionsByDays();
-      }
+        const day = button.getAttribute('data-day');
+        if (button.classList.contains('active')) {
+            button.classList.remove('active');
+            selectedDays = selectedDays.filter(d => d !== day);
+        } else {
+            if (selectedDays.length < 3) {
+                button.classList.add('active');
+                selectedDays.push(day);
+            } else {
+                alert("You can select up to 3 days.");
+            }
+        }
+
+        clearScheduleTable();
+        if (selectedDays.length === 0) {
+            document.getElementById('section-buttons').innerHTML = '';
+        } else {
+            filterSectionsByDays();
+        }
     }
 
     function filterSectionsByDays() {
-      const sectionButtons = document.getElementById('section-buttons');
-      sectionButtons.innerHTML = '';
+        const sectionButtons = document.getElementById('section-buttons');
+        sectionButtons.innerHTML = '';
 
-      for (const [sectionId, sectionData] of Object.entries(sectionsData)) {
-          const sectionDays = sectionData.subjects.map(subject => subject.day_of_week);
-          const containsAllSelectedDays = selectedDays.every(day => sectionDays.includes(day));
+        for (const [sectionId, sectionData] of Object.entries(sectionsData)) {
+            const sectionDays = sectionData.subjects.map(subject => subject.day_of_week);
+            const containsAllSelectedDays = selectedDays.every(day => sectionDays.includes(day));
 
-          if (containsAllSelectedDays) {
-              const button = document.createElement('button');
-              button.classList.add('btn', 'btn-outline-primary', 'section-button');
-              button.textContent = `Section ${sectionData.section_number} (Available slots: ${sectionData.available})`;
-              button.setAttribute('data-section-id', sectionId);
-              button.onclick = () => selectSection(button);
-              sectionButtons.appendChild(button);
-          }
-      }
+            if (containsAllSelectedDays && sectionData.available > 0) {
+                const button = document.createElement('button');
+                button.classList.add('btn', 'btn-outline-primary', 'section-button', 'me-2', 'mb-2');
+                button.textContent = `Section ${sectionData.section_number} (Slots: ${sectionData.available})`;
+                button.setAttribute('data-section-id', sectionId);
+                button.onclick = () => toggleSectionSelection(button);
+                sectionButtons.appendChild(button);
+            }
+        }
     }
 
-    function selectSection(button) {
-        document.querySelectorAll('.section-button').forEach(btn => btn.classList.remove('active'));
-        button.classList.add('active');
-        selectedSection = button.getAttribute('data-section-id');
-        displaySectionDetails(selectedSection);
+    function toggleSectionSelection(button) {
+        if (button.classList.contains('active')) {
+            button.classList.remove('active');
+            selectedSection = null;
+            clearScheduleTable();
+        } else {
+            document.querySelectorAll('.section-button').forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+            selectedSection = button.getAttribute('data-section-id');
+            displaySectionDetails(selectedSection);
+        }
     }
 
     function displaySectionDetails(sectionId) {
@@ -350,6 +359,12 @@ $stmt->close();
         document.getElementById('enroll-button').style.display = section.subjects.length ? 'block' : 'none';
     }
 
+    function clearScheduleTable() {
+        scheduleBody.innerHTML = '';
+        scheduleTable.style.display = 'none';
+        document.getElementById('enroll-button').style.display = 'none';
+    }
+
     function enrollInSection() {
         if (!selectedSection) return;
 
@@ -361,6 +376,7 @@ $stmt->close();
         .then(response => response.json())
         .then(data => {
             alert(data.message);
+            clearScheduleTable();
         })
         .catch(error => console.error('Enrollment error:', error));
     }
