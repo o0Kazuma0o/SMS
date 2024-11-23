@@ -283,7 +283,12 @@ $sections = $conn->query("
       <hr class="sidebar-divider">
 
       <li class="nav-heading">MANAGE USER</li>
-
+      <li class="nav-item">
+        <a class="nav-link " href="audit_logs.php">
+          <i class="bi bi-grid"></i>
+          <span>Audit Logs</span>
+        </a>
+      </li>
       <li class="nav-item">
         <a class="nav-link " href="manage_user.php">
           <i class="bi bi-grid"></i>

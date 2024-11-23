@@ -1,18 +1,10 @@
 <?php
 require('../database.php');
 require_once 'session.php';
-checkAccess('Admin'); // Ensure only users with the 'admin' role can access this page
+checkAccess('Admin');
 
-$query = "SELECT s.*, d.department_code AS department 
-          FROM sms3_students s
-          LEFT JOIN sms3_departments d ON s.department_id = d.id
-          ORDER BY s.created_at DESC";
-
-$stmt = $conn->prepare($query);
-$stmt->execute();
-$result = $stmt->get_result();
+$result = $conn->query("SELECT al.*, u.username FROM sms3_audit_log al JOIN sms3_user u ON al.user_id = u.id ORDER BY al.timestamp DESC");
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -20,7 +12,7 @@ $result = $stmt->get_result();
   <meta charset="utf-8">
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
 
-  <title>Admission</title>
+  <title>Audit Logs</title>
   <meta content="" name="description">
   <meta content="" name="keywords">
 
@@ -104,7 +96,7 @@ $result = $stmt->get_result();
               <hr class="dropdown-divider">
             </li>
 
-            <li>
+<li>
               <a class="dropdown-item d-flex align-items-center" href="../logout.php">
                 <i class="bi bi-box-arrow-right"></i>
                 <span>Sign Out</span>
@@ -162,7 +154,7 @@ $result = $stmt->get_result();
           <i class="bi bi-grid"></i>
           <span>Admission</span>
         </a>
-      </li><!-- End System Nav -->
+      </li>
 
       <li class="nav-item">
         <a class="nav-link " href="students.php">
@@ -217,10 +209,12 @@ $result = $stmt->get_result();
           <span>Timetable</span>
         </a>
       </li>
+      <!-- End System Nav -->
 
       <hr class="sidebar-divider">
 
       <li class="nav-heading">MANAGE USER</li>
+
       <li class="nav-item">
         <a class="nav-link " href="audit_logs.php">
           <i class="bi bi-grid"></i>
@@ -235,6 +229,7 @@ $result = $stmt->get_result();
       </li>
 
       <hr class="sidebar-divider">
+
     </ul>
 
   </aside><!-- End Sidebar-->
@@ -242,134 +237,53 @@ $result = $stmt->get_result();
   <main id="main" class="main">
 
     <div class="pagetitle">
-      <h1>Admission</h1>
+      <h1>Audit Logs</h1>
       <nav>
         <ol class="breadcrumb">
-          <li class="breadcrumb-item"><a href="Adashboard.php">Dashboard</a></li>
-          <li class="breadcrumb-item">Enrolled BSIT</li>
-          <li class="breadcrumb-item active">1st Year</li>
+          <li class="breadcrumb-item"><a href="index.html">Home</a></li>
+          <li class="breadcrumb-item active">Audit Logs</li>
         </ol>
       </nav>
     </div><!-- End Page Title -->
 
-    <section class="section">
-      <div class="col-lg-12">
-          <div class="card">
-            <div class="card-body">
-              <h5 class="card-title">List of Student</h5>
-              <!-- Table with stripped rows -->
-              <table class="table datatable">
-                <thead>
+    <section class="section dashboard">
+    <div class="row">
+
+      <div class="card">
+        <div class="card-body">
+        <h5 class="card-title">Audit Logs</h5>
+          <table class="table table-bordered">
+              <thead>
                   <tr>
-                    <th>Student Number</th>
-                    <th>Name</th>
-                    <th>Date Approved</th>
-                    <th>Academic Year</th>
-                    <th>Program</th>
-                    <th>Year Level</th>
-                    <th>Information</th>
-                    <th>Subjects</th>
-                    <th>Status</th>
+                      <th>User</th>
+                      <th>Action</th>
+                      <th>Table</th>
+                      <th>Target ID</th>
+                      <th>Details</th>
+                      <th>Timestamp</th>
                   </tr>
-                </thead>
-                <tbody>
-                  <?php if ($result && $result->num_rows > 0): ?>
-                    <?php while ($row = $result->fetch_assoc()): ?>
+              </thead>
+              <tbody>
+                  <?php while ($log = $result->fetch_assoc()): ?>
                       <tr>
-                        <td><?= htmlspecialchars($row['student_number']); ?></td>
-                        <td>
-                          <?= htmlspecialchars($row['first_name']) . ' ' . 
-                              (!empty($row['middle_name']) ? htmlspecialchars($row['middle_name']) . ' ' : '') . 
-                              htmlspecialchars($row['last_name']); ?>
-                        </td>
-                        <td><?= htmlspecialchars(date('Y/m/d', strtotime($row['created_at']))); ?></td>
-                        <td><?= htmlspecialchars($row['academic_year']); ?></td>
-                        <td><?= htmlspecialchars($row['department']); ?></td>
-                        <td><?= htmlspecialchars($row['year_level']); ?></td>
-                        <td>
-                          <button class="btn btn-info btn-sm" onclick="viewInformation(<?= $row['id'] ?>)">View Information</button>
-                        </td>
-                        <td>
-                          <button class="btn btn-info btn-sm" onclick="viewSubjects(<?= $student['id'] ?>)">View Subjects</button>
-                        </td>
-                        <td>
-                          <span class="badge bg-<?= $row['status'] == 'Not Enrolled' ? 'warning' : ($row['status'] == 'Approved' ? 'success' : 'danger') ?>">
-                              <?= htmlspecialchars($row['status']); ?>
-                          </span>
-                        </td>
+                          <td><?= htmlspecialchars($log['username']) ?></td>
+                          <td><?= htmlspecialchars($log['action']) ?></td>
+                          <td><?= htmlspecialchars($log['target_table']) ?></td>
+                          <td><?= htmlspecialchars($log['target_id']) ?></td>
+                          <td><?= htmlspecialchars($log['details']) ?></td>
+                          <td><?= htmlspecialchars($log['timestamp']) ?></td>
                       </tr>
-                    <?php endwhile; ?>
-                  <?php else: ?>
-                    <tr>
-                        <td colspan="9" class="text-center">No students found</td>
-                    </tr>
-                  <?php endif; ?>
-                </tbody>
-              </table>
-              <!-- End Table with stripped rows -->
-            </div>
-          </div>
+                  <?php endwhile; ?>
+              </tbody>
+          </table>
+        </div>
       </div>
+
+
+    </div>
     </section>
 
   </main><!-- End #main -->
-
-  <div class="modal fade" id="informationModal" tabindex="-1" aria-labelledby="informationModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="informationModalLabel">Admission Information</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body" id="informationContent">
-            <!-- Information will be loaded here dynamically -->
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    function viewInformation(id) {
-    // Fetch additional information using AJAX
-    fetch('get_student_info.php?id=' + id)
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        // Populate the modal content
-        const info = data.info;
-        const content = `
-          <p><strong>Birthdate:</strong> ${info.birthday || 'N/A'}</p>
-          <p><strong>Sex:</strong> ${info.sex || 'N/A'}</p>
-          <p><strong>Email:</strong> ${info.email || 'N/A'}</p>
-          <p><strong>Contact Number:</strong> ${info.contact_number || 'N/A'}</p>
-          <p><strong>Facebook Name:</strong> ${info.facebook_name || 'N/A'}</p>
-          <p><strong>Working Student:</strong> ${info.working_student === 'Yes' ? 'Yes' : 'No'}</p>
-          <p><strong>Address:</strong> ${info.address || 'N/A'}</p>
-          <p><strong>Civil Status:</strong> ${info.civil_status || 'N/A'}</p>
-          <p><strong>Religion:</strong> ${info.religion || 'N/A'}</p>
-          <p><strong>Father's Name:</strong> ${info.father_name || 'N/A'}</p>
-          <p><strong>Mother's Name:</strong> ${info.mother_name || 'N/A'}</p>
-          <p><strong>Guardian's Name:</strong> ${info.guardian_name || 'N/A'}</p>
-          <p><strong>Guardian's Contact:</strong> ${info.guardian_contact || 'N/A'}</p>
-          <p><strong>Member 4Ps:</strong> ${info.member4ps === 'Yes' ? 'Yes' : 'No'}</p>
-          <p><strong>Primary School:</strong> ${info.primary_school || 'N/A'} (${info.primary_year || 'N/A'})</p>
-          <p><strong>Secondary School:</strong> ${info.secondary_school || 'N/A'} (${info.secondary_year || 'N/A'})</p>
-          <p><strong>Last School Attended:</strong> ${info.last_school || 'N/A'} (${info.last_school_year || 'N/A'})</p>
-          <p><strong>Referral Source:</strong> ${info.referral_source || 'N/A'}</p>
-        `;
-        document.getElementById('informationContent').innerHTML = content;
-        // Show the modal
-        new bootstrap.Modal(document.getElementById('informationModal')).show();
-      } else {
-          alert('Failed to fetch admission information.');
-      }
-    })
-    .catch(error => {
-      console.error('Error:', error);
-      alert('An error occurred while fetching the information.');
-    });
-  }
-  </script>
 
   <!-- ======= Footer ======= -->
   <footer id="footer" class="footer">

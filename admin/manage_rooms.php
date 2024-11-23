@@ -3,6 +3,50 @@ require('../database.php');
 require_once 'session.php';
 checkAccess('Admin'); // Ensure only users with the 'admin' role can access this page
 
+function logAudit($conn, $userId, $action, $targetTable, $targetId = null, $details = null) {
+  // Concatenate meaningful details into short summaries
+  $shortDetails = $details ? generateShortDetails($action, $targetTable, $details) : null;
+
+  $stmt = $conn->prepare("INSERT INTO sms3_audit_log (user_id, action, target_table, target_id, details) VALUES (?, ?, ?, ?, ?)");
+  $stmt->bind_param("issis", $userId, $action, $targetTable, $targetId, $shortDetails);
+  $stmt->execute();
+  $stmt->close();
+}
+
+function generateShortDetails($action, $table, $details) {
+  $summary = "";
+
+  switch ($action) {
+    case 'ADD':
+        $summary = "Added a new record to $table: " . $details['room_name'] ?? 'Unknown';
+        break;
+
+    case 'EDIT':
+        $old = $details['old'] ?? [];
+        $new = $details['new'] ?? [];
+        $changes = [];
+        
+        foreach ($new as $key => $value) {
+            if (isset($old[$key]) && $old[$key] !== $value) {
+                $changes[] = "$key: '$old[$key]' -> '$value'";
+            }
+        }
+
+        $summary = "Edited record in $table (ID: {$details['id']}): " . implode(", ", $changes);
+        break;
+
+    case 'DELETE':
+        $summary = "Deleted a record from $table: " . $details['room_name'] ?? 'Unknown';
+        break;
+
+    default:
+        $summary = "Performed $action on $table.";
+        break;
+  }
+
+  return $summary;
+}
+
 // Edit room
 $edit_room = null;
 if (isset($_GET['edit_room_id'])) {
@@ -19,16 +63,21 @@ if (isset($_GET['edit_room_id'])) {
 
 // Add room
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_room'])) {
-    $room_name = $_POST['room_name'];
-    $location = $_POST['location'];
-    $department_id = $_POST['department_id'];
+  $room_name = $_POST['room_name'];
+  $location = $_POST['location'];
+  $department_id = $_POST['department_id'];
 
-    try{
+  try{
     // Insert room
     $stmt = $conn->prepare("INSERT INTO sms3_rooms (room_name, location, department_id) VALUES (?, ?, ?)");
     $stmt->bind_param("ssi", $room_name, $location, $department_id);
     $stmt->execute();
+    $newRoomId = $stmt->insert_id; // Get the ID of the new room
     $stmt->close();
+
+    // Log the addition
+    $details = json_encode(['room_name' => $room_name, 'location' => $location, 'department_id' => $department_id]);
+    logAudit($conn, $_SESSION['user_id'], 'ADD', 'sms3_rooms', $newRoomId, $details);
 
     $_SESSION['success_message'] = "Room added successfully!";
     // Redirect to manage_rooms.php
@@ -47,49 +96,71 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_room'])) {
 
 // Update room
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_room'])) {
-    $room_id = $_POST['room_id'];  // The ID of the room being updated
-    $room_name = $_POST['room_name'];
-    $location = $_POST['location'];
-    $department_id = $_POST['department_id'];
+  $room_id = $_POST['room_id'];
+  $room_name = $_POST['room_name'];
+  $location = $_POST['location'];
+  $department_id = $_POST['department_id'];
 
-    try{
-    // Update the room in the database
+  try {
+    // Fetch existing room details for logging
+    $stmt = $conn->prepare("SELECT * FROM sms3_rooms WHERE id = ?");
+    $stmt->bind_param("i", $room_id);
+    $stmt->execute();
+    $oldRoom = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+
+    // Update the room
     $stmt = $conn->prepare("UPDATE sms3_rooms SET room_name = ?, location = ?, department_id = ? WHERE id = ?");
     $stmt->bind_param("ssii", $room_name, $location, $department_id, $room_id);
     $stmt->execute();
     $stmt->close();
 
-    $_SESSION['success_message'] = "Room updated successfully!";
+    // Log the update
+    $details = json_encode([
+        'old' => $oldRoom,
+        'new' => ['room_name' => $room_name, 'location' => $location, 'department_id' => $department_id]
+    ]);
+    logAudit($conn, $_SESSION['user_id'], 'EDIT', 'sms3_rooms', $room_id, $details);
 
-    // Redirect to manage_rooms.php after updating
+    $_SESSION['success_message'] = "Room updated successfully!";
     header('Location: manage_rooms.php');
     exit;
-    } catch (mysqli_sql_exception $e) {
-        if ($e->getCode() == 1062) { // Duplicate entry error code
-            $_SESSION['error_message'] = "Error: Duplicate entry for department code or name.";
-        } else {
-            $_SESSION['error_message'] = "Error: " . $e->getMessage();
-        }
-        header('Location: manage_rooms.php'); // Redirect to show error
-        exit;
-    }
+  } catch (mysqli_sql_exception $e) {
+      if ($e->getCode() == 1062) { // Duplicate entry error code
+          $_SESSION['error_message'] = "Error: Duplicate entry for department code or name.";
+      } else {
+          $_SESSION['error_message'] = "Error: " . $e->getMessage();
+      }
+      header('Location: manage_rooms.php'); // Redirect to show error
+      exit;
+  }
 }
 
 // Delete room
 if (isset($_GET['delete_room_id'])) {
-    $delete_id = $_GET['delete_room_id'];
-    try{
+  $delete_id = $_GET['delete_room_id'];
+  try {
+    // Fetch room details for logging
+    $stmt = $conn->prepare("SELECT * FROM sms3_rooms WHERE id = ?");
+    $stmt->bind_param("i", $delete_id);
+    $stmt->execute();
+    $roomToDelete = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+
+    // Delete the room
     $stmt = $conn->prepare("DELETE FROM sms3_rooms WHERE id = ?");
     $stmt->bind_param("i", $delete_id);
     $stmt->execute();
     $stmt->close();
 
-    $_SESSION['success_message'] = "Room deleted successfully!";
+    // Log the deletion
+    $details = json_encode($roomToDelete);
+    logAudit($conn, $_SESSION['user_id'], 'DELETE', 'sms3_rooms', $delete_id, $details);
 
-    // Redirect to manage_rooms.php
+    $_SESSION['success_message'] = "Room deleted successfully!";
     header('Location: manage_rooms.php');
     exit;
-    } catch (mysqli_sql_exception $e) {
+  } catch (mysqli_sql_exception $e) {
         if ($e->getCode() == 1451) { // Foreign key constraint error code
             $_SESSION['error_message'] = "Error: This room is still connected to other data.";
         } else {
@@ -369,7 +440,12 @@ $rooms = $conn->query("SELECT r.*, d.department_code FROM sms3_rooms r JOIN sms3
       <hr class="sidebar-divider">
 
       <li class="nav-heading">MANAGE USER</li>
-
+      <li class="nav-item">
+        <a class="nav-link " href="audit_logs.php">
+          <i class="bi bi-grid"></i>
+          <span>Audit Logs</span>
+        </a>
+      </li>
       <li class="nav-item">
         <a class="nav-link " href="manage_user.php">
           <i class="bi bi-grid"></i>
