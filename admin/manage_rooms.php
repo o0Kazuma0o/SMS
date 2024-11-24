@@ -455,8 +455,12 @@ $rooms = $conn->query("SELECT r.*, d.department_code FROM sms3_rooms r JOIN sms3
 
             <div class="form-group mt-2">
               <label for="location">Location:</label>
-              <input type="text" class="form-control" name="location" id="location" required
-                    value="<?= isset($edit_room) ? $edit_room['location'] : ''; ?>">
+              <select class="form-control" name="location" id="location" required>
+                <option value="2nd Floor" <?= isset($edit_room) && $edit_room['location'] == '2nd Floor' ? 'selected' : ''; ?>>2nd Floor</option>
+                <option value="3rd Floor" <?= isset($edit_room) && $edit_room['location'] == '3rd Floor' ? 'selected' : ''; ?>>3rd Floor</option>
+                <option value="4th Floor" <?= isset($edit_room) && $edit_room['location'] == '4th Floor' ? 'selected' : ''; ?>>4th Floor</option>
+                <option value="5th Floor" <?= isset($edit_room) && $edit_room['location'] == '5th Floor' ? 'selected' : ''; ?>>5th Floor</option>
+              </select>
             </div>
 
             <div class="form-group mt-2">

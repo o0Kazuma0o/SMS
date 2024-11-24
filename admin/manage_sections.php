@@ -154,6 +154,63 @@ $sections = $conn->query("
 
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
+  <style>
+    .modal {
+        display: none; 
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+    .modal-content {
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 5px;
+        text-align: center;
+        width: 300px;
+    }
+    .modal-buttons {
+        margin-top: 20px;
+        display: flex;
+        justify-content: space-between;
+    }
+    .btn-danger {
+        background-color: #dc3545;
+        color: white;
+    }
+    .btn-secondary {
+        background-color: #6c757d;
+        color: white;
+    }
+    .btn:hover {
+        opacity: 0.8;
+    }
+
+    .popup-message {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1000;
+        padding: 15px;
+        border-radius: 5px;
+        font-size: 16px;
+        color: #fff;
+        opacity: 0;
+        transition: opacity 0.5s ease-in-out;
+    }
+    .popup-message.success {
+        background-color: green;
+    }
+    .popup-message.error {
+        background-color: red;
+    }
+  </style>
+
 </head>
 
 <body>
