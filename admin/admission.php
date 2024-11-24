@@ -257,7 +257,7 @@ if (!$result) {
     <hr class="sidebar-divider">
 
       <li class="nav-item">
-        <a class="nav-link " href="Adashboard.php">
+        <a class="nav-link " href="Dashboard.php">
           <i class="bi bi-grid"></i>
           <span>Dashboard</span>
         </a>
@@ -342,7 +342,7 @@ if (!$result) {
       <h1>Admission</h1>
       <nav>
         <ol class="breadcrumb">
-          <li class="breadcrumb-item"><a href="Adashboard.php">Dashboard</a></li>
+          <li class="breadcrumb-item"><a href="Dashboard.php">Dashboard</a></li>
           <li class="breadcrumb-item active">Admission</li>
         </ol>
       </nav>

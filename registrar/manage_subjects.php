@@ -1,132 +1,137 @@
-<?php
+<?php 
 require('../database.php');
 require_once 'session.php';
 require_once 'audit_log_function.php';
-checkAccess('Admin'); // Ensure only users with the 'admin' role can access this page
+checkAccess('Registrar'); // Ensure only users with the 'admin' role can access this page
 
-// Edit room
-$edit_room = null;
-if (isset($_GET['edit_room_id'])) {
-    $edit_room_id = $_GET['edit_room_id'];
+// Edit subject
+$edit_subject = null;
+if (isset($_GET['edit_subject_id'])) {
+    $edit_subject_id = $_GET['edit_subject_id'];
 
-    // Fetch the room details to pre-fill the form for editing
-    $stmt = $conn->prepare("SELECT * FROM sms3_rooms WHERE id = ?");
-    $stmt->bind_param("i", $edit_room_id);
+    // Fetch the subject details to pre-fill the form for editing
+    $stmt = $conn->prepare("SELECT * FROM sms3_subjects WHERE id = ?");
+    $stmt->bind_param("i", $edit_subject_id);
     $stmt->execute();
     $result = $stmt->get_result();
-    $edit_room = $result->fetch_assoc();
+    $edit_subject = $result->fetch_assoc();
     $stmt->close();
 }
 
-// Add room
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_room'])) {
-  $room_name = $_POST['room_name'];
-  $location = $_POST['location'];
-  $department_id = $_POST['department_id'];
+// Add subject
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_subject'])) {
+    $subject_code = $_POST['subject_code'];
+    $subject_name = $_POST['subject_name'];
+    $department_id = $_POST['department_id'];
 
   try{
-    // Insert room
-    $stmt = $conn->prepare("INSERT INTO sms3_rooms (room_name, location, department_id) VALUES (?, ?, ?)");
-    $stmt->bind_param("ssi", $room_name, $location, $department_id);
+    // Insert subject
+    $stmt = $conn->prepare("INSERT INTO sms3_subjects (subject_code, subject_name, department_id) VALUES (?, ?, ?)");
+    $stmt->bind_param("ssi", $subject_code, $subject_name, $department_id);
     $stmt->execute();
-    $newRoomId = $stmt->insert_id; // Get the ID of the new room
+    $newSubjectId = $stmt->insert_id; // Get the ID of the new subject
     $stmt->close();
 
     // Log the addition
-    logAudit($conn, $_SESSION['user_id'], 'ADD', 'sms3_rooms', $newRoomId, ['room_name' => $room_name]);
+    logAudit($conn, $_SESSION['user_id'], 'ADD', 'sms3_subjects', $newSubjectId, ['subject_name' => $subject_name]);
 
-    $_SESSION['success_message'] = "Room added successfully!";
-    header('Location: manage_rooms.php');
+    $_SESSION['success_message'] = "Subject added successfully!";
+
+    // Redirect to manage_subjects.php
+    header('Location: manage_subjects.php');
     exit;
-  } catch (mysqli_sql_exception $e) {
+    } catch (mysqli_sql_exception $e) {
         if ($e->getCode() == 1062) { // Duplicate entry error code
-            $_SESSION['error_message'] = "Error: Duplicate entry for department code or name.";
+            $_SESSION['error_message'] = "Error: Duplicate entry for subject code or name.";
         } else {
             $_SESSION['error_message'] = "Error: " . $e->getMessage();
         }
-        header('Location: manage_rooms.php'); // Redirect to show error
+        header('Location: manage_subjects.php'); // Redirect to show error
         exit;
     }
 }
 
-// Update room
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_room'])) {
-  $room_id = $_POST['room_id'];
-  $room_name = $_POST['room_name'];
-  $location = $_POST['location'];
+// Update subject
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_subject'])) {
+  $subject_id = $_POST['subject_id'];  // The ID of the subject being updated
+  $subject_code = $_POST['subject_code'];
+  $subject_name = $_POST['subject_name'];
   $department_id = $_POST['department_id'];
 
-  try {
+  try{
     // Fetch existing room details for logging
-    $stmt = $conn->prepare("SELECT * FROM sms3_rooms WHERE id = ?");
-    $stmt->bind_param("i", $room_id);
+    $stmt = $conn->prepare("SELECT * FROM sms3_subjects WHERE id = ?");
+    $stmt->bind_param("i", $subject_id);
     $stmt->execute();
-    $oldRoom = $stmt->get_result()->fetch_assoc();
+    $oldSubject = $stmt->get_result()->fetch_assoc();
     $stmt->close();
 
-    // Update the room
-    $stmt = $conn->prepare("UPDATE sms3_rooms SET room_name = ?, location = ?, department_id = ? WHERE id = ?");
-    $stmt->bind_param("ssii", $room_name, $location, $department_id, $room_id);
+    // Update the subject in the database
+    $stmt = $conn->prepare("UPDATE sms3_subjects SET subject_code = ?, subject_name = ?, department_id = ? WHERE id = ?");
+    $stmt->bind_param("ssii", $subject_code, $subject_name, $department_id, $subject_id);
     $stmt->execute();
     $stmt->close();
 
     // Log the update
-    logAudit($conn, $_SESSION['user_id'], 'EDIT', 'sms3_rooms', $room_id, [
-      'id' => $room_id,
-      'old' => $oldRoom,
-      'new' => ['room_name' => $room_name, 'location' => $location, 'department_id' => $department_id]
+    logAudit($conn, $_SESSION['user_id'], 'EDIT', 'sms3_rooms', $subject_id, [
+      'id' => $subject_id,
+      'old' => $oldSubject,
+      'new' => ['subject_code' => $subject_code, 'subject_name' => $subject_name, 'department_id' => $department_id]
     ]);
 
-    $_SESSION['success_message'] = "Room updated successfully!";
-    header('Location: manage_rooms.php');
+    $_SESSION['success_message'] = "Subject updated successfully!";
+
+    // Redirect to manage_subjects.php after updating
+    header('Location: manage_subjects.php');
     exit;
-  } catch (mysqli_sql_exception $e) {
-      if ($e->getCode() == 1062) { // Duplicate entry error code
-          $_SESSION['error_message'] = "Error: Duplicate entry for department code or name.";
-      } else {
-          $_SESSION['error_message'] = "Error: " . $e->getMessage();
-      }
-      header('Location: manage_rooms.php'); // Redirect to show error
-      exit;
-  }
+    } catch (mysqli_sql_exception $e) {
+        if ($e->getCode() == 1062) { // Duplicate entry error code
+            $_SESSION['error_message'] = "Error: Duplicate entry for subject code or name.";
+        } else {
+            $_SESSION['error_message'] = "Error: " . $e->getMessage();
+        }
+        header('Location: manage_subjects.php'); // Redirect to show error
+        exit;
+    }
 }
 
-// Delete room
-if (isset($_GET['delete_room_id'])) {
-  $delete_id = $_GET['delete_room_id'];
-  try {
-    // Fetch room details for logging
-    $stmt = $conn->prepare("SELECT * FROM sms3_rooms WHERE id = ?");
+// Delete subject
+if (isset($_GET['delete_subject_id'])) {
+  $delete_id = $_GET['delete_subject_id'];
+  try{
+    // Fetch existing room details for logging
+    $stmt = $conn->prepare("SELECT * FROM sms3_subjects WHERE id = ?");
     $stmt->bind_param("i", $delete_id);
     $stmt->execute();
-    $roomToDelete = $stmt->get_result()->fetch_assoc();
+    $subjectToDelete = $stmt->get_result()->fetch_assoc();
     $stmt->close();
 
-    // Delete the room
-    $stmt = $conn->prepare("DELETE FROM sms3_rooms WHERE id = ?");
+    $stmt = $conn->prepare("DELETE FROM sms3_subjects WHERE id = ?");
     $stmt->bind_param("i", $delete_id);
     $stmt->execute();
     $stmt->close();
 
     // Log deletion
-    logAudit($conn, $_SESSION['user_id'], 'DELETE', 'sms3_rooms', $delete_id, $roomToDelete);
+    logAudit($conn, $_SESSION['user_id'], 'DELETE', 'sms3_subjects', $delete_id, $subjectToDelete);
 
-    $_SESSION['success_message'] = "Room deleted successfully!";
-    header('Location: manage_rooms.php');
+    $_SESSION['success_message'] = "Subject deleted successfully!";
+
+    // Redirect to manage_subjects.php
+    header('Location: manage_subjects.php');
     exit;
-  } catch (mysqli_sql_exception $e) {
+    } catch (mysqli_sql_exception $e) {
         if ($e->getCode() == 1451) { // Foreign key constraint error code
             $_SESSION['error_message'] = "Error: This room is still connected to other data.";
         } else {
             $_SESSION['error_message'] = "Error: " . $e->getMessage();
         }
-        header('Location: manage_rooms.php'); // Redirect to show error
+        header('Location: manage_subjects.php'); // Redirect to show error
         exit;
     }
 }
 
-// Fetch all rooms
-$rooms = $conn->query("SELECT r.*, d.department_code FROM sms3_rooms r JOIN sms3_departments d ON r.department_id = d.id");
+// Fetch all subjects
+$subjects = $conn->query("SELECT s.*, d.department_code FROM sms3_subjects s JOIN sms3_departments d ON s.department_id = d.id");
 
 ?>
 
@@ -137,7 +142,7 @@ $rooms = $conn->query("SELECT r.*, d.department_code FROM sms3_rooms r JOIN sms3
   <meta charset="utf-8">
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
 
-  <title>Rooms</title>
+  <title>Subjects</title>
   <meta content="" name="description">
   <meta content="" name="keywords">
 
@@ -217,6 +222,7 @@ $rooms = $conn->query("SELECT r.*, d.department_code FROM sms3_rooms r JOIN sms3
         background-color: red;
     }
   </style>
+
 </head>
 
 <body>
@@ -277,7 +283,7 @@ $rooms = $conn->query("SELECT r.*, d.department_code FROM sms3_rooms r JOIN sms3
               <hr class="dropdown-divider">
             </li>
 
-<li>
+            <li>
               <a class="dropdown-item d-flex align-items-center" href="../logout.php">
                 <i class="bi bi-box-arrow-right"></i>
                 <span>Sign Out</span>
@@ -328,14 +334,7 @@ $rooms = $conn->query("SELECT r.*, d.department_code FROM sms3_rooms r JOIN sms3
 
       <hr class="sidebar-divider">
 
-      <li class="nav-heading">Admission & Enrollment</li>
-
-      <li class="nav-item">
-        <a class="nav-link " href="admission.php">
-          <i class="bi bi-grid"></i>
-          <span>Admission</span>
-        </a>
-      </li>
+      <li class="nav-heading">Enrollment</li>
 
       <li class="nav-item">
         <a class="nav-link " href="students.php">
@@ -393,21 +392,6 @@ $rooms = $conn->query("SELECT r.*, d.department_code FROM sms3_rooms r JOIN sms3
 
       <hr class="sidebar-divider">
 
-      <li class="nav-heading">MANAGE USER</li>
-      <li class="nav-item">
-        <a class="nav-link " href="audit_logs.php">
-          <i class="bi bi-grid"></i>
-          <span>Audit Logs</span>
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link " href="manage_user.php">
-          <i class="bi bi-grid"></i>
-          <span>Users</span>
-        </a>
-      </li>
-
-      <hr class="sidebar-divider">
     </ul>
 
   </aside><!-- End Sidebar-->
@@ -415,18 +399,18 @@ $rooms = $conn->query("SELECT r.*, d.department_code FROM sms3_rooms r JOIN sms3
   <main id="main" class="main">
 
     <div class="pagetitle">
-      <h1>Rooms</h1>
+      <h1>Subjects</h1>
       <nav>
         <ol class="breadcrumb">
           <li class="breadcrumb-item"><a href="index.html">Home</a></li>
-          <li class="breadcrumb-item active">Rooms</li>
+          <li class="breadcrumb-item active">Subjects</li>
         </ol>
       </nav>
     </div><!-- End Page Title -->
 
     <div id="confirmationModal" class="modal">
       <div class="modal-content">
-          <p id="confirmationMessage">Are you sure you want to delete this room?</p>
+          <p id="confirmationMessage">Are you sure you want to delete this department?</p>
           <div class="modal-buttons">
               <button id="confirmDelete" class="btn btn-danger">Delete</button>
               <button id="cancelDelete" class="btn btn-secondary">Cancel</button>
@@ -434,88 +418,86 @@ $rooms = $conn->query("SELECT r.*, d.department_code FROM sms3_rooms r JOIN sms3
       </div>
     </div>
 
-
     <section class="section dashboard">
-    <div class="row">
-
-      <div class="card">
-        <div class="card-body">
-        <h5 class="card-title"><?php if (isset($_GET['edit_room_id'])): ?>
-          Edit Room
+    
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title">
+        <?php if (isset($_GET['edit_subject_id'])): ?>
+          Edit Subject
         <?php else: ?>
-          Add Room
-        <?php endif; ?>
-        </h5>
-          <form action="manage_rooms.php" method="POST" class="mb-4">
+          Add Subject
+        <?php endif; ?></h5>
+
+          <!-- Add Subject Form -->
+          <form action="manage_subjects.php" method="POST" class="mb-4">
             <div class="form-group">
-              <label for="room_name">Room Name:</label>
-              <input type="text" class="form-control" name="room_name" id="room_name" required
-                    value="<?= isset($edit_room) ? $edit_room['room_name'] : ''; ?>">
+              <label for="subject_code">Subject Code:</label>
+              <input type="text" class="form-control" name="subject_code" id="subject_code" required
+              value="<?= isset($edit_subject) ? $edit_subject['subject_code'] : ''; ?>">
             </div>
-
             <div class="form-group mt-2">
-              <label for="location">Location:</label>
-              <input type="text" class="form-control" name="location" id="location" required
-                    value="<?= isset($edit_room) ? $edit_room['location'] : ''; ?>">
+              <label for="subject_name">Subject Name:</label>
+              <input type="text" class="form-control" name="subject_name" id="subject_name" required
+              value="<?= isset($edit_subject) ? $edit_subject['subject_name'] : ''; ?>">
             </div>
-
             <div class="form-group mt-2">
-            <label for="department_id">Assign to Department:</label>
-            <select class="form-control" name="department_id" id="department_id" required>
-              <!-- Fetch Departments -->
-              <?php
-              $departments = $conn->query("SELECT * FROM sms3_departments");
-              while ($department = $departments->fetch_assoc()): ?>
-                <option value="<?= $department['id']; ?>" <?= isset($edit_room) && $edit_room['department_id'] == $department['id'] ? 'selected' : ''; ?>>
-                  <?= $department['department_code']; ?>
-                </option>
-              <?php endwhile; ?>
-            </select>
+              <label for="department_id">Assign to Department:</label>
+              <select class="form-control" name="department_id" id="department_id" required>
+                <!-- Fetch Departments -->
+                <?php
+                $departments = $conn->query("SELECT * FROM sms3_departments");
+                while ($department = $departments->fetch_assoc()): ?>
+                    <option value="<?= $department['id']; ?>" <?= isset($edit_subject) && $edit_subject['department_id'] == $department['id'] ? 'selected' : ''; ?>>
+                      <?= $department['department_code']; ?>
+                    </option>
+                <?php endwhile; ?>
+              </select>
             </div>
-
-            <?php if (isset($edit_room)): ?>
-              <input type="hidden" name="room_id" value="<?= $edit_room['id']; ?>">
-              <button type="submit" name="update_room" class="btn btn-warning mt-3">Update Room</button>
-            <?php else: ?>
-              <button type="submit" name="add_room" class="btn btn-primary mt-3">Add Room</button>
-            <?php endif; ?>
-          </form>
-        </div>
+            <?php if (isset($edit_subject)): ?>
+              <input type="hidden" name="subject_id" value="<?= $edit_subject['id']; ?>">
+              <button type="submit" name="update_subject" class="btn btn-warning mt-3">Update Subject</button>
+              <?php else: ?>
+              <button type="submit" name="add_subject" class="btn btn-primary mt-3">Add Subject</button>
+              <?php endif; ?>
+        </form>
       </div>
+    </div>
 
-      <div class="card">
-        <div class="card-body">
-        <h5 class="card-title">Room List</h5>
+    <div class="card">
+      <div class="card-body">
+      <h5 class="card-title">List of Subject</h5>
+          <!-- List of Subjects -->
           <table class="table table-bordered">
             <thead>
-                <tr>
-                    <th>Room Name</th>
-                    <th>Location</th>
-                    <th>Department</th>
-                    <th>Actions</th>
-                </tr>
+              <tr>
+                  <th>Subject Code</th>
+                  <th>Subject Name</th>
+                  <th>Department</th>
+                  <th>Actions</th>
+              </tr>
             </thead>
             <tbody>
-              <?php while ($room = $rooms->fetch_assoc()): ?>
-                <tr>
-                    <td><?= $room['room_name']; ?></td>
-                    <td><?= $room['location']; ?></td>
-                    <td><?= $room['department_code']; ?></td>
-                    <td>
-                    <a href="manage_rooms.php?edit_room_id=<?= $room['id']; ?>" 
-                      class="btn btn-info btn-sm">Edit</a>
-                    <a href="manage_rooms.php?delete_room_id=<?= $room['id']; ?>" 
-                      class="btn btn-danger btn-sm delete-link" 
-                      data-room-name="<?= $room['room_name']; ?>">Delete</a>
-                    </td>
-                </tr>
+              <?php while ($subject = $subjects->fetch_assoc()): ?>
+              <tr>
+                <td><?= $subject['subject_code']; ?></td>
+                <td><?= $subject['subject_name']; ?></td>
+                <td><?= $subject['department_code']; ?></td>
+                <td>
+                <a href="manage_subjects.php?edit_subject_id=<?= $subject['id']; ?>" 
+                    class="btn btn-info btn-sm">Edit</a>
+                <a href="manage_subjects.php?delete_subject_id=<?= $subject['id']; ?>" 
+                    class="btn btn-danger btn-sm delete-link"
+                    data-subject-code="<?= $subject['subject_code']; ?>">Delete</a>
+                </td>
+              </tr>
               <?php endwhile; ?>
             </tbody>
           </table>
-        </div>
-      </div>
 
+      </div>
     </div>
+
     </section>
 
   </main><!-- End #main -->
@@ -546,9 +528,9 @@ $rooms = $conn->query("SELECT r.*, d.department_code FROM sms3_rooms r JOIN sms3
       button.addEventListener('click', function(event) {
           event.preventDefault();
           const deleteUrl = this.href;
-          const roomName = this.getAttribute('data-room-name');
+          const subjectCode = this.getAttribute('data-subject-code');
 
-          showConfirmationModal(`Are you sure you want to delete the Room: ${roomName}?`, () => {
+          showConfirmationModal(`Are you sure you want to delete the Room: ${subjectCode}?`, () => {
               window.location.href = deleteUrl;
           });
       });

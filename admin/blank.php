@@ -132,7 +132,7 @@
     <hr class="sidebar-divider">
 
       <li class="nav-item">
-        <a class="nav-link " href="Adashboard.php">
+        <a class="nav-link " href="Dashboard.php">
           <i class="bi bi-grid"></i>
           <span>Dashboard</span>
         </a>

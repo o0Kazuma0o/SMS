@@ -1,22 +1,16 @@
 <?php
 require('../database.php');
 require_once 'session.php';
-checkAccess('Admin'); // Ensure only users with the 'admin' role can access this page
+checkAccess('Registrar'); // Ensure only users with the 'admin' role can access this page
 
-// Handle form submission to add an academic year
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['academic_year'])) {
-  $academicYear = $_POST['academic_year'];
-  $setCurrent = isset($_POST['set_current']) ? 1 : 0;
-  
-  if (addAcademicYear($academicYear, $setCurrent)) {
-      $success = "Academic year added successfully.";
-  } else {
-      $error = "Error adding academic year.";
-  }
-}
+$query = "SELECT s.*, d.department_code AS department 
+          FROM sms3_students s
+          LEFT JOIN sms3_departments d ON s.department_id = d.id
+          ORDER BY s.created_at DESC";
 
-// Get all academic years
-$academicYears = getAcademicYears();
+$stmt = $conn->prepare($query);
+$stmt->execute();
+$result = $stmt->get_result();
 ?>
 
 <!DOCTYPE html>
@@ -26,7 +20,7 @@ $academicYears = getAcademicYears();
   <meta charset="utf-8">
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
 
-  <title>Academic</title>
+  <title>Admission</title>
   <meta content="" name="description">
   <meta content="" name="keywords">
 
@@ -50,21 +44,6 @@ $academicYears = getAcademicYears();
   <!-- Template Main CSS File -->
   <link href="../assets/css/style.css" rel="stylesheet">
 
-  <style>
-    .alert {
-      padding: 10px;
-      margin: 10px 0;
-      border-radius: 5px;
-    }
-    .alert-success {
-      background-color: #d4edda;
-      color: #155724;
-    }
-    .alert-danger {
-      background-color: #f8d7da;
-      color: #721c24;
-    }
-  </style>
 </head>
 
 <body>
@@ -176,14 +155,7 @@ $academicYears = getAcademicYears();
 
       <hr class="sidebar-divider">
 
-      <li class="nav-heading">Admission & Enrollment</li>
-
-      <li class="nav-item">
-        <a class="nav-link " href="admission.php">
-          <i class="bi bi-grid"></i>
-          <span>Admission</span>
-        </a>
-      </li>
+      <li class="nav-heading">Enrollment</li><!-- End System Nav -->
 
       <li class="nav-item">
         <a class="nav-link " href="students.php">
@@ -241,22 +213,6 @@ $academicYears = getAcademicYears();
 
       <hr class="sidebar-divider">
 
-      <li class="nav-heading">MANAGE USER</li>
-      <li class="nav-item">
-        <a class="nav-link " href="audit_logs.php">
-          <i class="bi bi-grid"></i>
-          <span>Audit Logs</span>
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link " href="manage_user.php">
-          <i class="bi bi-grid"></i>
-          <span>Users</span>
-        </a>
-      </li>
-
-      <hr class="sidebar-divider">
-
     </ul>
 
   </aside><!-- End Sidebar-->
@@ -264,121 +220,132 @@ $academicYears = getAcademicYears();
   <main id="main" class="main">
 
     <div class="pagetitle">
-      <h1>Dashboard</h1>
+      <h1>Admission</h1>
       <nav>
         <ol class="breadcrumb">
-          <li class="breadcrumb-item"><a href="index.html">Home</a></li>
-          <li class="breadcrumb-item active">Dashboard</li>
+          <li class="breadcrumb-item"><a href="Dashboard.php">Dashboard</a></li>
+          <li class="breadcrumb-item">Enrolled BSIT</li>
+          <li class="breadcrumb-item active">1st Year</li>
         </ol>
       </nav>
     </div><!-- End Page Title -->
 
     <section class="section">
-      <div class="row">
-        <div class="col-lg-12">
+      <div class="col-lg-12">
           <div class="card">
             <div class="card-body">
-              <h5 class="card-title">Add New Academic Year</h5>
-
-              <form action="manage_academic_year.php" method="POST">
-                <div class="mb-3">
-                  <label for="academicYear" class="form-label">Academic Year</label>
-                  <input type="text" class="form-control" id="academicYear" name="academic_year" placeholder="2023-2024" required>
-                </div>
-                <button type="submit" class="btn btn-primary">Add Academic Year</button>
-              </form>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-lg-12">
-          <div class="card">
-            <div class="card-body">
-              <h5 class="card-title">Academic Year List</h5>
-
-              <table class="table">
+              <h5 class="card-title">List of Student</h5>
+              <!-- Table with stripped rows -->
+              <table class="table datatable">
                 <thead>
                   <tr>
-                    <th scope="col">Academic Year</th>
-                    <th scope="col">Set as Current</th>
-                    <th scope="col">Actions</th>
+                    <th>Student Number</th>
+                    <th>Name</th>
+                    <th>Date Approved</th>
+                    <th>Academic Year</th>
+                    <th>Program</th>
+                    <th>Year Level</th>
+                    <th>Information</th>
+                    <th>Subjects</th>
+                    <th>Status</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <?php
-                  $query = "SELECT * FROM sms3_academic_years ORDER BY id DESC";
-                  $result = $conn->query($query);
-                  if ($result->num_rows > 0) {
-                    $i = 1;
-                    while ($row = $result->fetch_assoc()) {
-                      $isCurrent = $row['is_current'] ? 'Yes' : 'No';
-                      echo "<tr>
-                              <td>" . $row['academic_year'] . "</td>
-                              <td>" . ($row['is_current'] ? '<span class="badge bg-success">Current</span>' : '<button class="btn btn-sm btn-primary" onclick="setCurrentAcademicYear(' . $row['id'] . ')">Set as Current</button>') . "</td>
-                              <td>
-                                <button class='btn btn-sm btn-danger' onclick='deleteAcademicYear(" . $row['id'] . ")'>Delete</button>
-                              </td>
-                            </tr>";
-                    }
-                  } else {
-                    echo "<tr><td colspan='4' class='text-center'>No academic years found</td></tr>";
-                  }
-                  ?>
+                  <?php if ($result && $result->num_rows > 0): ?>
+                    <?php while ($row = $result->fetch_assoc()): ?>
+                      <tr>
+                        <td><?= htmlspecialchars($row['student_number']); ?></td>
+                        <td>
+                          <?= htmlspecialchars($row['first_name']) . ' ' . 
+                              (!empty($row['middle_name']) ? htmlspecialchars($row['middle_name']) . ' ' : '') . 
+                              htmlspecialchars($row['last_name']); ?>
+                        </td>
+                        <td><?= htmlspecialchars(date('Y/m/d', strtotime($row['created_at']))); ?></td>
+                        <td><?= htmlspecialchars($row['academic_year']); ?></td>
+                        <td><?= htmlspecialchars($row['department']); ?></td>
+                        <td><?= htmlspecialchars($row['year_level']); ?></td>
+                        <td>
+                          <button class="btn btn-info btn-sm" onclick="viewInformation(<?= $row['id'] ?>)">View Information</button>
+                        </td>
+                        <td>
+                          <button class="btn btn-info btn-sm" onclick="viewSubjects(<?= $student['id'] ?>)">View Subjects</button>
+                        </td>
+                        <td>
+                          <span class="badge bg-<?= $row['status'] == 'Not Enrolled' ? 'warning' : ($row['status'] == 'Approved' ? 'success' : 'danger') ?>">
+                              <?= htmlspecialchars($row['status']); ?>
+                          </span>
+                        </td>
+                      </tr>
+                    <?php endwhile; ?>
+                  <?php else: ?>
+                    <tr>
+                        <td colspan="9" class="text-center">No students found</td>
+                    </tr>
+                  <?php endif; ?>
                 </tbody>
               </table>
+              <!-- End Table with stripped rows -->
             </div>
           </div>
-        </div>
       </div>
     </section>
 
   </main><!-- End #main -->
 
-  <script>
-  function setCurrentAcademicYear(id) {
-    if (confirm('Are you sure you want to set this academic year as current?')) {
-      fetch('set_academic_year.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id })
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-            alert('Academic year set as current successfully.');
-            location.reload();
-        } else {
-            alert('Failed to set the academic year.');
-        }
-      })
-      .catch(error => {
-        console.error('Error:', error);
-        alert('An error occurred while setting the academic year.');
-      });
-    }
-  }
+  <div class="modal fade" id="informationModal" tabindex="-1" aria-labelledby="informationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="informationModalLabel">Admission Information</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" id="informationContent">
+            <!-- Information will be loaded here dynamically -->
+        </div>
+      </div>
+    </div>
+  </div>
 
-  function deleteAcademicYear(id) {
-    if (confirm('Are you sure you want to delete this academic year?')) {
-      fetch('delete_academic_year.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id })
-      })
-      .then(response => response.json())
-      .then(data => {
-          if (data.success) {
-              alert('Academic year deleted successfully.');
-              location.reload();
-          } else {
-              alert('Failed to delete the academic year.');
-          }
-      })
-      .catch(error => {
-        console.error('Error:', error);
-        alert('An error occurred while deleting the academic year.');
-      });
-    }
+  <script>
+    function viewInformation(id) {
+    // Fetch additional information using AJAX
+    fetch('get_student_info.php?id=' + id)
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        // Populate the modal content
+        const info = data.info;
+        const content = `
+          <p><strong>Birthdate:</strong> ${info.birthday || 'N/A'}</p>
+          <p><strong>Sex:</strong> ${info.sex || 'N/A'}</p>
+          <p><strong>Email:</strong> ${info.email || 'N/A'}</p>
+          <p><strong>Contact Number:</strong> ${info.contact_number || 'N/A'}</p>
+          <p><strong>Facebook Name:</strong> ${info.facebook_name || 'N/A'}</p>
+          <p><strong>Working Student:</strong> ${info.working_student === 'Yes' ? 'Yes' : 'No'}</p>
+          <p><strong>Address:</strong> ${info.address || 'N/A'}</p>
+          <p><strong>Civil Status:</strong> ${info.civil_status || 'N/A'}</p>
+          <p><strong>Religion:</strong> ${info.religion || 'N/A'}</p>
+          <p><strong>Father's Name:</strong> ${info.father_name || 'N/A'}</p>
+          <p><strong>Mother's Name:</strong> ${info.mother_name || 'N/A'}</p>
+          <p><strong>Guardian's Name:</strong> ${info.guardian_name || 'N/A'}</p>
+          <p><strong>Guardian's Contact:</strong> ${info.guardian_contact || 'N/A'}</p>
+          <p><strong>Member 4Ps:</strong> ${info.member4ps === 'Yes' ? 'Yes' : 'No'}</p>
+          <p><strong>Primary School:</strong> ${info.primary_school || 'N/A'} (${info.primary_year || 'N/A'})</p>
+          <p><strong>Secondary School:</strong> ${info.secondary_school || 'N/A'} (${info.secondary_year || 'N/A'})</p>
+          <p><strong>Last School Attended:</strong> ${info.last_school || 'N/A'} (${info.last_school_year || 'N/A'})</p>
+          <p><strong>Referral Source:</strong> ${info.referral_source || 'N/A'}</p>
+        `;
+        document.getElementById('informationContent').innerHTML = content;
+        // Show the modal
+        new bootstrap.Modal(document.getElementById('informationModal')).show();
+      } else {
+          alert('Failed to fetch admission information.');
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      alert('An error occurred while fetching the information.');
+    });
   }
   </script>
 

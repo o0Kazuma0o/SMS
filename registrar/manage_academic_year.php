@@ -1,7 +1,7 @@
 <?php
 require('../database.php');
 require_once 'session.php';
-checkAccess('Admin'); // Ensure only users with the 'admin' role can access this page
+checkAccess('Registrar'); // Ensure only users with the 'admin' role can access this page
 
 // Handle form submission to add an academic year
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['academic_year'])) {
@@ -176,14 +176,7 @@ $academicYears = getAcademicYears();
 
       <hr class="sidebar-divider">
 
-      <li class="nav-heading">Admission & Enrollment</li>
-
-      <li class="nav-item">
-        <a class="nav-link " href="admission.php">
-          <i class="bi bi-grid"></i>
-          <span>Admission</span>
-        </a>
-      </li>
+      <li class="nav-heading">Enrollment</li>
 
       <li class="nav-item">
         <a class="nav-link " href="students.php">
@@ -236,22 +229,6 @@ $academicYears = getAcademicYears();
         <a class="nav-link " href="manage_timetable.php">
           <i class="bi bi-grid"></i>
           <span>Timetable</span>
-        </a>
-      </li>
-
-      <hr class="sidebar-divider">
-
-      <li class="nav-heading">MANAGE USER</li>
-      <li class="nav-item">
-        <a class="nav-link " href="audit_logs.php">
-          <i class="bi bi-grid"></i>
-          <span>Audit Logs</span>
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link " href="manage_user.php">
-          <i class="bi bi-grid"></i>
-          <span>Users</span>
         </a>
       </li>
 

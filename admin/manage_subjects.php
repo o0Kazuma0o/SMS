@@ -1,6 +1,7 @@
 <?php 
 require('../database.php');
 require_once 'session.php';
+require_once 'audit_log_function.php';
 checkAccess('Admin'); // Ensure only users with the 'admin' role can access this page
 
 // Edit subject
@@ -23,12 +24,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_subject'])) {
     $subject_name = $_POST['subject_name'];
     $department_id = $_POST['department_id'];
 
-    try{
+  try{
     // Insert subject
     $stmt = $conn->prepare("INSERT INTO sms3_subjects (subject_code, subject_name, department_id) VALUES (?, ?, ?)");
     $stmt->bind_param("ssi", $subject_code, $subject_name, $department_id);
     $stmt->execute();
+    $newSubjectId = $stmt->insert_id; // Get the ID of the new subject
     $stmt->close();
+
+    // Log the addition
+    logAudit($conn, $_SESSION['user_id'], 'ADD', 'sms3_subjects', $newSubjectId, ['subject_name' => $subject_name]);
 
     $_SESSION['success_message'] = "Subject added successfully!";
 
@@ -48,17 +53,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_subject'])) {
 
 // Update subject
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_subject'])) {
-    $subject_id = $_POST['subject_id'];  // The ID of the subject being updated
-    $subject_code = $_POST['subject_code'];
-    $subject_name = $_POST['subject_name'];
-    $department_id = $_POST['department_id'];
+  $subject_id = $_POST['subject_id'];  // The ID of the subject being updated
+  $subject_code = $_POST['subject_code'];
+  $subject_name = $_POST['subject_name'];
+  $department_id = $_POST['department_id'];
 
-    try{
+  try{
+    // Fetch existing room details for logging
+    $stmt = $conn->prepare("SELECT * FROM sms3_subjects WHERE id = ?");
+    $stmt->bind_param("i", $subject_id);
+    $stmt->execute();
+    $oldSubject = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+
     // Update the subject in the database
     $stmt = $conn->prepare("UPDATE sms3_subjects SET subject_code = ?, subject_name = ?, department_id = ? WHERE id = ?");
     $stmt->bind_param("ssii", $subject_code, $subject_name, $department_id, $subject_id);
     $stmt->execute();
     $stmt->close();
+
+    // Log the update
+    logAudit($conn, $_SESSION['user_id'], 'EDIT', 'sms3_rooms', $subject_id, [
+      'id' => $subject_id,
+      'old' => $oldSubject,
+      'new' => ['subject_code' => $subject_code, 'subject_name' => $subject_name, 'department_id' => $department_id]
+    ]);
 
     $_SESSION['success_message'] = "Subject updated successfully!";
 
@@ -78,12 +97,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_subject'])) {
 
 // Delete subject
 if (isset($_GET['delete_subject_id'])) {
-    $delete_id = $_GET['delete_subject_id'];
-    try{
+  $delete_id = $_GET['delete_subject_id'];
+  try{
+    // Fetch existing room details for logging
+    $stmt = $conn->prepare("SELECT * FROM sms3_subjects WHERE id = ?");
+    $stmt->bind_param("i", $delete_id);
+    $stmt->execute();
+    $subjectToDelete = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+
     $stmt = $conn->prepare("DELETE FROM sms3_subjects WHERE id = ?");
     $stmt->bind_param("i", $delete_id);
     $stmt->execute();
     $stmt->close();
+
+    // Log deletion
+    logAudit($conn, $_SESSION['user_id'], 'DELETE', 'sms3_subjects', $delete_id, $subjectToDelete);
 
     $_SESSION['success_message'] = "Subject deleted successfully!";
 
@@ -297,7 +326,7 @@ $subjects = $conn->query("SELECT s.*, d.department_code FROM sms3_subjects s JOI
     <hr class="sidebar-divider">
 
       <li class="nav-item">
-        <a class="nav-link " href="Adashboard.php">
+        <a class="nav-link " href="Dashboard.php">
           <i class="bi bi-grid"></i>
           <span>Dashboard</span>
         </a>

@@ -139,7 +139,7 @@ $result = $conn->query("SELECT al.*, u.username FROM sms3_audit_log al JOIN sms3
     <hr class="sidebar-divider">
 
       <li class="nav-item">
-        <a class="nav-link " href="Adashboard.php">
+        <a class="nav-link " href="Dashboard.php">
           <i class="bi bi-grid"></i>
           <span>Dashboard</span>
         </a>

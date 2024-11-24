@@ -42,7 +42,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if ($result->num_rows > 0) {
             $user = $result->fetch_assoc();
 
-            // Plain text password verification (not recommended for production)
+            // Password verification
             if (password_verify($password, $user['password'])) {
                 return $user;
             } else {
@@ -69,15 +69,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         // Set session variables
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['username'] = $user['username'];
+        $_SESSION['name'] = $user['name'];
         $_SESSION['role'] = $user['role'];
+        $_SESSION['email'] = $user['email'];
+        $_SESSION['phone'] = $user['phone'];
 
         // Redirect based on role
         switch ($user['role']) {
             case 'Admin':
-                header("Location: admin/Adashboard.php");
+                header("Location: admin/Dashboard.php");
                 break;
-            case 'staff':
-                header("Location: Sdashboard.php");
+            case 'Registrar':
+                header("Location: registrar/Dashboard.php");
                 break;
             case 'Superadmin':
                 header("Location: Superdashboard.php");

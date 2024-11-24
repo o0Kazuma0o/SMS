@@ -1,6 +1,7 @@
 <?php
 require('../database.php');
 require_once 'session.php';
+require_once 'audit_log_function.php';
 checkAccess('Admin'); // Ensure only users with the 'admin' role can access this page
 
 // Edit section
@@ -17,51 +18,98 @@ if (isset($_GET['edit_section_id'])) {
 
 // Add or update section
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST['add_section']) || isset($_POST['update_section']))) {
-    $section_number = $_POST['section_number'];
-    $year_level = $_POST['year_level'];
-    $capacity = $_POST['capacity'];
-    $semester = $_POST['semester_id'];
-    $available = $_POST['available'];
-    $department_id = $_POST['department_id'];
+  $section_number = $_POST['section_number'];
+  $year_level = $_POST['year_level'];
+  $capacity = $_POST['capacity'];
+  $semester = $_POST['semester_id'];
+  $available = $_POST['available'];
+  $department_id = $_POST['department_id'];
 
-    try {
-        if (isset($_POST['add_section'])) {
-            $stmt = $conn->prepare("INSERT INTO sms3_sections (section_number, year_level, capacity, semester_id, available, department_id) VALUES (?, ?, ?, ?, ?, ?)");
-            $stmt->bind_param("iiiiii", $section_number, $year_level, $capacity, $semester, $available, $department_id);
-        } elseif (isset($_POST['update_section'])) {
-            $section_id = $_POST['section_id'];
-            $stmt = $conn->prepare("UPDATE sms3_sections SET section_number = ?, year_level = ?, capacity = ?, semester_id = ?, available = ?, department_id = ? WHERE id = ?");
-            $stmt->bind_param("iiiiiii", $section_number, $year_level, $capacity, $semester, $available, $department_id, $section_id);
-        }
+  try {
+    if (isset($_POST['add_section'])) {
+      $stmt = $conn->prepare("INSERT INTO sms3_sections (section_number, year_level, capacity, semester_id, available, department_id) VALUES (?, ?, ?, ?, ?, ?)");
+      $stmt->bind_param("iiiiii", $section_number, $year_level, $capacity, $semester, $available, $department_id);
+      $stmt->execute();
+      $newSectionId = $stmt->insert_id;
 
-        $stmt->execute();
-        $stmt->close();
-        $_SESSION['success_message'] = isset($_POST['add_section']) ? "Section added successfully!" : "Section updated successfully!";
-        header("Location: manage_sections.php");
-        exit;
-    } catch (mysqli_sql_exception $e) {
-        $_SESSION['error_message'] = $e->getCode() == 1062 ? "Error: Duplicate section number." : "Error: " . $e->getMessage();
-        header("Location: manage_sections.php");
-        exit;
+      // Log the addition
+      logAudit($conn, $_SESSION['user_id'], 'ADD', 'sms3_sections', $newSectionId, [
+        'section_number' => $section_number,
+        'year_level' => $year_level,
+        'capacity' => $capacity,
+        'semester_id' => $semester,
+        'available' => $available,
+        'department_id' => $department_id
+      ]);
+    } elseif (isset($_POST['update_section'])) {
+      $section_id = $_POST['section_id'];
+
+      // Fetch old section details
+      $stmt = $conn->prepare("SELECT * FROM sms3_sections WHERE id = ?");
+      $stmt->bind_param("i", $section_id);
+      $stmt->execute();
+      $oldSection = $stmt->get_result()->fetch_assoc();
+      $stmt->close();
+
+      // Update section
+      $stmt = $conn->prepare("UPDATE sms3_sections SET section_number = ?, year_level = ?, capacity = ?, semester_id = ?, available = ?, department_id = ? WHERE id = ?");
+      $stmt->bind_param("iiiiiii", $section_number, $year_level, $capacity, $semester, $available, $department_id, $section_id);
+      $stmt->execute();
+
+      // Log the update
+      logAudit($conn, $_SESSION['user_id'], 'EDIT', 'sms3_sections', $section_id, [
+        'id' => $section_id,
+        'old' => $oldSection,
+        'new' => [
+            'section_number' => $section_number,
+            'year_level' => $year_level,
+            'capacity' => $capacity,
+            'semester_id' => $semester,
+            'available' => $available,
+            'department_id' => $department_id
+        ]
+      ]);
+    }
+
+    $stmt->close();
+    $_SESSION['success_message'] = isset($_POST['add_section']) ? "Section added successfully!" : "Section updated successfully!";
+    header("Location: manage_sections.php");
+    exit;
+  } catch (mysqli_sql_exception $e) {
+      $_SESSION['error_message'] = $e->getCode() == 1062 ? "Error: Duplicate section number." : "Error: " . $e->getMessage();
+      header("Location: manage_sections.php");
+      exit;
     }
 }
 
 // Delete section
 if (isset($_GET['delete_section_id'])) {
-    $delete_id = $_GET['delete_section_id'];
-    try {
-        $stmt = $conn->prepare("DELETE FROM sms3_sections WHERE id = ?");
-        $stmt->bind_param("i", $delete_id);
-        $stmt->execute();
-        $stmt->close();
-        $_SESSION['success_message'] = "Section deleted successfully!";
-        header("Location: manage_sections.php");
-        exit;
-    } catch (mysqli_sql_exception $e) {
-        $_SESSION['error_message'] = $e->getCode() == 1451 ? "Error: This section is linked to other data." : "Error: " . $e->getMessage();
-        header("Location: manage_sections.php");
-        exit;
-    }
+  $delete_id = $_GET['delete_section_id'];
+  try {
+    // Fetch section details before deletion
+    $stmt = $conn->prepare("SELECT * FROM sms3_sections WHERE id = ?");
+    $stmt->bind_param("i", $delete_id);
+    $stmt->execute();
+    $sectionToDelete = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+
+    // Delete the section
+    $stmt = $conn->prepare("DELETE FROM sms3_sections WHERE id = ?");
+    $stmt->bind_param("i", $delete_id);
+    $stmt->execute();
+    $stmt->close();
+
+    // Log the deletion
+    logAudit($conn, $_SESSION['user_id'], 'DELETE', 'sms3_sections', $delete_id, $sectionToDelete);
+    
+    $_SESSION['success_message'] = "Section deleted successfully!";
+    header("Location: manage_sections.php");
+    exit;
+} catch (mysqli_sql_exception $e) {
+    $_SESSION['error_message'] = $e->getCode() == 1451 ? "Error: This section is linked to other data." : "Error: " . $e->getMessage();
+    header("Location: manage_sections.php");
+    exit;
+  }
 }
 
 // Fetch sections for display
@@ -209,7 +257,7 @@ $sections = $conn->query("
     <hr class="sidebar-divider">
 
       <li class="nav-item">
-        <a class="nav-link " href="Adashboard.php">
+        <a class="nav-link " href="Dashboard.php">
           <i class="bi bi-grid"></i>
           <span>Dashboard</span>
         </a>

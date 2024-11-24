@@ -1,7 +1,7 @@
 <?php
 require('../database.php');
 require_once 'session.php';
-checkAccess('Admin'); // Ensure only users with the 'admin' role can access this page
+checkAccess('Registrar'); // Ensure only users with the 'admin' role can access this page
 
 // Edit timetable
 $edit_timetable = null;
@@ -447,14 +447,7 @@ $timetables = $conn->query("
 
       <hr class="sidebar-divider">
 
-      <li class="nav-heading">Admission & Enrollment</li>
-
-      <li class="nav-item">
-        <a class="nav-link " href="admission.php">
-          <i class="bi bi-grid"></i>
-          <span>Admission</span>
-        </a>
-      </li>
+      <li class="nav-heading">Enrollment</li>
 
       <li class="nav-item">
         <a class="nav-link " href="students.php">
@@ -512,21 +505,6 @@ $timetables = $conn->query("
 
       <hr class="sidebar-divider">
 
-      <li class="nav-heading">MANAGE USER</li>
-      <li class="nav-item">
-        <a class="nav-link " href="audit_logs.php">
-          <i class="bi bi-grid"></i>
-          <span>Audit Logs</span>
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link " href="manage_user.php">
-          <i class="bi bi-grid"></i>
-          <span>Users</span>
-        </a>
-      </li>
-
-      <hr class="sidebar-divider">
     </ul>
 
   </aside><!-- End Sidebar-->
