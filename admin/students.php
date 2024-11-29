@@ -255,10 +255,10 @@ $result = $stmt->get_result();
     <section class="section">
       <div class="col-lg-12">
           <div class="card">
-            <div class="card-body">
+            <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;" class="card-body">
               <h5 class="card-title">List of Student</h5>
               <!-- Table with stripped rows -->
-              <table class="table datatable">
+              <table style="width: 100%; min-width: 800px;" class="table datatable">
                 <thead>
                   <tr>
                     <th>Student Number</th>

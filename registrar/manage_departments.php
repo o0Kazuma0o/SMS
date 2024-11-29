@@ -421,10 +421,10 @@ $departments = $conn->query("SELECT * FROM sms3_departments");
         </div>
       </div>
       <div class="card">
-        <div class="card-body">
+        <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;" class="card-body">
         <h5 class="card-title">Department List</h5>
           <!-- List of Departments -->
-          <table class="table table-bordered">
+          <table style="width: 100%; min-width: 800px;" class="table table-bordered">
             <thead>
                 <tr>
                     <th>Department Code</th>

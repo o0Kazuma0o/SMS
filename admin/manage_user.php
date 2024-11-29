@@ -431,9 +431,9 @@ $result = $conn->query($sql);
 
       <!-- User List Table -->
       <div class="card">
-        <div class="card-body">
+        <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;" class="card-body">
           <h5 class="card-title">User List</h5>
-          <table class="table table-bordered">
+          <table style="width: 100%; min-width: 800px;" class="table datatable">
             <thead>
               <tr>
                 <th>Username</th>

@@ -662,9 +662,9 @@ if (isset($_GET['delete_row_id'])) {
       </div>
 
       <div class="card">
-        <div class="card-body">
+        <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;" class="card-body">
         <h5 class="card-title">List of Timetables</h5>
-          <table class="table table-bordered">
+          <table style="width: 100%; min-width: 800px;" class="table table-bordered">
             <thead>
               <tr>
                 <th>Department</th>
@@ -731,8 +731,8 @@ if (isset($_GET['delete_row_id'])) {
             <h5 class="modal-title">Timetable Details</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
-            <div class="modal-body">
-              <table class="table table-bordered" id="timetable-details">
+            <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;" class="modal-body">
+              <table style="width: 100%; min-width: 800px;" class="table table-bordered" id="timetable-details">
                 <thead>
                   <tr>
                     <th>Subject</th>

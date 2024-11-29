@@ -270,10 +270,10 @@ $academicYears = getAcademicYears();
 
         <div class="col-lg-12">
           <div class="card">
-            <div class="card-body">
+            <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;" class="card-body">
               <h5 class="card-title">Academic Year List</h5>
 
-              <table class="table">
+              <table style="width: 100%; min-width: 800px;" class="table">
                 <thead>
                   <tr>
                     <th scope="col">Academic Year</th>

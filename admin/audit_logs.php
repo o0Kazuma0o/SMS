@@ -250,9 +250,9 @@ $result = $conn->query("SELECT al.*, u.username FROM sms3_audit_log al JOIN sms3
     <div class="row">
 
       <div class="card">
-        <div class="card-body">
+        <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;" class="card-body">
         <h5 class="card-title">Audit Logs</h5>
-          <table class="table table-bordered">
+          <table style="width: 100%; min-width: 800px;" class="table datatable">
               <thead>
                   <tr>
                       <th>User</th>

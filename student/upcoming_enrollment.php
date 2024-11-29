@@ -313,9 +313,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       </div>
 
       <div class="card">
-        <div class="card-body">
+        <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;" class="card-body">
             <h5 class="card-title">Section Schedule</h5>
-            <table id="schedule-table" class="table table-striped" style="display: none;">
+            <table style="width: 100%; min-width: 800px;" id="schedule-table" class="table table-striped" style="display: none;">
                 <thead>
                     <tr>
                         <th>Section</th>
