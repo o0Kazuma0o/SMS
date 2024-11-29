@@ -1,6 +1,7 @@
 <?php
 require('../database.php');
 require_once 'session.php';
+require_once 'audit_log_function.php';
 checkAccess('Registrar'); // Ensure only users with the 'admin' role can access this page
 
 // Edit timetable
@@ -21,231 +22,290 @@ if (isset($_GET['edit_timetable_id'])) {
     $stmt->close();
 }
 
-// Add timetable with multiple subjects, rooms, and times
+// Add timetable
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_timetable'])) {
-    $section_id = $_POST['section_id'];  // The selected section
-    $subjects = $_POST['subjects'];  // Array of subject IDs
-    $rooms = $_POST['rooms'];  // Array of room IDs
-    $days = $_POST['days'];  // Array of days
-    $start_times = $_POST['start_times'];  // Array of start times
-    $end_times = $_POST['end_times'];  // Array of end times
+  $section_id = $_POST['section_id'];
+  $subjects = $_POST['subjects'];
+  $rooms = $_POST['rooms'];
+  $days = $_POST['days'];
+  $start_times = $_POST['start_times'];
+  $end_times = $_POST['end_times'];
 
-    // Ensure all arrays have the same number of entries
-    if (count($subjects) == count($rooms) && count($rooms) == count($days) && count($days) == count($start_times) && count($start_times) == count($end_times)) {
-        try {
-            $conn->begin_transaction();  // Start a transaction
+  if (count($subjects) === count($rooms) && count($rooms) === count($days) && count($days) === count($start_times) && count($start_times) === count($end_times)) {
+      try {
+          $conn->begin_transaction();
 
-            for ($i = 0; $i < count($subjects); $i++) {
-                $subject_id = $subjects[$i];
-                $room_id = $rooms[$i];
-                $day_of_week = $days[$i];
-                $start_time = $start_times[$i];
-                $end_time = $end_times[$i];
+          for ($i = 0; $i < count($subjects); $i++) {
+              $subject_id = $subjects[$i];
+              $room_id = $rooms[$i];
+              $day_of_week = $days[$i];
+              $start_time = $start_times[$i];
+              $end_time = $end_times[$i];
 
-                // 1. Check if the subject already exists in the same section (ignoring the day)
-                $stmt = $conn->prepare("
-                    SELECT COUNT(*) 
-                    FROM sms3_timetable 
-                    WHERE section_id = ? 
-                    AND subject_id = ?");
-                $stmt->bind_param("ii", $section_id, $subject_id);
-                $stmt->execute();
-                $stmt->bind_result($subject_count);
-                $stmt->fetch();
-                $stmt->close();
+              // Validate for duplicate subjects in the same section
+              $stmt = $conn->prepare("
+                  SELECT COUNT(*) 
+                  FROM sms3_timetable 
+                  WHERE section_id = ? AND subject_id = ?");
+              $stmt->bind_param("ii", $section_id, $subject_id);
+              $stmt->execute();
+              $stmt->bind_result($duplicate_count);
+              $stmt->fetch();
+              $stmt->close();
 
-                if ($subject_count > 0) {
-                    // Duplicate subject detected in the section
-                    $_SESSION['error_message'] = "Error: Duplicate subject in this section.";
-                    $conn->rollback();  // Rollback the transaction
-                    header('Location: manage_timetable.php');
-                    exit;
-                }
+              if ($duplicate_count > 0) {
+                  $_SESSION['error_message'] = "Error: Duplicate subject in section.";
+                  $conn->rollback();
+                  header('Location: manage_timetable.php');
+                  exit;
+              }
 
-                // 2. Check for time conflicts within the section on the same day
-                $stmt = $conn->prepare("
-                    SELECT COUNT(*) 
-                    FROM sms3_timetable 
-                    WHERE section_id = ? 
-                    AND day_of_week = ? 
-                    AND ((start_time < ? AND end_time > ?) OR (start_time < ? AND end_time > ?))
-                    AND NOT (end_time = ?)");
-                $stmt->bind_param("issssss", $section_id, $day_of_week, $end_time, $start_time, $end_time, $start_time, $start_time);
-                $stmt->execute();
-                $stmt->bind_result($time_conflict_count);
-                $stmt->fetch();
-                $stmt->close();
+              // Validate for time conflicts
+              $stmt = $conn->prepare("
+                  SELECT COUNT(*) 
+                  FROM sms3_timetable 
+                  WHERE section_id = ? AND day_of_week = ? 
+                  AND ((start_time < ? AND end_time > ?) OR (start_time < ? AND end_time > ?))");
+              $stmt->bind_param("isssss", $section_id, $day_of_week, $end_time, $start_time, $end_time, $start_time);
+              $stmt->execute();
+              $stmt->bind_result($conflict_count);
+              $stmt->fetch();
+              $stmt->close();
 
-                if ($time_conflict_count > 0) {
-                    // Time conflict detected
-                    $_SESSION['error_message'] = "Error: Time conflict on {$day_of_week} between {$start_time} and {$end_time}.";
-                    $conn->rollback();  // Rollback the transaction
-                    header('Location: manage_timetable.php');
-                    exit;
-                }
+              if ($conflict_count > 0) {
+                  $_SESSION['error_message'] = "Error: Time conflict detected on {$day_of_week} between {$start_time} and {$end_time}.";
+                  $conn->rollback();
+                  header('Location: manage_timetable.php');
+                  exit;
+              }
 
-                // 3. Insert timetable for each subject, room, day, and time combination
-                $stmt = $conn->prepare("
-                    INSERT INTO sms3_timetable (subject_id, section_id, room_id, day_of_week, start_time, end_time)
-                    VALUES (?, ?, ?, ?, ?, ?)");
-                $stmt->bind_param("iiisss", $subject_id, $section_id, $room_id, $day_of_week, $start_time, $end_time);
-                $stmt->execute();
-            }
+              // Insert timetable entry
+              $stmt = $conn->prepare("
+                  INSERT INTO sms3_timetable (subject_id, section_id, room_id, day_of_week, start_time, end_time)
+                  VALUES (?, ?, ?, ?, ?, ?)");
+              $stmt->bind_param("iiisss", $subject_id, $section_id, $room_id, $day_of_week, $start_time, $end_time);
+              $stmt->execute();
+              $timetableId = $stmt->insert_id;
 
-            $conn->commit();  // Commit the transaction
-            $_SESSION['success_message'] = "Timetable added successfully!";
-            header('Location: manage_timetable.php');
-            exit;
+              // Log the action
+              logAudit($conn, $_SESSION['user_id'], 'ADD', 'sms3_timetable', $timetableId, [
+                  'subject_id' => $subject_id,
+                  'section_id' => $section_id,
+                  'room_id' => $room_id,
+                  'day_of_week' => $day_of_week,
+                  'start_time' => $start_time,
+                  'end_time' => $end_time
+              ]);
+          }
 
-        } catch (mysqli_sql_exception $e) {
-            $conn->rollback();  // Rollback transaction on error
-            $_SESSION['error_message'] = "Error: " . $e->getMessage();
-            header('Location: manage_timetable.php');
-            exit;
-        }
-    } else {
-        // If the array sizes don't match, return an error
-        $_SESSION['error_message'] = "Error: Mismatch in subject, room, day, or time fields.";
-        header('Location: manage_timetable.php');
-        exit;
-    }
+          $conn->commit();
+          $_SESSION['success_message'] = "Timetable added successfully!";
+          header('Location: manage_timetable.php');
+          exit;
+
+      } catch (mysqli_sql_exception $e) {
+          $conn->rollback();
+          $_SESSION['error_message'] = "Error: " . $e->getMessage();
+          header('Location: manage_timetable.php');
+          exit;
+      }
+  } else {
+      $_SESSION['error_message'] = "Mismatch in input fields.";
+      header('Location: manage_timetable.php');
+      exit;
+  }
 }
 
-// Update a single timetable entry
+// Update timetable
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_single_timetable'])) {
-    $timetable_id = $_POST['timetable_id'];  // ID of the timetable being updated
-    $section_id = $_POST['section_id'];  // The section ID
-    $subject_code = $_POST['subject'];  // Subject code from the form
-    $room_name = $_POST['room'];  // Room name from the form
-    $day_of_week = $_POST['day'];  // Day from the form
-    $start_time = $_POST['start_time'];  // Start time from the form
-    $end_time = $_POST['end_time'];  // End time from the form
+  $timetable_id = $_POST['timetable_id'];
+  $section_id = $_POST['section_id'];
+  $subject_code = $_POST['subject'];
+  $room_name = $_POST['room'];
+  $day_of_week = $_POST['day'];
+  $start_time = $_POST['start_time'];
+  $end_time = $_POST['end_time'];
 
-    try {
-        // Fetch the subject_id based on subject_code
-        $subject_id = getSubjectIdByCode($subject_code);
+  try {
+      $subject_id = getSubjectIdByCode($subject_code);
+      $room_id = getRoomIdByName($room_name);
 
-        // Fetch the room_id based on room_name
-        $room_id = getRoomIdByName($room_name);
+      if ($subject_id && $room_id) {
+          // Fetch existing data for logging
+          $stmt = $conn->prepare("SELECT * FROM sms3_timetable WHERE id = ?");
+          $stmt->bind_param("i", $timetable_id);
+          $stmt->execute();
+          $oldData = $stmt->get_result()->fetch_assoc();
+          $stmt->close();
 
-        // Check if both IDs are valid
-        if ($subject_id && $room_id) {
-            // 1. Ensure no duplicate subjects in the same section
-            $stmt = $conn->prepare("
-                SELECT COUNT(*) 
-                FROM sms3_timetable 
-                WHERE section_id = ? 
-                AND subject_id = ? 
-                AND id != ?");
-            $stmt->bind_param("iii", $section_id, $subject_id, $timetable_id);
-            $stmt->execute();
-            $stmt->bind_result($duplicate_subject_count);
-            $stmt->fetch();
-            $stmt->close();
+          // Validate for duplicate subjects in the same section
+          $stmt = $conn->prepare("
+              SELECT COUNT(*) 
+              FROM sms3_timetable 
+              WHERE section_id = ? AND subject_id = ? AND id != ?");
+          $stmt->bind_param("iii", $section_id, $subject_id, $timetable_id);
+          $stmt->execute();
+          $stmt->bind_result($duplicate_count);
+          $stmt->fetch();
+          $stmt->close();
 
-            if ($duplicate_subject_count > 0) {
-                // Subject already exists in the section
-                $_SESSION['error_message'] = "Error: Duplicate subject in this section.";
-                header('Location: manage_timetable.php');
-                exit;
-            }
+          if ($duplicate_count > 0) {
+              $_SESSION['error_message'] = "Error: Duplicate subject in section.";
+              header('Location: manage_timetable.php');
+              exit;
+          }
 
-            // 2. Ensure no time conflicts within the section on the same day
-            $stmt = $conn->prepare("
-                SELECT COUNT(*) 
-                FROM sms3_timetable 
-                WHERE section_id = ? 
-                AND day_of_week = ? 
-                AND ((start_time < ? AND end_time > ?) OR (start_time < ? AND end_time > ?)) 
-                AND id != ?
-                AND NOT (end_time = ?)");
-            $stmt->bind_param("issssssi", $section_id, $day_of_week, $end_time, $start_time, $end_time, $start_time, $timetable_id, $start_time);
-            $stmt->execute();
-            $stmt->bind_result($time_conflict_count);
-            $stmt->fetch();
-            $stmt->close();
+          // Validate for time conflicts
+          $stmt = $conn->prepare("
+              SELECT COUNT(*) 
+              FROM sms3_timetable 
+              WHERE section_id = ? AND day_of_week = ? 
+              AND ((start_time < ? AND end_time > ?) OR (start_time < ? AND end_time > ?)) AND id != ?");
+          $stmt->bind_param("isssssi", $section_id, $day_of_week, $end_time, $start_time, $end_time, $start_time, $timetable_id);
+          $stmt->execute();
+          $stmt->bind_result($conflict_count);
+          $stmt->fetch();
+          $stmt->close();
 
-            if ($time_conflict_count > 0) {
-                // Time conflict detected
-                $_SESSION['error_message'] = "Error: Time conflict on {$day_of_week} between {$start_time} and {$end_time}.";
-                header('Location: manage_timetable.php');
-                exit;
-            }
+          if ($conflict_count > 0) {
+              $_SESSION['error_message'] = "Error: Time conflict detected on {$day_of_week} between {$start_time} and {$end_time}.";
+              header('Location: manage_timetable.php');
+              exit;
+          }
 
-            // 3. If no conflicts, update the single timetable entry
-            $stmt = $conn->prepare("
-                UPDATE sms3_timetable
-                SET subject_id = ?, room_id = ?, day_of_week = ?, start_time = ?, end_time = ?
-                WHERE id = ?");
-            $stmt->bind_param("iisssi", $subject_id, $room_id, $day_of_week, $start_time, $end_time, $timetable_id);
-            $stmt->execute();
+          // Update timetable
+          $stmt = $conn->prepare("
+              UPDATE sms3_timetable 
+              SET subject_id = ?, room_id = ?, day_of_week = ?, start_time = ?, end_time = ? 
+              WHERE id = ?");
+          $stmt->bind_param("iisssi", $subject_id, $room_id, $day_of_week, $start_time, $end_time, $timetable_id);
+          $stmt->execute();
 
-            $_SESSION['success_message'] = "Timetable updated successfully!";
-            header('Location: manage_timetable.php');
-            exit;
-        } else {
-            // Handle error if subject_id or room_id is invalid
-            $_SESSION['error_message'] = "Invalid subject or room.";
-            header('Location: manage_timetable.php');
-            exit;
-        }
-    } catch (mysqli_sql_exception $e) {
-        $_SESSION['error_message'] = "Error: " . $e->getMessage();
-        header('Location: manage_timetable.php');
-        exit;
-    }
+          // Log the action
+          logAudit($conn, $_SESSION['user_id'], 'EDIT', 'sms3_timetable', $timetable_id, [
+              'id' => $timetable_id,
+              'old' => $oldData,
+              'new' => [
+                  'subject_id' => $subject_id,
+                  'room_id' => $room_id,
+                  'day_of_week' => $day_of_week,
+                  'start_time' => $start_time,
+                  'end_time' => $end_time
+              ]
+          ]);
+
+          $_SESSION['success_message'] = "Timetable updated successfully!";
+          header('Location: manage_timetable.php');
+          exit;
+      } else {
+          $_SESSION['error_message'] = "Invalid subject or room.";
+          header('Location: manage_timetable.php');
+          exit;
+      }
+  } catch (mysqli_sql_exception $e) {
+      $_SESSION['error_message'] = "Error: " . $e->getMessage();
+      header('Location: manage_timetable.php');
+      exit;
+  }
 }
 
 // Delete entire timetable for a section (or group of timetables)
 if (isset($_GET['delete_timetable_id'])) {
-    $delete_id = $_GET['delete_timetable_id'];
-    
-    try {
-        // Delete all timetable entries for a section based on the timetable ID
-        $stmt = $conn->prepare("DELETE FROM sms3_timetable WHERE section_id = (SELECT section_id FROM sms3_timetable WHERE id = ?)");
-        $stmt->bind_param("i", $delete_id);
-        $stmt->execute();
-        $stmt->close();
+  $delete_id = $_GET['delete_timetable_id'];
 
-        $_SESSION['success_message'] = "Entire timetable deleted successfully!";
-        header('Location: manage_timetable.php');
-        exit;
-    } catch (mysqli_sql_exception $e) {
-        $_SESSION['error_message'] = "Error: " . $e->getMessage();
-        header('Location: manage_timetable.php');
-        exit;
-    }
+  try {
+      // Fetch details for audit logging
+      $stmt = $conn->prepare("
+          SELECT t.id, s.subject_code, sec.section_number, r.room_name, t.day_of_week, t.start_time, t.end_time
+          FROM sms3_timetable t
+          JOIN sms3_subjects s ON t.subject_id = s.id
+          JOIN sms3_sections sec ON t.section_id = sec.id
+          JOIN sms3_rooms r ON t.room_id = r.id
+          WHERE t.section_id = (SELECT section_id FROM sms3_timetable WHERE id = ?)
+      ");
+      $stmt->bind_param("i", $delete_id);
+      $stmt->execute();
+      $result = $stmt->get_result();
+      $deletedTimetables = $result->fetch_all(MYSQLI_ASSOC);
+      $stmt->close();
+
+      // Delete all timetable entries for a section
+      $stmt = $conn->prepare("DELETE FROM sms3_timetable WHERE section_id = (SELECT section_id FROM sms3_timetable WHERE id = ?)");
+      $stmt->bind_param("i", $delete_id);
+      $stmt->execute();
+      $stmt->close();
+
+      // Log the deletions
+      foreach ($deletedTimetables as $timetable) {
+          logAudit($conn, $_SESSION['user_id'], 'DELETE', 'sms3_timetable', $timetable['id'], [
+              'id' => $timetable['id'], // Ensure ID is included
+              'subject_code' => $timetable['subject_code'],
+              'section_number' => $timetable['section_number'],
+              'room_name' => $timetable['room_name'],
+              'day_of_week' => $timetable['day_of_week'],
+              'start_time' => $timetable['start_time'],
+              'end_time' => $timetable['end_time']
+          ]);
+      }
+
+      $_SESSION['success_message'] = "Entire timetable deleted successfully!";
+      header('Location: manage_timetable.php');
+      exit;
+  } catch (mysqli_sql_exception $e) {
+      $_SESSION['error_message'] = "Error: " . $e->getMessage();
+      header('Location: manage_timetable.php');
+      exit;
+  }
 }
 
 // Delete a single row from the timetable
 if (isset($_GET['delete_row_id'])) {
-    $delete_row_id = $_GET['delete_row_id'];
+  $delete_row_id = $_GET['delete_row_id'];
 
-    try {
-        $stmt = $conn->prepare("DELETE FROM sms3_timetable WHERE id = ?");
-        $stmt->bind_param("i", $delete_row_id);
-        $stmt->execute();
-        $stmt->close();
+  try {
+      // Fetch details for audit logging
+      $stmt = $conn->prepare("
+          SELECT t.id, s.subject_code, sec.section_number, r.room_name, t.day_of_week, t.start_time, t.end_time
+          FROM sms3_timetable t
+          JOIN sms3_subjects s ON t.subject_id = s.id
+          JOIN sms3_sections sec ON t.section_id = sec.id
+          JOIN sms3_rooms r ON t.room_id = r.id
+          WHERE t.id = ?
+      ");
+      $stmt->bind_param("i", $delete_row_id);
+      $stmt->execute();
+      $result = $stmt->get_result();
+      $deletedTimetable = $result->fetch_assoc();
+      $stmt->close();
 
-        $_SESSION['success_message'] = "Timetable entry deleted successfully!";
-        header('Location: manage_timetable.php');
-        exit;
-    } catch (mysqli_sql_exception $e) {
-        $_SESSION['error_message'] = "Error: " . $e->getMessage();
-        header('Location: manage_timetable.php');
-        exit;
-    }
+      // Delete the timetable entry
+      $stmt = $conn->prepare("DELETE FROM sms3_timetable WHERE id = ?");
+      $stmt->bind_param("i", $delete_row_id);
+      $stmt->execute();
+      $stmt->close();
+
+      // Log the deletion
+      if ($deletedTimetable) {
+          logAudit($conn, $_SESSION['user_id'], 'DELETE', 'sms3_timetable', $deletedTimetable['id'], [
+              'id' => $deletedTimetable['id'], // Ensure ID is included
+              'subject_code' => $deletedTimetable['subject_code'],
+              'section_number' => $deletedTimetable['section_number'],
+              'room_name' => $deletedTimetable['room_name'],
+              'day_of_week' => $deletedTimetable['day_of_week'],
+              'start_time' => $deletedTimetable['start_time'],
+              'end_time' => $deletedTimetable['end_time']
+          ]);
+      }
+
+      $_SESSION['success_message'] = "Timetable entry deleted successfully!";
+      header('Location: manage_timetable.php');
+      exit;
+  } catch (mysqli_sql_exception $e) {
+      $_SESSION['error_message'] = "Error: " . $e->getMessage();
+      header('Location: manage_timetable.php');
+      exit;
+  }
 }
-
-
-// Fetch all timetables (adjust to join all relevant data)
-$timetables = $conn->query("
-    SELECT t.*, s.subject_code, sec.section_number, r.room_name, d.department_code
-    FROM sms3_timetable t 
-    JOIN sms3_subjects s ON t.subject_id = s.id 
-    JOIN sms3_sections sec ON t.section_id = sec.id 
-    JOIN sms3_rooms r ON t.room_id = r.id
-    JOIN sms3_departments d ON sec.department_id = d.id");
 
 ?>
 
@@ -582,45 +642,57 @@ $timetables = $conn->query("
       <div class="card">
         <div class="card-body">
         <h5 class="card-title">List of Timetables</h5>
-        <table class="table table-bordered">
+          <table class="table table-bordered">
             <thead>
-                <tr>
-                    <th>Department</th>
-                    <th>Section</th>
-                    <th>Timetable</th>
-                    <th>Actions</th>
-                </tr>
+              <tr>
+                <th>Department</th>
+                <th>Section</th>
+                <th>Timetable</th>
+                <th>Actions</th>
+              </tr>
             </thead>
             <tbody>
-                <?php
-                // Fetch grouped timetables from the database
-                $sql = "SELECT t.id, d.department_code, sec.section_number,
-                                GROUP_CONCAT(s.subject_code SEPARATOR ', ') as subjects,
-                                GROUP_CONCAT(t.day_of_week SEPARATOR ', ') as days,
-                                GROUP_CONCAT(t.start_time SEPARATOR ', ') as start_times,
-                                GROUP_CONCAT(t.end_time SEPARATOR ', ') as end_times
-                        FROM sms3_timetable t
-                        JOIN sms3_subjects s ON t.subject_id = s.id
-                        JOIN sms3_sections sec ON t.section_id = sec.id
-                        JOIN sms3_rooms r ON t.room_id = r.id
-                        JOIN sms3_departments d ON sec.department_id = d.id
-                        GROUP BY d.department_code, sec.section_number, r.room_name";
-                $timetables = $conn->query($sql);
+              <?php
+              // Fetch grouped timetables from the database
+              $sql = "
+                  SELECT d.department_code, sec.section_number, 
+                      GROUP_CONCAT(DISTINCT s.subject_code SEPARATOR ', ') AS subjects,
+                      GROUP_CONCAT(DISTINCT t.day_of_week SEPARATOR ', ') AS days,
+                      GROUP_CONCAT(DISTINCT TIME_FORMAT(t.start_time, '%H:%i') SEPARATOR ', ') AS start_times,
+                      GROUP_CONCAT(DISTINCT TIME_FORMAT(t.end_time, '%H:%i') SEPARATOR ', ') AS end_times,
+                      GROUP_CONCAT(DISTINCT r.room_name SEPARATOR ', ') AS rooms
+                  FROM sms3_timetable t
+                  JOIN sms3_subjects s ON t.subject_id = s.id
+                  JOIN sms3_sections sec ON t.section_id = sec.id
+                  JOIN sms3_rooms r ON t.room_id = r.id
+                  JOIN sms3_departments d ON sec.department_id = d.id
+                  GROUP BY d.department_code, sec.section_number
+              ";
+              $timetables = $conn->query($sql);
 
-                // Loop through grouped timetables
-                while ($timetable = $timetables->fetch_assoc()):
-                ?>
-                <tr>
-                    <td><?= $timetable['department_code']; ?></td>
-                    <td><?= $timetable['section_number']; ?></td>
-                    <td>
-                      <button class="btn btn-info btn-sm" onclick="viewTimetableDetails('<?= $timetable['section_number']; ?>', '<?= $timetable['department_code']; ?>')">View Timetable</button>
-                    </td>
-                    <td>
-                    <a href="manage_timetable.php?delete_timetable_id=<?= $timetable['id']; ?>" class="btn btn-danger btn-sm delete-link" data-timetable-id="<?= $timetable['section_number']; ?>">Delete</a>
-                    </td>
-                </tr>
-                <?php endwhile; ?>
+              // Loop through grouped timetables
+              while ($timetable = $timetables->fetch_assoc()):
+              ?>
+              <tr>
+                <td><?= htmlspecialchars($timetable['department_code']); ?></td>
+                <td><?= htmlspecialchars($timetable['section_number']); ?></td>
+                <td>
+                  <button 
+                    class="btn btn-info btn-sm" 
+                    onclick="viewTimetableDetails('<?= htmlspecialchars($timetable['section_number']); ?>', '<?= htmlspecialchars($timetable['department_code']); ?>')">
+                    View Timetable
+                  </button>
+                </td>
+                <td>
+                  <a 
+                    href="manage_timetable.php?delete_timetable_id=<?= htmlspecialchars($timetable['section_number']); ?>" 
+                    class="btn btn-danger btn-sm delete-link" 
+                    data-timetable-id="<?= htmlspecialchars($timetable['section_number']); ?>">
+                    Delete
+                  </a>
+                </td>
+              </tr>
+              <?php endwhile; ?>
             </tbody>
           </table>
         </div>

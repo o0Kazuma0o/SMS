@@ -15,6 +15,9 @@ $sql = "
     JOIN sms3_rooms r ON t.room_id = r.id
     JOIN sms3_departments d ON sec.department_id = d.id
     WHERE sec.section_number = ? AND d.department_code = ?
+    ORDER BY 
+        FIELD(t.day_of_week, 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'),
+        t.start_time
 ";
 
 $stmt = $conn->prepare($sql);

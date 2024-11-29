@@ -16,8 +16,8 @@ if (isset($_GET['edit_section_id'])) {
     $stmt->close();
 }
 
-// Add or update section
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST['add_section']) || isset($_POST['update_section']))) {
+// Add section
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_section'])) {
   $section_number = $_POST['section_number'];
   $year_level = $_POST['year_level'];
   $capacity = $_POST['capacity'];
@@ -26,60 +26,114 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST['add_section']) || is
   $department_id = $_POST['department_id'];
 
   try {
-    if (isset($_POST['add_section'])) {
-      $stmt = $conn->prepare("INSERT INTO sms3_sections (section_number, year_level, capacity, semester_id, available, department_id) VALUES (?, ?, ?, ?, ?, ?)");
+      // Check for duplicates
+      $stmt = $conn->prepare("
+          SELECT COUNT(*) 
+          FROM sms3_sections 
+          WHERE section_number = ? AND department_id = ? AND semester_id = ?");
+      $stmt->bind_param("iii", $section_number, $department_id, $semester);
+      $stmt->execute();
+      $stmt->bind_result($duplicate_count);
+      $stmt->fetch();
+      $stmt->close();
+
+      if ($duplicate_count > 0) {
+          throw new Exception("Duplicate section: A section with this number, department, and semester already exists.");
+      }
+
+      // Insert section
+      $stmt = $conn->prepare("
+          INSERT INTO sms3_sections (section_number, year_level, capacity, semester_id, available, department_id) 
+          VALUES (?, ?, ?, ?, ?, ?)");
       $stmt->bind_param("iiiiii", $section_number, $year_level, $capacity, $semester, $available, $department_id);
       $stmt->execute();
       $newSectionId = $stmt->insert_id;
+      $stmt->close();
 
       // Log the addition
       logAudit($conn, $_SESSION['user_id'], 'ADD', 'sms3_sections', $newSectionId, [
-        'section_number' => $section_number,
-        'year_level' => $year_level,
-        'capacity' => $capacity,
-        'semester_id' => $semester,
-        'available' => $available,
-        'department_id' => $department_id
+          'section_number' => $section_number,
+          'year_level' => $year_level,
+          'capacity' => $capacity,
+          'semester_id' => $semester,
+          'available' => $available,
+          'department_id' => $department_id
       ]);
-    } elseif (isset($_POST['update_section'])) {
-      $section_id = $_POST['section_id'];
 
-      // Fetch old section details
+      $_SESSION['success_message'] = "Section added successfully!";
+      header("Location: manage_sections.php");
+      exit;
+  } catch (Exception $e) {
+      $_SESSION['error_message'] = $e->getMessage();
+      header("Location: manage_sections.php");
+      exit;
+  }
+}
+
+// Update section
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_section'])) {
+  $section_id = $_POST['section_id'];
+  $section_number = $_POST['section_number'];
+  $year_level = $_POST['year_level'];
+  $capacity = $_POST['capacity'];
+  $semester = $_POST['semester_id'];
+  $available = $_POST['available'];
+  $department_id = $_POST['department_id'];
+
+  try {
+      // Check for duplicates (excluding current section)
+      $stmt = $conn->prepare("
+          SELECT COUNT(*) 
+          FROM sms3_sections 
+          WHERE section_number = ? AND department_id = ? AND semester_id = ? AND id != ?");
+      $stmt->bind_param("iiii", $section_number, $department_id, $semester, $section_id);
+      $stmt->execute();
+      $stmt->bind_result($duplicate_count);
+      $stmt->fetch();
+      $stmt->close();
+
+      if ($duplicate_count > 0) {
+          throw new Exception("Duplicate section: A section with this number, department, and semester already exists.");
+      }
+
+      // Fetch existing section details for logging
       $stmt = $conn->prepare("SELECT * FROM sms3_sections WHERE id = ?");
       $stmt->bind_param("i", $section_id);
       $stmt->execute();
       $oldSection = $stmt->get_result()->fetch_assoc();
       $stmt->close();
 
-      // Update section
-      $stmt = $conn->prepare("UPDATE sms3_sections SET section_number = ?, year_level = ?, capacity = ?, semester_id = ?, available = ?, department_id = ? WHERE id = ?");
+      // Update the section
+      $stmt = $conn->prepare("
+          UPDATE sms3_sections 
+          SET section_number = ?, year_level = ?, capacity = ?, semester_id = ?, available = ?, department_id = ? 
+          WHERE id = ?");
       $stmt->bind_param("iiiiiii", $section_number, $year_level, $capacity, $semester, $available, $department_id, $section_id);
       $stmt->execute();
+      $stmt->close();
 
       // Log the update
       logAudit($conn, $_SESSION['user_id'], 'EDIT', 'sms3_sections', $section_id, [
-        'id' => $section_id,
-        'old' => $oldSection,
-        'new' => [
-            'section_number' => $section_number,
-            'year_level' => $year_level,
-            'capacity' => $capacity,
-            'semester_id' => $semester,
-            'available' => $available,
-            'department_id' => $department_id
-        ]
+          'id' => $section_id,
+          'old' => $oldSection,
+          'new' => [
+              'section_number' => $section_number,
+              'year_level' => $year_level,
+              'capacity' => $capacity,
+              'semester_id' => $semester,
+              'available' => $available,
+              'department_id' => $department_id
+          ]
       ]);
-    }
 
-    $stmt->close();
-    $_SESSION['success_message'] = isset($_POST['add_section']) ? "Section added successfully!" : "Section updated successfully!";
-    header("Location: manage_sections.php");
-    exit;
-  } catch (mysqli_sql_exception $e) {
-      $_SESSION['error_message'] = $e->getCode() == 1062 ? "Error: Duplicate section number." : "Error: " . $e->getMessage();
+      $_SESSION['success_message'] = "Section updated successfully!";
       header("Location: manage_sections.php");
       exit;
-    }
+  } catch (Exception $e) {
+      $_SESSION['error_message'] = $e->getMessage();
+      header("Location: manage_sections.php");
+      exit;
+  }
 }
 
 // Delete section
