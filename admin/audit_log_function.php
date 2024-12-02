@@ -1,7 +1,8 @@
 <?php
 
 // Log audit entries into the database
-function logAudit($conn, $userId, $action, $targetTable, $targetId = null, $details = null) {
+function logAudit($conn, $userId, $action, $targetTable, $targetId = null, $details = null)
+{
     $shortDetails = $details ? generateShortDetails($action, $targetTable, $details) : null;
 
     $stmt = $conn->prepare("INSERT INTO sms3_audit_log (user_id, action, target_table, target_id, details) VALUES (?, ?, ?, ?, ?)");
@@ -11,7 +12,8 @@ function logAudit($conn, $userId, $action, $targetTable, $targetId = null, $deta
 }
 
 // Generate short details dynamically for any table
-function generateShortDetails($action, $table, $details) {
+function generateShortDetails($action, $table, $details)
+{
     $summary = "";
 
     switch ($action) {
@@ -51,7 +53,8 @@ function generateShortDetails($action, $table, $details) {
 }
 
 // Helper function to format details into a readable string
-function formatDetails($details) {
+function formatDetails($details)
+{
     if (is_array($details)) {
         return implode("; ", array_map(
             fn($key, $value) => ucfirst(str_replace('_', ' ', $key)) . ": '$value'",

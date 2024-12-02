@@ -123,7 +123,7 @@ checkAccess('Admin'); // Ensure only users with the 'admin' role can access this
 
       <div style="display: flex; flex-direction: column; align-items: center; padding: 16px;">
         <div style="display: flex; align-items: center; justify-content: center; width: 96px; height: 96px; border-radius: 50%; background-color: #334155; color: #e2e8f0; font-size: 48px; font-weight: bold; text-transform: uppercase; line-height: 1;">
-            LC
+          LC
         </div>
         <div style="display: flex; flex-direction: column; align-items: center; margin-top: 24px; text-align: center;">
           <div style="font-weight: 500; color: #fff;">
@@ -135,7 +135,7 @@ checkAccess('Admin'); // Ensure only users with the 'admin' role can access this
         </div>
       </div>
 
-    <hr class="sidebar-divider">
+      <hr class="sidebar-divider">
 
       <li class="nav-item">
         <a class="nav-link " href="Dashboard.php">
@@ -152,6 +152,13 @@ checkAccess('Admin'); // Ensure only users with the 'admin' role can access this
         <a class="nav-link " href="admission.php">
           <i class="bi bi-grid"></i>
           <span>Admission</span>
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link " href="enrollment.php">
+          <i class="bi bi-grid"></i>
+          <span>Enrollment</span>
         </a>
       </li>
 
@@ -213,7 +220,7 @@ checkAccess('Admin'); // Ensure only users with the 'admin' role can access this
       <hr class="sidebar-divider">
 
       <li class="nav-heading">MANAGE USER</li>
-      
+
       <li class="nav-item">
         <a class="nav-link " href="audit_logs.php">
           <i class="bi bi-grid"></i>

@@ -157,6 +157,13 @@ $result = $stmt->get_result();
 
       <li class="nav-heading">Enrollment</li><!-- End System Nav -->
 
+            <li class="nav-item">
+        <a class="nav-link " href="enrollment.php">
+          <i class="bi bi-grid"></i>
+          <span>Enrollment</span>
+        </a>
+      </li>
+
       <li class="nav-item">
         <a class="nav-link " href="students.php">
           <i class="bi bi-grid"></i>

@@ -14,7 +14,9 @@ $studentYearLevel = $_SESSION['year_level'];
 $currentSemester = $_SESSION['semester'];
 $departmentCodePrefix = substr($studentYearLevel, 0, 1) . ($currentSemester === '1st Semester' ? '1' : '2');
 
-$query = "SELECT s.id, s.section_number, s.available, tt.id AS timetable_id, tt.day_of_week, tt.start_time, tt.end_time, subj.subject_name
+$query = "SELECT s.id, s.section_number, s.available, 
+                 tt.id AS timetable_id, tt.day_of_week, tt.start_time, tt.end_time, 
+                 subj.subject_name
           FROM sms3_sections s
           JOIN sms3_timetable tt ON s.id = tt.section_id
           JOIN sms3_subjects subj ON tt.subject_id = subj.id
@@ -39,57 +41,53 @@ while ($row = $sectionsResult->fetch_assoc()) {
 }
 $stmt->close();
 
-// Function to handle enrollment as a single record
-function enrollInSections($studentId, $selectedSection, $selectedTimetables) {
-  global $conn;
+// Function to handle enrollment
+function enrollInTimetables($studentId, $selectedTimetables) {
+    global $conn;
 
-  // Prepare an INSERT statement with placeholders for each section and timetable column
-  $sectionPlaceholders = implode(', ', array_map(fn($n) => "section_$n", range(1, count($selectedTimetables))));
-  $timetablePlaceholders = implode(', ', array_map(fn($n) => "timetable_$n", range(1, count($selectedTimetables))));
+    // Prepare the INSERT statement with dynamic columns for timetables
+    $timetablePlaceholders = implode(', ', array_map(fn($n) => "timetable_$n", range(1, count($selectedTimetables))));
 
-  // Dynamic query construction for the values being inserted
-  $query = "
-      INSERT INTO sms3_pending_enrollment (student_id, $sectionPlaceholders, $timetablePlaceholders)
-      VALUES (?, " . str_repeat('?, ', count($selectedTimetables) * 2 - 1) . "?)
-  ";
+    $query = "
+        INSERT INTO sms3_pending_enrollment (student_id, $timetablePlaceholders)
+        VALUES (?, " . str_repeat('?, ', count($selectedTimetables) - 1) . "?)
+    ";
 
-  $stmt = $conn->prepare($query);
+    $stmt = $conn->prepare($query);
 
-  // Merge section and timetable values for binding to placeholders
-  $params = array_merge([$studentId], array_fill(0, count($selectedTimetables), $selectedSection), $selectedTimetables);
+    // Merge the student ID and timetable IDs for parameter binding
+    $params = array_merge([$studentId], $selectedTimetables);
+    $stmt->bind_param(str_repeat('i', count($params)), ...$params);
 
-  $stmt->bind_param(str_repeat('i', count($params)), ...$params);
+    if ($stmt->execute()) {
+        echo json_encode(['status' => 'success', 'message' => 'Enrollment successful!']);
+    } else {
+        echo json_encode(['status' => 'error', 'message' => 'Error: ' . $stmt->error]);
+    }
 
-  if ($stmt->execute()) {
-      echo json_encode(['status' => 'success', 'message' => 'Enrollment successful!']);
-  } else {
-      echo json_encode(['status' => 'error', 'message' => 'Error: ' . $stmt->error]);
-  }
-
-  $stmt->close();
+    $stmt->close();
 }
 
 // Handle AJAX request for enrollment
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-  header('Content-Type: application/json');
+    header('Content-Type: application/json');
 
-  $inputData = json_decode(file_get_contents('php://input'), true);
+    $inputData = json_decode(file_get_contents('php://input'), true);
 
-  if (json_last_error() !== JSON_ERROR_NONE) {
-      echo json_encode(['status' => 'error', 'message' => 'Invalid JSON data received.']);
-      exit;
-  }
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        echo json_encode(['status' => 'error', 'message' => 'Invalid JSON data received.']);
+        exit;
+    }
 
-  if (!isset($inputData['enroll'], $inputData['sections'], $inputData['timetables'])) {
-      echo json_encode(['status' => 'error', 'message' => 'Missing enrollment data.']);
-      exit;
-  }
+    if (!isset($inputData['enroll'], $inputData['timetables'])) {
+        echo json_encode(['status' => 'error', 'message' => 'Missing enrollment data.']);
+        exit;
+    }
 
-  $selectedSection = $inputData['sections'][0];
-  $selectedTimetables = array_slice($inputData['timetables'], 0, 8); // Limit to 8 timetables
+    $selectedTimetables = array_slice($inputData['timetables'], 0, 8); // Limit to 8 timetables
 
-  enrollInSections($studentId, $selectedSection, $selectedTimetables);
-  exit;
+    enrollInTimetables($studentId, $selectedTimetables);
+    exit;
 }
 ?>
 
@@ -252,17 +250,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <li class="nav-heading">Enrollment</li>
 
       <li class="nav-item">
-        <a class="nav-link collapsed" data-bs-target="#system-nav" data-bs-toggle="collapse" href="#">
+        <a class="nav-link " data-bs-target="#system-nav" data-bs-toggle="collapse" href="#">
           <i class="bi bi-layout-text-window-reverse"></i><span>Enrollment</span><i class="bi bi-chevron-down ms-auto"></i>
         </a>
-        <ul id="system-nav" class="nav-content collapse " data-bs-parent="#sidebar-nav">
+        <ul id="system-nav" class="nav-content collapse show" data-bs-parent="#sidebar-nav">
           <li>
             <a href="current_enrollment.php">
               <i class="bi bi-circle"></i><span>Current Enrollemnt</span>
             </a>
           </li>
           <li>
-            <a href="upcoming_enrollment.php">
+            <a href="upcoming_enrollment.php" class="active">
               <i class="bi bi-circle"></i><span>Upcoming Enrollment</span>
             </a>
           </li>

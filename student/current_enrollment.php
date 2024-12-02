@@ -143,12 +143,12 @@
       <li class="nav-heading">Enrollment</li>
 
       <li class="nav-item">
-        <a class="nav-link collapsed" data-bs-target="#system-nav" data-bs-toggle="collapse" href="#">
+        <a class="nav-link " data-bs-target="#system-nav" data-bs-toggle="collapse" href="#">
           <i class="bi bi-layout-text-window-reverse"></i><span>Enrollment</span><i class="bi bi-chevron-down ms-auto"></i>
         </a>
-        <ul id="system-nav" class="nav-content collapse " data-bs-parent="#sidebar-nav">
+        <ul id="system-nav" class="nav-content collapse show" data-bs-parent="#sidebar-nav">
           <li>
-            <a href="current_enrollment.php">
+            <a href="current_enrollment.php" class="active">
               <i class="bi bi-circle"></i><span>Current Enrollemnt</span>
             </a>
           </li>

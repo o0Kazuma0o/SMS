@@ -162,7 +162,14 @@ $result = $stmt->get_result();
           <i class="bi bi-grid"></i>
           <span>Admission</span>
         </a>
-      </li><!-- End System Nav -->
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link " href="enrollment.php">
+          <i class="bi bi-grid"></i>
+          <span>Enrollment</span>
+        </a>
+      </li>
 
       <li class="nav-item">
         <a class="nav-link " href="students.php">

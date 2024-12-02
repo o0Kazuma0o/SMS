@@ -4,30 +4,33 @@ require_once 'session.php';
 checkAccess('Admin'); // Ensure only users with the 'admin' role can access this page
 
 // Function to generate student number
-function generateStudentNumber($conn) {
+function generateStudentNumber($conn)
+{
   $yearPrefix = date('y'); // e.g., '24' for 2024
 
   $result = $conn->query("SELECT student_number FROM sms3_students ORDER BY id DESC LIMIT 1");
   $lastStudentNumber = $result->fetch_assoc();
 
   if ($lastStudentNumber) {
-      $lastNumber = intval(substr($lastStudentNumber['student_number'], 2)); // Extract last 6 digits
-      $newNumber = $lastNumber + 1;
+    $lastNumber = intval(substr($lastStudentNumber['student_number'], 2)); // Extract last 6 digits
+    $newNumber = $lastNumber + 1;
   } else {
-      $newNumber = 100001; // Starting number for first student
+    $newNumber = 100001; // Starting number for first student
   }
 
   return $yearPrefix . str_pad($newNumber, 6, '0', STR_PAD_LEFT); // e.g., "24100001"
 }
 
 // Function to generate and bcrypt hash password
-function generatePassword($lastName) {
+function generatePassword($lastName)
+{
   $passwordPlain = '#' . substr($lastName, 0, 2) . '8080';
   return password_hash($passwordPlain, PASSWORD_BCRYPT);
 }
 
 // Fetch current academic year
-function getCurrentAcademicYear($conn) {
+function getCurrentAcademicYear($conn)
+{
   $result = $conn->query("SELECT academic_year FROM sms3_academic_years WHERE is_current = 1 LIMIT 1");
   return ($result && $result->num_rows > 0) ? $result->fetch_assoc()['academic_year'] : null;
 }
@@ -38,73 +41,96 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_id'], $_POS
   $status = $_POST['status'];
 
   if ($status === 'Rejected') {
-      // Delete admission record on rejection
-      $stmt = $conn->prepare("DELETE FROM sms3_pending_admission WHERE id = ?");
-      $stmt->bind_param("i", $admissionId);
-      echo json_encode($stmt->execute() ? ['success' => true, 'message' => 'Admission record deleted successfully.'] : ['success' => false, 'message' => 'Failed to delete admission record.']);
+    // Delete admission record on rejection
+    $stmt = $conn->prepare("DELETE FROM sms3_pending_admission WHERE id = ?");
+    $stmt->bind_param("i", $admissionId);
+    echo json_encode($stmt->execute() ? ['success' => true, 'message' => 'Admission record deleted successfully.'] : ['success' => false, 'message' => 'Failed to delete admission record.']);
   } elseif ($status === 'Approved') {
-      // Move record to sms3_students on approval
-      $stmt = $conn->prepare("SELECT * FROM sms3_pending_admission WHERE id = ?");
-      $stmt->bind_param('i', $admissionId);
-      $stmt->execute();
-      $result = $stmt->get_result();
-      $admissionData = $result->fetch_assoc();
-      $stmt->close();
+    // Move record to sms3_students on approval
+    $stmt = $conn->prepare("SELECT * FROM sms3_pending_admission WHERE id = ?");
+    $stmt->bind_param('i', $admissionId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $admissionData = $result->fetch_assoc();
+    $stmt->close();
 
-      if ($admissionData) {
-          $academicYear = getCurrentAcademicYear($conn);
-          if (!$academicYear) {
-              echo json_encode(['success' => false, 'message' => 'Error: No current academic year set.']);
-              exit;
-          }
+    if ($admissionData) {
+      $academicYear = getCurrentAcademicYear($conn);
+      if (!$academicYear) {
+        echo json_encode(['success' => false, 'message' => 'Error: No current academic year set.']);
+        exit;
+      }
 
-          // Generate student number and hashed password
-          $studentNumber = generateStudentNumber($conn);
-          $password = generatePassword($admissionData['last_name']);
+      // Generate student number and hashed password
+      $studentNumber = generateStudentNumber($conn);
+      $password = generatePassword($admissionData['last_name']);
 
-          // Insert data into sms3_students
-          $stmt = $conn->prepare("INSERT INTO sms3_students (
+      // Insert data into sms3_students
+      $stmt = $conn->prepare("INSERT INTO sms3_students (
               student_number, first_name, middle_name, last_name, academic_year, username, password, role, department_id, admission_type, 
               year_level, sex, civil_status, religion, birthday, email, contact_number, facebook_name, 
               address, father_name, mother_name, guardian_name, guardian_contact, primary_school, primary_year, 
               secondary_school, secondary_year, last_school, last_school_year, referral_source, working_student, member4ps, status
           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
-          $username = 's' . $studentNumber;
-          $role = 'Student';
-          $status = 'Not Enrolled';
+      $username = 's' . $studentNumber;
+      $role = 'Student';
+      $status = 'Not Enrolled';
 
-          $stmt->bind_param(
-              "sssssssssssssssssssssssssssssssss",
-              $studentNumber, $admissionData['first_name'], $admissionData['middle_name'], $admissionData['last_name'], 
-              $academicYear, $username, $password, $role, 
-              $admissionData['department_id'], $admissionData['admission_type'], $admissionData['year_level'],
-              $admissionData['sex'], $admissionData['civil_status'], $admissionData['religion'], $admissionData['birthday'],
-              $admissionData['email'], $admissionData['contact_number'], $admissionData['facebook_name'], 
-              $admissionData['address'], $admissionData['father_name'], $admissionData['mother_name'], 
-              $admissionData['guardian_name'], $admissionData['guardian_contact'], $admissionData['primary_school'], 
-              $admissionData['primary_year'], $admissionData['secondary_school'], $admissionData['secondary_year'], 
-              $admissionData['last_school'], $admissionData['last_school_year'], $admissionData['referral_source'], 
-              $admissionData['working_student'], $admissionData['member4ps'], $status
-          );
+      $stmt->bind_param(
+        "sssssssssssssssssssssssssssssssss",
+        $studentNumber,
+        $admissionData['first_name'],
+        $admissionData['middle_name'],
+        $admissionData['last_name'],
+        $academicYear,
+        $username,
+        $password,
+        $role,
+        $admissionData['department_id'],
+        $admissionData['admission_type'],
+        $admissionData['year_level'],
+        $admissionData['sex'],
+        $admissionData['civil_status'],
+        $admissionData['religion'],
+        $admissionData['birthday'],
+        $admissionData['email'],
+        $admissionData['contact_number'],
+        $admissionData['facebook_name'],
+        $admissionData['address'],
+        $admissionData['father_name'],
+        $admissionData['mother_name'],
+        $admissionData['guardian_name'],
+        $admissionData['guardian_contact'],
+        $admissionData['primary_school'],
+        $admissionData['primary_year'],
+        $admissionData['secondary_school'],
+        $admissionData['secondary_year'],
+        $admissionData['last_school'],
+        $admissionData['last_school_year'],
+        $admissionData['referral_source'],
+        $admissionData['working_student'],
+        $admissionData['member4ps'],
+        $status
+      );
 
-          if ($stmt->execute()) {
-              $deleteStmt = $conn->prepare("DELETE FROM sms3_pending_admission WHERE id = ?");
-              $deleteStmt->bind_param('i', $admissionId);
-              $deleteStmt->execute();
-              $deleteStmt->close();
-              echo json_encode(['success' => true, 'message' => 'Student approved and moved to students table successfully!']);
-          } else {
-              echo json_encode(['success' => false, 'message' => 'Failed to insert student record.']);
-          }
-          $stmt->close();
+      if ($stmt->execute()) {
+        $deleteStmt = $conn->prepare("DELETE FROM sms3_pending_admission WHERE id = ?");
+        $deleteStmt->bind_param('i', $admissionId);
+        $deleteStmt->execute();
+        $deleteStmt->close();
+        echo json_encode(['success' => true, 'message' => 'Student approved and moved to students table successfully!']);
       } else {
-          echo json_encode(['success' => false, 'message' => 'Admission record not found.']);
+        echo json_encode(['success' => false, 'message' => 'Failed to insert student record.']);
       }
+      $stmt->close();
+    } else {
+      echo json_encode(['success' => false, 'message' => 'Admission record not found.']);
+    }
   } else {
-      $stmt = $conn->prepare("UPDATE sms3_pending_admission SET status = ? WHERE id = ?");
-      $stmt->bind_param("si", $status, $admissionId);
-      echo json_encode($stmt->execute() ? ['success' => true, 'message' => 'Admission status updated successfully.'] : ['success' => false, 'message' => 'Failed to update admission status.']);
+    $stmt = $conn->prepare("UPDATE sms3_pending_admission SET status = ? WHERE id = ?");
+    $stmt->bind_param("si", $status, $admissionId);
+    echo json_encode($stmt->execute() ? ['success' => true, 'message' => 'Admission status updated successfully.'] : ['success' => false, 'message' => 'Failed to update admission status.']);
   }
   exit;
 }
@@ -115,11 +141,11 @@ $query = "SELECT a.*, d.department_code AS department
           LEFT JOIN sms3_departments d ON a.department_id = d.id
           WHERE a.status = 'Pending'
           ORDER BY a.created_at DESC";
-          
+
 $result = $conn->query($query);
 
 if (!$result) {
-    $queryError = "Failed to execute query: " . $conn->error;
+  $queryError = "Failed to execute query: " . $conn->error;
 }
 ?>
 
@@ -236,25 +262,25 @@ if (!$result) {
 
       <div class="flex items-center w-full p-1 pl-6" style="display: flex; align-items: center; padding: 3px; width: 40px; background-color: transparent; height: 4rem;">
         <div class="flex items-center justify-center" style="display: flex; align-items: center; justify-content: center;">
-            <img src="https://elc-public-images.s3.ap-southeast-1.amazonaws.com/bcp-olp-logo-mini2.png" alt="Logo" style="width: 30px; height: auto;">
+          <img src="https://elc-public-images.s3.ap-southeast-1.amazonaws.com/bcp-olp-logo-mini2.png" alt="Logo" style="width: 30px; height: auto;">
         </div>
       </div>
 
       <div style="display: flex; flex-direction: column; align-items: center; padding: 16px;">
         <div style="display: flex; align-items: center; justify-content: center; width: 96px; height: 96px; border-radius: 50%; background-color: #334155; color: #e2e8f0; font-size: 48px; font-weight: bold; text-transform: uppercase; line-height: 1;">
-            LC
+          LC
         </div>
         <div style="display: flex; flex-direction: column; align-items: center; margin-top: 24px; text-align: center;">
-            <div style="font-weight: 500; color: #fff;">
-                Name
-            </div>
-            <div style="margin-top: 4px; font-size: 14px; color: #fff;">
-                ID
-            </div>
+          <div style="font-weight: 500; color: #fff;">
+            Name
+          </div>
+          <div style="margin-top: 4px; font-size: 14px; color: #fff;">
+            ID
+          </div>
         </div>
-    </div>
+      </div>
 
-    <hr class="sidebar-divider">
+      <hr class="sidebar-divider">
 
       <li class="nav-item">
         <a class="nav-link " href="Dashboard.php">
@@ -272,7 +298,14 @@ if (!$result) {
           <i class="bi bi-grid"></i>
           <span>Admission</span>
         </a>
-      </li><!-- End System Nav -->
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link " href="enrollment.php">
+          <i class="bi bi-grid"></i>
+          <span>Enrollment</span>
+        </a>
+      </li>
 
       <li class="nav-item">
         <a class="nav-link " href="students.php">
@@ -284,7 +317,7 @@ if (!$result) {
       <hr class="sidebar-divider">
 
       <li class="nav-heading">TEST REGISTRAR</li>
-      
+
       <li class="nav-item">
         <a class="nav-link " href="manage_academic_year.php">
           <i class="bi bi-grid"></i>
@@ -328,10 +361,24 @@ if (!$result) {
         </a>
       </li>
 
-      <!-- End System Nav -->
-
       <hr class="sidebar-divider">
 
+      <li class="nav-heading">MANAGE USER</li>
+
+      <li class="nav-item">
+        <a class="nav-link " href="audit_logs.php">
+          <i class="bi bi-grid"></i>
+          <span>Audit Logs</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link " href="manage_user.php">
+          <i class="bi bi-grid"></i>
+          <span>Users</span>
+        </a>
+      </li>
+
+      <hr class="sidebar-divider">
     </ul>
 
   </aside><!-- End Sidebar-->
@@ -350,70 +397,68 @@ if (!$result) {
 
     <section class="section">
       <div class="col-lg-12">
-          <div class="card">
-            <div class="card-body">
-              <h5 class="card-title">Basic Information</h5>
-              <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Basic Information</h5>
+            <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
               <!-- Table with stripped rows -->
-                <table style="width: 100%; min-width: 800px;" class="table datatable">
-                  <thead>
-                    <tr>
-                      <th>Name</th>
-                      <th data-type="date" data-format="YYYY/DD/MM">Birthdate</th>
-                      <th>Admission Type</th>
-                      <th>Department</th>
-                      <th>Year Level</th>
-                      <th>Information</th>
-                      <th>Date Submitted</th>
-                      <th>Status</th>
-                      <th>Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <?php if ($result && $result->num_rows > 0): ?>
-                      <?php while ($row = $result->fetch_assoc()): ?>
-                        <tr>
-                          <td>
-                          <?= htmlspecialchars($row['first_name']) . ' ' . 
-                              (!empty($row['middle_name']) ? htmlspecialchars($row['middle_name']) . ' ' : '') . 
-                              htmlspecialchars($row['last_name']); ?>
-                          </td>
-                          <td><?= htmlspecialchars($row['birthday']) ?></td>
-                          <td><?= htmlspecialchars($row['admission_type']) ?></td>
-                          <td><?= htmlspecialchars($row['department']) ?></td>
-                          <td><?= htmlspecialchars($row['year_level']) ?></td>
-                          <td>
-                              <button class="btn btn-info btn-sm" onclick="viewInformation(<?= $row['id'] ?>)">View Information</button>
-                          </td>
-                          <td><?= htmlspecialchars($row['created_at']) ?></td>
-                          <td>
-                              <span class="badge bg-<?= $row['status'] == 'Pending' ? 'warning' : ($row['status'] == 'Approved' ? 'success' : 'danger') ?>">
-                                  <?= htmlspecialchars($row['status']) ?>
-                              </span>
-                          </td>
-                          <td>
-                            <!-- Approve and Reject buttons -->
-                            <?php if ($row['status'] !== 'Approved' && $row['status'] !== 'Rejected'): ?>
-                                <button class="btn btn-success btn-sm" onclick="updateAdmissionStatus(<?= $row['id'] ?>, 'Approved')">Approve</button>
-                                <button class="btn btn-danger btn-sm" onclick="updateAdmissionStatus(<?= $row['id'] ?>, 'Rejected')">Reject</button>
-                            <?php else: ?>
-                                <!-- No action if already approved or rejected -->
-                                <span>No Action Available</span>
-                            <?php endif; ?>
-                          </td>
-                        </tr>
-                      <?php endwhile; ?>
-                    <?php else: ?>
+              <table style="width: 100%; min-width: 800px;" class="table datatable">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Admission Type</th>
+                    <th>Department</th>
+                    <th>Year Level</th>
+                    <th>Information</th>
+                    <th>Date Submitted</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <?php if ($result && $result->num_rows > 0): ?>
+                    <?php while ($row = $result->fetch_assoc()): ?>
                       <tr>
-                          <td colspan="9" class="text-center">No admissions found</td>
+                        <td>
+                          <?= htmlspecialchars($row['first_name']) . ' ' .
+                            (!empty($row['middle_name']) ? htmlspecialchars($row['middle_name']) . ' ' : '') .
+                            htmlspecialchars($row['last_name']); ?>
+                        </td>
+                        <td><?= htmlspecialchars($row['admission_type']) ?></td>
+                        <td><?= htmlspecialchars($row['department']) ?></td>
+                        <td><?= htmlspecialchars($row['year_level']) ?></td>
+                        <td>
+                          <button class="btn btn-info btn-sm" onclick="viewInformation(<?= $row['id'] ?>)">View Information</button>
+                        </td>
+                        <td><?= htmlspecialchars($row['created_at']) ?></td>
+                        <td>
+                          <span class="badge bg-<?= $row['status'] == 'Pending' ? 'warning' : ($row['status'] == 'Approved' ? 'success' : 'danger') ?>">
+                            <?= htmlspecialchars($row['status']) ?>
+                          </span>
+                        </td>
+                        <td>
+                          <!-- Approve and Reject buttons -->
+                          <?php if ($row['status'] !== 'Approved' && $row['status'] !== 'Rejected'): ?>
+                            <button class="btn btn-success btn-sm" onclick="updateAdmissionStatus(<?= $row['id'] ?>, 'Approved')">Approve</button>
+                            <button class="btn btn-danger btn-sm" onclick="updateAdmissionStatus(<?= $row['id'] ?>, 'Rejected')">Reject</button>
+                          <?php else: ?>
+                            <!-- No action if already approved or rejected -->
+                            <span>No Action Available</span>
+                          <?php endif; ?>
+                        </td>
                       </tr>
-                    <?php endif; ?>
-                  </tbody>
-                </table>
-              </div>
-              <!-- End Table with stripped rows -->
+                    <?php endwhile; ?>
+                  <?php else: ?>
+                    <tr>
+                      <td colspan="9" class="text-center">No admissions found</td>
+                    </tr>
+                  <?php endif; ?>
+                </tbody>
+              </table>
             </div>
+            <!-- End Table with stripped rows -->
           </div>
+        </div>
       </div>
     </section>
 
@@ -427,23 +472,23 @@ if (!$result) {
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body" id="informationContent">
-            <!-- Information will be loaded here dynamically -->
+          <!-- Information will be loaded here dynamically -->
         </div>
       </div>
     </div>
   </div>
 
   <script>
-
-  function viewInformation(id) {
-    // Fetch additional information using AJAX
-    fetch('get_admission_info.php?id=' + id)
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        // Populate the modal content
-        const info = data.info;
-        const content = `
+    function viewInformation(id) {
+      // Fetch additional information using AJAX
+      fetch('get_admission_info.php?id=' + id)
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            // Populate the modal content
+            const info = data.info;
+            const content = `
+          <p><strong>Birthdate:</strong> ${info.birthday || 'N/A'}</p>
           <p><strong>Sex:</strong> ${info.sex || 'N/A'}</p>
           <p><strong>Email:</strong> ${info.email || 'N/A'}</p>
           <p><strong>Contact Number:</strong> ${info.contact_number || 'N/A'}</p>
@@ -462,50 +507,50 @@ if (!$result) {
           <p><strong>Last School Attended:</strong> ${info.last_school || 'N/A'} (${info.last_school_year || 'N/A'})</p>
           <p><strong>Referral Source:</strong> ${info.referral_source || 'N/A'}</p>
         `;
-        document.getElementById('informationContent').innerHTML = content;
-        // Show the modal
-        new bootstrap.Modal(document.getElementById('informationModal')).show();
-      } else {
-          alert('Failed to fetch admission information.');
-      }
-    })
-    .catch(error => {
-      console.error('Error:', error);
-      alert('An error occurred while fetching the information.');
-    });
-  }
-
-  // JavaScript function to update admission status
-  function updateAdmissionStatus(admissionId, status) {
-    if (!confirm('Are you sure you want to update the status to ' + status + '?')) {
-        return;
+            document.getElementById('informationContent').innerHTML = content;
+            // Show the modal
+            new bootstrap.Modal(document.getElementById('informationModal')).show();
+          } else {
+            alert('Failed to fetch admission information.');
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('An error occurred while fetching the information.');
+        });
     }
 
-    // Send an AJAX request to update the status
-    fetch('admission.php', {
-        method: 'POST',
-        headers: {
+    // JavaScript function to update admission status
+    function updateAdmissionStatus(admissionId, status) {
+      if (!confirm('Are you sure you want to update the status to ' + status + '?')) {
+        return;
+      }
+
+      // Send an AJAX request to update the status
+      fetch('admission.php', {
+          method: 'POST',
+          headers: {
             'Content-Type': 'application/x-www-form-urlencoded'
-        },
-        body: new URLSearchParams({
+          },
+          body: new URLSearchParams({
             'admission_id': admissionId,
             'status': status
+          })
         })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
             alert('Status updated successfully.');
             location.reload();
-        } else {
+          } else {
             alert('Failed to update status: ' + data.message);
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('An error occurred while updating the status.');
-    });
-  }
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('An error occurred while updating the status.');
+        });
+    }
   </script>
 
   <!-- ======= Footer ======= -->
