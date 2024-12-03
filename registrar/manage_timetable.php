@@ -117,18 +117,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_timetable'])) 
 
 // Update timetable
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_single_timetable'])) {
-  $timetable_id = $_POST['timetable_id'];
-  $section_id = $_POST['section_id'];
-  $subject_code = $_POST['subject'];
-  $room_name = $_POST['room'];
+  $timetable_id = intval($_POST['timetable_id']);
+  $section_id = intval($_POST['section_id']);
+  $subject_id = intval($_POST['subject_id']);
+  $room_id = intval($_POST['room_id']);
   $day_of_week = $_POST['day'];
   $start_time = $_POST['start_time'];
   $end_time = $_POST['end_time'];
 
   try {
-    $subject_id = getSubjectIdByCode($subject_code);
-    $room_id = getRoomIdByName($room_name);
-
     if ($subject_id && $room_id) {
       // Fetch existing data for logging
       $stmt = $conn->prepare("SELECT * FROM sms3_timetable WHERE id = ?");
@@ -912,7 +909,7 @@ if (isset($_GET['delete_row_id'])) {
                 roomDropdown.value = data.room_id; // Pre-select the current room
               })
               .catch(error => console.error('Error fetching rooms:', error));
-              
+
             // Hide the "View Timetable" modal
             var timetableModal = bootstrap.Modal.getInstance(document.getElementById('timetableModal'));
             timetableModal.hide();
