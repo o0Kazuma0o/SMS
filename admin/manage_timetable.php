@@ -774,14 +774,16 @@ if (isset($_GET['delete_row_id'])) {
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
-            <form id="editTimetableForm" action="manage_timetable.php" method="POST" onsubmit="return validateTimetableForm();">
-              <!-- Hidden inputs to pass timetable and section IDs -->
+            <form id="editTimetableForm" action="manage_timetable.php" method="POST">
               <input type="hidden" name="timetable_id" id="editTimetableId">
 
               <!-- Subject -->
               <div class="form-group">
                 <label for="editSubject">Subject:</label>
-                <input type="text" class="form-control" name="subject" id="editSubject" required>
+                <select class="form-control" name="subject_id" id="editSubject" required>
+                  <option value="">Select Subject</option>
+                  <!-- Populated dynamically -->
+                </select>
               </div>
 
               <!-- Day -->
@@ -800,7 +802,10 @@ if (isset($_GET['delete_row_id'])) {
               <!-- Room -->
               <div class="form-group mt-3">
                 <label for="editRoom">Room:</label>
-                <input type="text" class="form-control" name="room" id="editRoom" required>
+                <select class="form-control" name="room_id" id="editRoom" required>
+                  <option value="">Select Room</option>
+                  <!-- Populated dynamically -->
+                </select>
               </div>
 
               <!-- Start Time -->
@@ -897,18 +902,39 @@ if (isset($_GET['delete_row_id'])) {
       }
 
       // Edit timetable details
-      function editTimetable(timetableDetailId) {
-        // Fetch the details of the timetable you want to edit
-        fetch('fetch_single_timetable_detail.php?id=' + timetableDetailId)
+      function editTimetable(timetableId) {
+        fetch(`fetch_single_timetable_detail.php?id=${timetableId}`)
           .then(response => response.json())
           .then(data => {
+            if (!data || !data.department_id) {
+              throw new Error('Invalid timetable data');
+            }
+
             // Populate the form with the existing timetable data
             document.getElementById('editTimetableId').value = data.id;
-            document.getElementById('editSubject').value = data.subject_code;
             document.getElementById('editDay').value = data.day_of_week;
-            document.getElementById('editRoom').value = data.room_name;
             document.getElementById('editStartTime').value = data.start_time;
             document.getElementById('editEndTime').value = data.end_time;
+
+            // Fetch and populate subjects based on the department
+            fetch(`fetch_subjects.php?department_id=${data.department_id}`)
+              .then(response => response.text()) // Expecting HTML as response
+              .then(subjectOptions => {
+                const subjectDropdown = document.getElementById('editSubject');
+                subjectDropdown.innerHTML = subjectOptions; // Replace dropdown content
+                subjectDropdown.value = data.subject_id; // Pre-select the current subject
+              })
+              .catch(error => console.error('Error fetching subjects:', error));
+
+            // Fetch and populate rooms based on the department
+            fetch(`fetch_rooms.php?department_id=${data.department_id}`)
+              .then(response => response.text()) // Expecting HTML as response
+              .then(roomOptions => {
+                const roomDropdown = document.getElementById('editRoom');
+                roomDropdown.innerHTML = roomOptions; // Replace dropdown content
+                roomDropdown.value = data.room_id; // Pre-select the current room
+              })
+              .catch(error => console.error('Error fetching rooms:', error));
 
             // Hide the "View Timetable" modal
             var timetableModal = bootstrap.Modal.getInstance(document.getElementById('timetableModal'));

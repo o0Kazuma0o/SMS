@@ -3,14 +3,225 @@ require('../database.php');
 require_once 'session.php';
 checkAccess('Admin'); // Ensure only users with the 'admin' role can access this page
 
-$query = "SELECT s.*, d.department_code AS department 
+$query = "SELECT s.*, 
+                 s.id AS student_id, 
+                 d.department_code AS department, 
+                 GROUP_CONCAT(t.id) AS timetable_ids 
           FROM sms3_students s
           LEFT JOIN sms3_departments d ON s.department_id = d.id
+          LEFT JOIN sms3_timetable t ON t.id IN (s.timetable_1, s.timetable_2, s.timetable_3, s.timetable_4, s.timetable_5, s.timetable_6, s.timetable_7, s.timetable_8)
+          GROUP BY s.id
           ORDER BY s.created_at DESC";
 
 $stmt = $conn->prepare($query);
 $stmt->execute();
 $result = $stmt->get_result();
+
+$currentSemester = getCurrentActiveSemester($conn);
+
+// Fetch timetable details
+if (isset($_GET['timetable_details'])) {
+  $studentId = intval($_GET['timetable_details']);
+  $query = "
+      SELECT t.id, sec.section_number, sub.subject_code, 
+             CONCAT(t.day_of_week, ' ', TIME_FORMAT(t.start_time, '%H:%i'), '-', TIME_FORMAT(t.end_time, '%H:%i')) AS schedule
+      FROM sms3_students s
+      JOIN sms3_timetable t ON t.id IN (s.timetable_1, s.timetable_2, s.timetable_3, s.timetable_4, s.timetable_5, s.timetable_6, s.timetable_7, s.timetable_8)
+      JOIN sms3_sections sec ON t.section_id = sec.id
+      JOIN sms3_subjects sub ON t.subject_id = sub.id
+      WHERE s.id = ?
+  ";
+  $stmt = $conn->prepare($query);
+  $stmt->bind_param("i", $studentId);
+  $stmt->execute();
+  $result = $stmt->get_result();
+
+  $timetableDetails = [];
+  while ($row = $result->fetch_assoc()) {
+    $timetableDetails[] = $row;
+  }
+  $stmt->close();
+
+  header('Content-Type: application/json');
+  echo json_encode($timetableDetails);
+  exit;
+}
+
+// Fetch sections for current semester
+if (isset($_GET['fetch_sections'])) {
+  $stmt = $conn->prepare("
+      SELECT DISTINCT sec.id, sec.section_number
+      FROM sms3_sections sec
+      JOIN sms3_timetable t ON t.section_id = sec.id
+      WHERE sec.semester_id = (SELECT id FROM sms3_semesters WHERE name = ? AND status = 'Active')
+  ");
+  $stmt->bind_param("s", $currentSemester);
+  $stmt->execute();
+  $result = $stmt->get_result();
+
+  $sections = [];
+  while ($row = $result->fetch_assoc()) {
+    $sections[] = $row;
+  }
+  $stmt->close();
+
+  header('Content-Type: application/json');
+  echo json_encode($sections);
+  exit;
+}
+
+// Fetch subjects based on section
+if (isset($_GET['fetch_subjects'])) {
+  $sectionId = intval($_GET['section_id']);
+  $stmt = $conn->prepare("
+      SELECT t.id AS timetable_id, sub.id AS subject_id, sub.subject_code, t.day_of_week, t.start_time, t.end_time
+      FROM sms3_timetable t
+      JOIN sms3_subjects sub ON t.subject_id = sub.id
+      WHERE t.section_id = ?
+  ");
+  $stmt->bind_param("i", $sectionId);
+  $stmt->execute();
+  $result = $stmt->get_result();
+
+  $subjects = [];
+  while ($row = $result->fetch_assoc()) {
+    $subjects[] = $row;
+  }
+  $stmt->close();
+
+  header('Content-Type: application/json');
+  echo json_encode($subjects);
+  exit;
+}
+
+// Handle fetching a single timetable for editing
+if (isset($_GET['fetch_timetable_id'])) {
+  $timetableId = intval($_GET['fetch_timetable_id']);
+  $query = "
+      SELECT t.id, sec.id AS section_id, sec.section_number, sub.id AS subject_id, sub.subject_code,
+             t.day_of_week, r.room_name, t.start_time, t.end_time, d.id AS department_id
+      FROM sms3_timetable t
+      JOIN sms3_sections sec ON t.section_id = sec.id
+      JOIN sms3_subjects sub ON t.subject_id = sub.id
+      JOIN sms3_rooms r ON t.room_id = r.id
+      JOIN sms3_departments d ON sec.department_id = d.id
+      WHERE t.id = ?
+  ";
+  $stmt = $conn->prepare($query);
+  $stmt->bind_param("i", $timetableId);
+  $stmt->execute();
+  $result = $stmt->get_result();
+  $data = $result->fetch_assoc();
+  $stmt->close();
+
+  header('Content-Type: application/json');
+  echo json_encode($data);
+  exit;
+}
+
+// Update a specific timetable entry in sms3_students
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_timetable'])) {
+  $timetableId = intval($_POST['timetable_id']); // Current timetable ID
+  $newTimetableId = intval($_POST['new_timetable_id']); // New timetable ID to update
+
+  // Identify the column where the current timetable ID exists
+  $stmt = $conn->prepare("
+      SELECT id,
+             IF(timetable_1 = ?, 'timetable_1', 
+                IF(timetable_2 = ?, 'timetable_2', 
+                   IF(timetable_3 = ?, 'timetable_3', 
+                      IF(timetable_4 = ?, 'timetable_4', 
+                         IF(timetable_5 = ?, 'timetable_5', 
+                            IF(timetable_6 = ?, 'timetable_6', 
+                               IF(timetable_7 = ?, 'timetable_7', 
+                                  'timetable_8')))))))
+             AS timetable_column
+      FROM sms3_students
+      WHERE ? IN (timetable_1, timetable_2, timetable_3, timetable_4, timetable_5, timetable_6, timetable_7, timetable_8)
+  ");
+  $stmt->bind_param("iiiiiiii", $timetableId, $timetableId, $timetableId, $timetableId, $timetableId, $timetableId, $timetableId, $timetableId);
+  $stmt->execute();
+  $result = $stmt->get_result();
+  $data = $result->fetch_assoc();
+  $stmt->close();
+
+  if (!$data) {
+    $_SESSION['error_message'] = "Timetable entry not found in student.";
+    header("Location: students.php");
+    exit;
+  }
+
+  $timetableColumn = $data['timetable_column']; // Identified timetable column
+  if (!$timetableColumn) {
+    $_SESSION['error_message'] = "Unable to identify timetable column.";
+    header("Location: students.php");
+    exit;
+  }
+
+  // Update the identified column with the new timetable ID
+  $updateQuery = "UPDATE sms3_students SET $timetableColumn = ? WHERE id = ?";
+  $updateStmt = $conn->prepare($updateQuery);
+  $updateStmt->bind_param("ii", $newTimetableId, $data['id']);
+
+  if ($updateStmt->execute()) {
+    $_SESSION['success_message'] = "Timetable updated successfully.";
+  } else {
+    $_SESSION['error_message'] = "Failed to update timetable.";
+  }
+  $updateStmt->close();
+
+  header("Location: students.php");
+  exit;
+}
+
+// Delete timetable from students
+if (isset($_GET['delete_timetable_from_student'])) {
+  $timetableId = intval($_GET['delete_timetable_from_student']);
+
+  // Identify the column containing the timetable ID
+  $stmt = $conn->prepare("
+      SELECT id,
+             IF(timetable_1 = ?, 'timetable_1', 
+                IF(timetable_2 = ?, 'timetable_2', 
+                   IF(timetable_3 = ?, 'timetable_3', 
+                      IF(timetable_4 = ?, 'timetable_4', 
+                         IF(timetable_5 = ?, 'timetable_5', 
+                            IF(timetable_6 = ?, 'timetable_6', 
+                               IF(timetable_7 = ?, 'timetable_7', 
+                                  'timetable_8'))))))) AS timetable_column
+      FROM sms3_students
+      WHERE ? IN (timetable_1, timetable_2, timetable_3, timetable_4, timetable_5, timetable_6, timetable_7, timetable_8)
+  ");
+  $stmt->bind_param("iiiiiiii", $timetableId, $timetableId, $timetableId, $timetableId, $timetableId, $timetableId, $timetableId, $timetableId);
+  $stmt->execute();
+  $result = $stmt->get_result();
+  $data = $result->fetch_assoc();
+  $stmt->close();
+
+  if (!$data) {
+    echo json_encode(['status' => 'error', 'message' => 'Timetable entry not found in student.']);
+    exit;
+  }
+
+  $timetableColumn = $data['timetable_column']; // Identified timetable column
+  if (!$timetableColumn) {
+    echo json_encode(['status' => 'error', 'message' => 'Unable to identify timetable column.']);
+    exit;
+  }
+
+  // Update the column to NULL
+  $updateQuery = "UPDATE sms3_students SET $timetableColumn = NULL WHERE id = ?";
+  $updateStmt = $conn->prepare($updateQuery);
+  $updateStmt->bind_param("i", $data['id']);
+
+  if ($updateStmt->execute()) {
+    echo json_encode(['status' => 'success', 'message' => 'Timetable entry deleted successfully.']);
+  } else {
+    echo json_encode(['status' => 'error', 'message' => 'Failed to delete timetable entry.']);
+  }
+  $updateStmt->close();
+  exit; // Ensure no further output is sent
+}
 ?>
 
 <!DOCTYPE html>
@@ -44,6 +255,28 @@ $result = $stmt->get_result();
   <!-- Template Main CSS File -->
   <link href="../assets/css/style.css" rel="stylesheet">
 
+  <style>
+    .popup-message {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1000;
+      padding: 15px;
+      border-radius: 5px;
+      font-size: 16px;
+      color: #fff;
+      opacity: 0;
+      transition: opacity 0.5s ease-in-out;
+    }
+
+    .popup-message.success {
+      background-color: green;
+    }
+
+    .popup-message.error {
+      background-color: red;
+    }
+  </style>
 </head>
 
 <body>
@@ -126,25 +359,25 @@ $result = $stmt->get_result();
 
       <div class="flex items-center w-full p-1 pl-6" style="display: flex; align-items: center; padding: 3px; width: 40px; background-color: transparent; height: 4rem;">
         <div class="flex items-center justify-center" style="display: flex; align-items: center; justify-content: center;">
-            <img src="https://elc-public-images.s3.ap-southeast-1.amazonaws.com/bcp-olp-logo-mini2.png" alt="Logo" style="width: 30px; height: auto;">
+          <img src="https://elc-public-images.s3.ap-southeast-1.amazonaws.com/bcp-olp-logo-mini2.png" alt="Logo" style="width: 30px; height: auto;">
         </div>
       </div>
 
       <div style="display: flex; flex-direction: column; align-items: center; padding: 16px;">
         <div style="display: flex; align-items: center; justify-content: center; width: 96px; height: 96px; border-radius: 50%; background-color: #334155; color: #e2e8f0; font-size: 48px; font-weight: bold; text-transform: uppercase; line-height: 1;">
-            LC
+          LC
         </div>
         <div style="display: flex; flex-direction: column; align-items: center; margin-top: 24px; text-align: center;">
-            <div style="font-weight: 500; color: #fff;">
-                Name
-            </div>
-            <div style="margin-top: 4px; font-size: 14px; color: #fff;">
-                ID
-            </div>
+          <div style="font-weight: 500; color: #fff;">
+            Name
+          </div>
+          <div style="margin-top: 4px; font-size: 14px; color: #fff;">
+            ID
+          </div>
         </div>
-    </div>
+      </div>
 
-    <hr class="sidebar-divider">
+      <hr class="sidebar-divider">
 
       <li class="nav-item">
         <a class="nav-link " href="Dashboard.php">
@@ -249,73 +482,147 @@ $result = $stmt->get_result();
   <main id="main" class="main">
 
     <div class="pagetitle">
-      <h1>Admission</h1>
+      <h1>Enrollment</h1>
       <nav>
         <ol class="breadcrumb">
           <li class="breadcrumb-item"><a href="Dashboard.php">Dashboard</a></li>
-          <li class="breadcrumb-item">Enrolled BSIT</li>
-          <li class="breadcrumb-item active">1st Year</li>
+          <li class="breadcrumb-item active">Enrollment</li>
         </ol>
       </nav>
     </div><!-- End Page Title -->
 
     <section class="section">
       <div class="col-lg-12">
-          <div class="card">
-            <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;" class="card-body">
-              <h5 class="card-title">List of Student</h5>
-              <!-- Table with stripped rows -->
-              <table style="width: 100%; min-width: 800px;" class="table datatable">
-                <thead>
-                  <tr>
-                    <th>Student Number</th>
-                    <th>Name</th>
-                    <th>Date Approved</th>
-                    <th>Academic Year</th>
-                    <th>Program</th>
-                    <th>Year Level</th>
-                    <th>Information</th>
-                    <th>Subjects</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <?php if ($result && $result->num_rows > 0): ?>
-                    <?php while ($row = $result->fetch_assoc()): ?>
-                      <tr>
-                        <td><?= htmlspecialchars($row['student_number']); ?></td>
-                        <td>
-                          <?= htmlspecialchars($row['first_name']) . ' ' . 
-                              (!empty($row['middle_name']) ? htmlspecialchars($row['middle_name']) . ' ' : '') . 
-                              htmlspecialchars($row['last_name']); ?>
-                        </td>
-                        <td><?= htmlspecialchars(date('Y/m/d', strtotime($row['created_at']))); ?></td>
-                        <td><?= htmlspecialchars($row['academic_year']); ?></td>
-                        <td><?= htmlspecialchars($row['department']); ?></td>
-                        <td><?= htmlspecialchars($row['year_level']); ?></td>
-                        <td>
-                          <button class="btn btn-info btn-sm" onclick="viewInformation(<?= $row['id'] ?>)">View Information</button>
-                        </td>
-                        <td>
-                          <button class="btn btn-info btn-sm" onclick="viewSubjects(<?= $student['id'] ?>)">View Subjects</button>
-                        </td>
-                        <td>
-                          <span class="badge bg-<?= $row['status'] == 'Not Enrolled' ? 'warning' : ($row['status'] == 'Approved' ? 'success' : 'danger') ?>">
-                              <?= htmlspecialchars($row['status']); ?>
-                          </span>
-                        </td>
-                      </tr>
-                    <?php endwhile; ?>
-                  <?php else: ?>
+        <div class="card">
+          <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;" class="card-body">
+            <h5 class="card-title">List of Student</h5>
+            <!-- Table with stripped rows -->
+            <table style="width: 100%; min-width: 800px;" class="table datatable">
+              <thead>
+                <tr>
+                  <th>Student Number</th>
+                  <th>Name</th>
+                  <th>Date Approved</th>
+                  <th>Academic Year</th>
+                  <th>Program</th>
+                  <th>Year Level</th>
+                  <th>Information</th>
+                  <th>Subjects</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <?php if ($result && $result->num_rows > 0): ?>
+                  <?php while ($row = $result->fetch_assoc()): ?>
                     <tr>
-                        <td colspan="9" class="text-center">No students found</td>
+                      <td><?= htmlspecialchars($row['student_number']); ?></td>
+                      <td>
+                        <?= htmlspecialchars($row['first_name']) . ' ' .
+                          (!empty($row['middle_name']) ? htmlspecialchars($row['middle_name']) . ' ' : '') .
+                          htmlspecialchars($row['last_name']); ?>
+                      </td>
+                      <td><?= htmlspecialchars(date('Y/m/d', strtotime($row['created_at']))); ?></td>
+                      <td><?= htmlspecialchars($row['academic_year']); ?></td>
+                      <td><?= htmlspecialchars($row['department']); ?></td>
+                      <td><?= htmlspecialchars($row['year_level']); ?></td>
+                      <td>
+                        <button class="btn btn-info btn-sm" onclick="viewInformation(<?= $row['id'] ?>)">View Information</button>
+                      </td>
+                      <td>
+                        <button class="btn btn-info btn-sm" onclick="viewTimetableDetails(<?= $row['id']; ?>)">View Timetable</button>
+                      </td>
+                      <td>
+                        <span class="badge bg-<?= $row['status'] == 'Not Enrolled' ? 'warning' : ($row['status'] == 'Approved' ? 'success' : 'danger') ?>">
+                          <?= htmlspecialchars($row['status']); ?>
+                        </span>
+                      </td>
                     </tr>
-                  <?php endif; ?>
-                </tbody>
-              </table>
-              <!-- End Table with stripped rows -->
+                  <?php endwhile; ?>
+                <?php else: ?>
+                  <tr>
+                    <td colspan="9" class="text-center">No students found</td>
+                  </tr>
+                <?php endif; ?>
+              </tbody>
+            </table>
+            <!-- End Table with stripped rows -->
+          </div>
+        </div>
+
+        <!-- Timetable Modal -->
+        <div class="modal fade" id="timetableModal" tabindex="-1" aria-labelledby="timetableModalLabel" aria-hidden="true">
+          <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="timetableModalLabel">Timetable Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <table class="table table-bordered">
+                  <thead>
+                    <tr>
+                      <th>Section</th>
+                      <th>Subject</th>
+                      <th>Schedule</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="timetableDetails">
+                    <!-- Content populated dynamically -->
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
+        </div>
+
+        <div class="modal fade" id="editTimetableModal" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">Edit Timetable</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+              <div class="modal-body">
+                <form method="POST" action="students.php">
+                  <input type="hidden" id="editTimetableId" name="timetable_id">
+
+                  <div class="mb-3">
+                    <label for="editSection" class="form-label">Section</label>
+                    <select id="editSection" class="form-control" required>
+                      <option value="">Select Section</option>
+                    </select>
+                  </div>
+
+                  <div class="mb-3">
+                    <label for="newTimetableId" class="form-label">Timetable</label>
+                    <select id="newTimetableId" name="new_timetable_id" class="form-control" required>
+                      <option value="">Select Timetable</option>
+                    </select>
+                  </div>
+
+                  <div class="mb-3">
+                    <label for="editDay" class="form-label">Day</label>
+                    <input type="text" id="editDay" class="form-control" disabled>
+                  </div>
+
+                  <div class="mb-3">
+                    <label for="editStartTime" class="form-label">Start Time</label>
+                    <input type="time" id="editStartTime" class="form-control" disabled>
+                  </div>
+
+                  <div class="mb-3">
+                    <label for="editEndTime" class="form-label">End Time</label>
+                    <input type="time" id="editEndTime" class="form-control" disabled>
+                  </div>
+
+                  <button type="submit" name="update_timetable" class="btn btn-primary">Save Changes</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </section>
 
@@ -329,7 +636,7 @@ $result = $stmt->get_result();
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body" id="informationContent">
-            <!-- Information will be loaded here dynamically -->
+          <!-- Information will be loaded here dynamically -->
         </div>
       </div>
     </div>
@@ -337,14 +644,14 @@ $result = $stmt->get_result();
 
   <script>
     function viewInformation(id) {
-    // Fetch additional information using AJAX
-    fetch('get_student_info.php?id=' + id)
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        // Populate the modal content
-        const info = data.info;
-        const content = `
+      // Fetch additional information using AJAX
+      fetch('get_student_info.php?id=' + id)
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            // Populate the modal content
+            const info = data.info;
+            const content = `
           <p><strong>Birthdate:</strong> ${info.birthday || 'N/A'}</p>
           <p><strong>Sex:</strong> ${info.sex || 'N/A'}</p>
           <p><strong>Email:</strong> ${info.email || 'N/A'}</p>
@@ -364,18 +671,173 @@ $result = $stmt->get_result();
           <p><strong>Last School Attended:</strong> ${info.last_school || 'N/A'} (${info.last_school_year || 'N/A'})</p>
           <p><strong>Referral Source:</strong> ${info.referral_source || 'N/A'}</p>
         `;
-        document.getElementById('informationContent').innerHTML = content;
-        // Show the modal
-        new bootstrap.Modal(document.getElementById('informationModal')).show();
-      } else {
-          alert('Failed to fetch admission information.');
-      }
-    })
-    .catch(error => {
-      console.error('Error:', error);
-      alert('An error occurred while fetching the information.');
-    });
-  }
+            document.getElementById('informationContent').innerHTML = content;
+            // Show the modal
+            new bootstrap.Modal(document.getElementById('informationModal')).show();
+          } else {
+            alert('Failed to fetch admission information.');
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('An error occurred while fetching the information.');
+        });
+    }
+
+    function viewTimetableDetails(studentId) {
+      fetch(`students.php?timetable_details=${studentId}`)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error("Network response was not ok");
+          }
+          return response.json();
+        })
+        .then(data => {
+          if (!data || data.length === 0) {
+            alert("No timetable details found for this student.");
+            return;
+          }
+
+          const timetableDetails = document.getElementById('timetableDetails');
+          timetableDetails.innerHTML = '';
+          data.forEach(item => {
+            timetableDetails.innerHTML += `
+              <tr>
+                  <td>${item.section_number}</td>
+                  <td>${item.subject_code}</td>
+                  <td>${item.schedule}</td>
+                  <td>
+                    <button class="btn btn-warning btn-sm" onclick="editTimetable(${item.id})">Edit</button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteTimetableFromStudents(${item.id})">Delete</button>
+                  </td>
+              </tr>
+            `;
+          });
+
+          const modal = new bootstrap.Modal(document.getElementById('timetableModal'));
+          modal.show();
+        })
+        .catch(error => console.error("Error fetching timetable details:", error));
+    }
+
+    function editTimetable(timetableId) {
+      fetch(`students.php?fetch_timetable_id=${timetableId}`)
+        .then(response => response.json())
+        .then(data => {
+          // Populate current timetable details
+          document.getElementById('editTimetableId').value = data.id;
+
+          // Populate section dropdown
+          fetch('students.php?fetch_sections')
+            .then(response => response.json())
+            .then(sections => {
+              const sectionDropdown = document.getElementById('editSection');
+              sectionDropdown.innerHTML = `<option value="">Select Section</option>`;
+              sections.forEach(section => {
+                const option = document.createElement('option');
+                option.value = section.id;
+                option.text = section.section_number;
+                sectionDropdown.appendChild(option);
+              });
+              sectionDropdown.value = data.section_id; // Pre-select current section
+            });
+
+          // Update timetable dropdown based on section
+          document.getElementById('editSection').addEventListener('change', function() {
+            const sectionId = this.value;
+            fetch(`students.php?fetch_subjects&section_id=${sectionId}`)
+              .then(response => response.json())
+              .then(timetables => {
+                const timetableDropdown = document.getElementById('newTimetableId');
+                timetableDropdown.innerHTML = `<option value="">Select Timetable</option>`;
+                timetables.forEach(timetable => {
+                  const option = document.createElement('option');
+                  option.value = timetable.timetable_id;
+                  option.text = `${timetable.subject_code} (${timetable.day_of_week} ${timetable.start_time}-${timetable.end_time})`;
+                  option.dataset.day = timetable.day_of_week;
+                  option.dataset.startTime = timetable.start_time;
+                  option.dataset.endTime = timetable.end_time;
+                  timetableDropdown.appendChild(option);
+                });
+
+                // Update day, start time, and end time on timetable selection
+                timetableDropdown.addEventListener('change', function() {
+                  const selectedOption = this.options[this.selectedIndex];
+                  document.getElementById('editDay').value = selectedOption.dataset.day || '';
+                  document.getElementById('editStartTime').value = selectedOption.dataset.startTime || '';
+                  document.getElementById('editEndTime').value = selectedOption.dataset.endTime || '';
+                });
+              });
+          });
+          const modal = new bootstrap.Modal(document.getElementById('editTimetableModal'));
+          modal.show();
+        })
+        .catch(error => console.error("Error fetching timetable details:", error));
+    }
+
+    function deleteTimetableFromStudents(timetableId) {
+      if (!confirm("Are you sure you want to delete this timetable entry?")) return;
+
+      fetch(`students.php?delete_timetable_from_student=${timetableId}`)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          return response.json(); // Parse JSON response
+        })
+        .then(data => {
+          if (data.status === 'success') {
+            showPopupMessage(data.message, 'success');
+            // Refresh the timetable modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('timetableModal'));
+            if (modal) modal.hide();
+            setTimeout(() => location.reload(), 500); // Reload to update changes
+          } else {
+            showPopupMessage(data.message, 'error');
+          }
+        })
+        .catch(error => {
+          console.error("Error deleting timetable entry:", error);
+          showPopupMessage("An unexpected error occurred while deleting the timetable.", 'error');
+        });
+    }
+
+    function showPopupMessage(message, type = 'success') {
+      const popup = document.createElement('div');
+      popup.className = `popup-message ${type}`;
+      popup.innerText = message;
+
+      popup.style.position = 'fixed';
+      popup.style.top = '20px';
+      popup.style.right = '20px';
+      popup.style.padding = '15px';
+      popup.style.zIndex = '1000';
+      popup.style.borderRadius = '5px';
+      popup.style.color = '#fff';
+      popup.style.fontSize = '16px';
+      popup.style.backgroundColor = type === 'success' ? 'green' : 'red';
+      popup.style.opacity = '1';
+      popup.style.transition = 'opacity 0.5s ease';
+
+      document.body.appendChild(popup);
+
+      setTimeout(() => {
+        popup.style.opacity = '0';
+        setTimeout(() => {
+          popup.remove();
+        }, 500);
+      }, 3000);
+    }
+
+    window.onload = function() {
+      <?php if (isset($_SESSION['error_message'])): ?>
+        showPopupMessage('<?= $_SESSION['error_message']; ?>', 'error');
+        <?php unset($_SESSION['error_message']); ?>
+      <?php elseif (isset($_SESSION['success_message'])): ?>
+        showPopupMessage('<?= $_SESSION['success_message']; ?>', 'success');
+        <?php unset($_SESSION['success_message']); ?>
+      <?php endif; ?>
+    };
   </script>
 
   <!-- ======= Footer ======= -->
