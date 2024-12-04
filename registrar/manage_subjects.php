@@ -499,6 +499,7 @@ $subjects = $conn->query("SELECT s.*, d.department_code FROM sms3_subjects s JOI
                 <th>Subject Code</th>
                 <th>Subject Name</th>
                 <th>Department</th>
+                <th>Year Level</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -508,6 +509,7 @@ $subjects = $conn->query("SELECT s.*, d.department_code FROM sms3_subjects s JOI
                   <td><?= $subject['subject_code']; ?></td>
                   <td><?= $subject['subject_name']; ?></td>
                   <td><?= $subject['department_code']; ?></td>
+                  <td><?= htmlspecialchars(($subject['year_level']) . ' Year'); ?></td>
                   <td>
                     <a href="manage_subjects.php?edit_subject_id=<?= $subject['id']; ?>"
                       class="btn btn-info btn-sm">Edit</a>
