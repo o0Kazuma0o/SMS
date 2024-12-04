@@ -46,3 +46,13 @@ function checkAccess($requiredRole) {
         exit;
     }
 }
+
+function getCurrentActiveSemester($conn) {
+    $stmt = $conn->prepare("SELECT name FROM sms3_semesters WHERE status = 'Active' LIMIT 1");
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $semester = $result->fetch_assoc()['name'];
+    $stmt->close();
+
+    return $semester;
+}

@@ -1,4 +1,4 @@
-<?php 
+<?php
 require('../database.php');
 require_once 'session.php';
 require_once 'audit_log_function.php';
@@ -7,27 +7,28 @@ checkAccess('Registrar'); // Ensure only users with the 'admin' role can access 
 // Edit subject
 $edit_subject = null;
 if (isset($_GET['edit_subject_id'])) {
-    $edit_subject_id = $_GET['edit_subject_id'];
+  $edit_subject_id = $_GET['edit_subject_id'];
 
-    // Fetch the subject details to pre-fill the form for editing
-    $stmt = $conn->prepare("SELECT * FROM sms3_subjects WHERE id = ?");
-    $stmt->bind_param("i", $edit_subject_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $edit_subject = $result->fetch_assoc();
-    $stmt->close();
+  // Fetch the subject details to pre-fill the form for editing
+  $stmt = $conn->prepare("SELECT * FROM sms3_subjects WHERE id = ?");
+  $stmt->bind_param("i", $edit_subject_id);
+  $stmt->execute();
+  $result = $stmt->get_result();
+  $edit_subject = $result->fetch_assoc();
+  $stmt->close();
 }
 
 // Add subject
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_subject'])) {
-    $subject_code = $_POST['subject_code'];
-    $subject_name = $_POST['subject_name'];
-    $department_id = $_POST['department_id'];
+  $subject_code = $_POST['subject_code'];
+  $subject_name = $_POST['subject_name'];
+  $department_id = $_POST['department_id'];
+  $year_level = $_POST['year_level'];
 
-  try{
+  try {
     // Insert subject
-    $stmt = $conn->prepare("INSERT INTO sms3_subjects (subject_code, subject_name, department_id) VALUES (?, ?, ?)");
-    $stmt->bind_param("ssi", $subject_code, $subject_name, $department_id);
+    $stmt = $conn->prepare("INSERT INTO sms3_subjects (subject_code, subject_name, department_id, year_level) VALUES (?, ?, ?, ?)");
+    $stmt->bind_param("ssii", $subject_code, $subject_name, $department_id, $year_level);
     $stmt->execute();
     $newSubjectId = $stmt->insert_id; // Get the ID of the new subject
     $stmt->close();
@@ -40,25 +41,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_subject'])) {
     // Redirect to manage_subjects.php
     header('Location: manage_subjects.php');
     exit;
-    } catch (mysqli_sql_exception $e) {
-        if ($e->getCode() == 1062) { // Duplicate entry error code
-            $_SESSION['error_message'] = "Error: Duplicate entry for subject code or name.";
-        } else {
-            $_SESSION['error_message'] = "Error: " . $e->getMessage();
-        }
-        header('Location: manage_subjects.php'); // Redirect to show error
-        exit;
+  } catch (mysqli_sql_exception $e) {
+    if ($e->getCode() == 1062) { // Duplicate entry error code
+      $_SESSION['error_message'] = "Error: Duplicate entry for subject code or name.";
+    } else {
+      $_SESSION['error_message'] = "Error: " . $e->getMessage();
     }
+    header('Location: manage_subjects.php'); // Redirect to show error
+    exit;
+  }
 }
 
 // Update subject
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_subject'])) {
-  $subject_id = $_POST['subject_id'];  // The ID of the subject being updated
+  $subject_id = $_POST['subject_id']; // The ID of the subject being updated
   $subject_code = $_POST['subject_code'];
   $subject_name = $_POST['subject_name'];
   $department_id = $_POST['department_id'];
+  $year_level = $_POST['year_level'];
 
-  try{
+  try {
     // Fetch existing room details for logging
     $stmt = $conn->prepare("SELECT * FROM sms3_subjects WHERE id = ?");
     $stmt->bind_param("i", $subject_id);
@@ -67,16 +69,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_subject'])) {
     $stmt->close();
 
     // Update the subject in the database
-    $stmt = $conn->prepare("UPDATE sms3_subjects SET subject_code = ?, subject_name = ?, department_id = ? WHERE id = ?");
-    $stmt->bind_param("ssii", $subject_code, $subject_name, $department_id, $subject_id);
+    $stmt = $conn->prepare("UPDATE sms3_subjects SET subject_code = ?, subject_name = ?, department_id = ?, year_level = ? WHERE id = ?");
+    $stmt->bind_param("ssiii", $subject_code, $subject_name, $department_id, $year_level, $subject_id);
     $stmt->execute();
     $stmt->close();
 
     // Log the update
-    logAudit($conn, $_SESSION['user_id'], 'EDIT', 'sms3_rooms', $subject_id, [
+    logAudit($conn, $_SESSION['user_id'], 'EDIT', 'sms3_subjects', $subject_id, [
       'id' => $subject_id,
       'old' => $oldSubject,
-      'new' => ['subject_code' => $subject_code, 'subject_name' => $subject_name, 'department_id' => $department_id]
+      'new' => ['subject_code' => $subject_code, 'subject_name' => $subject_name, 'department_id' => $department_id, 'year_level' => $year_level]
     ]);
 
     $_SESSION['success_message'] = "Subject updated successfully!";
@@ -84,21 +86,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_subject'])) {
     // Redirect to manage_subjects.php after updating
     header('Location: manage_subjects.php');
     exit;
-    } catch (mysqli_sql_exception $e) {
-        if ($e->getCode() == 1062) { // Duplicate entry error code
-            $_SESSION['error_message'] = "Error: Duplicate entry for subject code or name.";
-        } else {
-            $_SESSION['error_message'] = "Error: " . $e->getMessage();
-        }
-        header('Location: manage_subjects.php'); // Redirect to show error
-        exit;
+  } catch (mysqli_sql_exception $e) {
+    if ($e->getCode() == 1062) { // Duplicate entry error code
+      $_SESSION['error_message'] = "Error: Duplicate entry for subject code or name.";
+    } else {
+      $_SESSION['error_message'] = "Error: " . $e->getMessage();
     }
+    header('Location: manage_subjects.php'); // Redirect to show error
+    exit;
+  }
 }
 
 // Delete subject
 if (isset($_GET['delete_subject_id'])) {
   $delete_id = $_GET['delete_subject_id'];
-  try{
+  try {
     // Fetch existing room details for logging
     $stmt = $conn->prepare("SELECT * FROM sms3_subjects WHERE id = ?");
     $stmt->bind_param("i", $delete_id);
@@ -119,15 +121,15 @@ if (isset($_GET['delete_subject_id'])) {
     // Redirect to manage_subjects.php
     header('Location: manage_subjects.php');
     exit;
-    } catch (mysqli_sql_exception $e) {
-        if ($e->getCode() == 1451) { // Foreign key constraint error code
-            $_SESSION['error_message'] = "Error: This room is still connected to other data.";
-        } else {
-            $_SESSION['error_message'] = "Error: " . $e->getMessage();
-        }
-        header('Location: manage_subjects.php'); // Redirect to show error
-        exit;
+  } catch (mysqli_sql_exception $e) {
+    if ($e->getCode() == 1451) { // Foreign key constraint error code
+      $_SESSION['error_message'] = "Error: This room is still connected to other data.";
+    } else {
+      $_SESSION['error_message'] = "Error: " . $e->getMessage();
     }
+    header('Location: manage_subjects.php'); // Redirect to show error
+    exit;
+  }
 }
 
 // Fetch all subjects
@@ -168,58 +170,65 @@ $subjects = $conn->query("SELECT s.*, d.department_code FROM sms3_subjects s JOI
 
   <style>
     .modal {
-        display: none; 
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.5);
-        justify-content: center;
-        align-items: center;
-        z-index: 1000;
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
     }
+
     .modal-content {
-        background-color: #fff;
-        padding: 20px;
-        border-radius: 5px;
-        text-align: center;
-        width: 300px;
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 5px;
+      text-align: center;
+      width: 300px;
     }
+
     .modal-buttons {
-        margin-top: 20px;
-        display: flex;
-        justify-content: space-between;
+      margin-top: 20px;
+      display: flex;
+      justify-content: space-between;
     }
+
     .btn-danger {
-        background-color: #dc3545;
-        color: white;
+      background-color: #dc3545;
+      color: white;
     }
+
     .btn-secondary {
-        background-color: #6c757d;
-        color: white;
+      background-color: #6c757d;
+      color: white;
     }
+
     .btn:hover {
-        opacity: 0.8;
+      opacity: 0.8;
     }
 
     .popup-message {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        z-index: 1000;
-        padding: 15px;
-        border-radius: 5px;
-        font-size: 16px;
-        color: #fff;
-        opacity: 0;
-        transition: opacity 0.5s ease-in-out;
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1000;
+      padding: 15px;
+      border-radius: 5px;
+      font-size: 16px;
+      color: #fff;
+      opacity: 0;
+      transition: opacity 0.5s ease-in-out;
     }
+
     .popup-message.success {
-        background-color: green;
+      background-color: green;
     }
+
     .popup-message.error {
-        background-color: red;
+      background-color: red;
     }
   </style>
 
@@ -305,25 +314,25 @@ $subjects = $conn->query("SELECT s.*, d.department_code FROM sms3_subjects s JOI
 
       <div class="flex items-center w-full p-1 pl-6" style="display: flex; align-items: center; padding: 3px; width: 40px; background-color: transparent; height: 4rem;">
         <div class="flex items-center justify-center" style="display: flex; align-items: center; justify-content: center;">
-            <img src="https://elc-public-images.s3.ap-southeast-1.amazonaws.com/bcp-olp-logo-mini2.png" alt="Logo" style="width: 30px; height: auto;">
+          <img src="https://elc-public-images.s3.ap-southeast-1.amazonaws.com/bcp-olp-logo-mini2.png" alt="Logo" style="width: 30px; height: auto;">
         </div>
       </div>
 
       <div style="display: flex; flex-direction: column; align-items: center; padding: 16px;">
         <div style="display: flex; align-items: center; justify-content: center; width: 96px; height: 96px; border-radius: 50%; background-color: #334155; color: #e2e8f0; font-size: 48px; font-weight: bold; text-transform: uppercase; line-height: 1;">
-            LC
+          LC
         </div>
         <div style="display: flex; flex-direction: column; align-items: center; margin-top: 24px; text-align: center;">
-            <div style="font-weight: 500; color: #fff;">
-                Name
-            </div>
-            <div style="margin-top: 4px; font-size: 14px; color: #fff;">
-                ID
-            </div>
+          <div style="font-weight: 500; color: #fff;">
+            Name
+          </div>
+          <div style="margin-top: 4px; font-size: 14px; color: #fff;">
+            ID
+          </div>
         </div>
-    </div>
+      </div>
 
-    <hr class="sidebar-divider">
+      <hr class="sidebar-divider">
 
       <li class="nav-item">
         <a class="nav-link " href="Dashboard.php">
@@ -336,7 +345,7 @@ $subjects = $conn->query("SELECT s.*, d.department_code FROM sms3_subjects s JOI
 
       <li class="nav-heading">Enrollment</li>
 
-            <li class="nav-item">
+      <li class="nav-item">
         <a class="nav-link " href="enrollment.php">
           <i class="bi bi-grid"></i>
           <span>Enrollment</span>
@@ -417,36 +426,36 @@ $subjects = $conn->query("SELECT s.*, d.department_code FROM sms3_subjects s JOI
 
     <div id="confirmationModal" class="modal">
       <div class="modal-content">
-          <p id="confirmationMessage">Are you sure you want to delete this department?</p>
-          <div class="modal-buttons">
-              <button id="confirmDelete" class="btn btn-danger">Delete</button>
-              <button id="cancelDelete" class="btn btn-secondary">Cancel</button>
-          </div>
+        <p id="confirmationMessage">Are you sure you want to delete this department?</p>
+        <div class="modal-buttons">
+          <button id="confirmDelete" class="btn btn-danger">Delete</button>
+          <button id="cancelDelete" class="btn btn-secondary">Cancel</button>
+        </div>
       </div>
     </div>
 
     <section class="section dashboard">
-    
-    <div class="card">
-      <div class="card-body">
-        <h5 class="card-title">
-        <?php if (isset($_GET['edit_subject_id'])): ?>
-          Edit Subject
-        <?php else: ?>
-          Add Subject
-        <?php endif; ?></h5>
+
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title">
+            <?php if (isset($_GET['edit_subject_id'])): ?>
+              Edit Subject
+            <?php else: ?>
+              Add Subject
+            <?php endif; ?></h5>
 
           <!-- Add Subject Form -->
           <form action="manage_subjects.php" method="POST" class="mb-4">
             <div class="form-group">
               <label for="subject_code">Subject Code:</label>
               <input type="text" class="form-control" name="subject_code" id="subject_code" required
-              value="<?= isset($edit_subject) ? $edit_subject['subject_code'] : ''; ?>">
+                value="<?= isset($edit_subject) ? $edit_subject['subject_code'] : ''; ?>">
             </div>
             <div class="form-group mt-2">
               <label for="subject_name">Subject Name:</label>
               <input type="text" class="form-control" name="subject_name" id="subject_name" required
-              value="<?= isset($edit_subject) ? $edit_subject['subject_name'] : ''; ?>">
+                value="<?= isset($edit_subject) ? $edit_subject['subject_name'] : ''; ?>">
             </div>
             <div class="form-group mt-2">
               <label for="department_id">Assign to Department:</label>
@@ -455,55 +464,64 @@ $subjects = $conn->query("SELECT s.*, d.department_code FROM sms3_subjects s JOI
                 <?php
                 $departments = $conn->query("SELECT * FROM sms3_departments");
                 while ($department = $departments->fetch_assoc()): ?>
-                    <option value="<?= $department['id']; ?>" <?= isset($edit_subject) && $edit_subject['department_id'] == $department['id'] ? 'selected' : ''; ?>>
-                      <?= $department['department_code']; ?>
-                    </option>
+                  <option value="<?= $department['id']; ?>" <?= isset($edit_subject) && $edit_subject['department_id'] == $department['id'] ? 'selected' : ''; ?>>
+                    <?= $department['department_code']; ?>
+                  </option>
                 <?php endwhile; ?>
+              </select>
+            </div>
+            <div class="form-group mt-2">
+              <label for="year_level">Year Level:</label>
+              <select class="form-control" name="year_level" id="year_level" required>
+                <option value="1" <?= isset($edit_subject) && $edit_subject['year_level'] == 1 ? 'selected' : ''; ?>>1st Year</option>
+                <option value="2" <?= isset($edit_subject) && $edit_subject['year_level'] == 2 ? 'selected' : ''; ?>>2nd Year</option>
+                <option value="3" <?= isset($edit_subject) && $edit_subject['year_level'] == 3 ? 'selected' : ''; ?>>3rd Year</option>
+                <option value="4" <?= isset($edit_subject) && $edit_subject['year_level'] == 4 ? 'selected' : ''; ?>>4th Year</option>
               </select>
             </div>
             <?php if (isset($edit_subject)): ?>
               <input type="hidden" name="subject_id" value="<?= $edit_subject['id']; ?>">
               <button type="submit" name="update_subject" class="btn btn-warning mt-3">Update Subject</button>
-              <?php else: ?>
+            <?php else: ?>
               <button type="submit" name="add_subject" class="btn btn-primary mt-3">Add Subject</button>
-              <?php endif; ?>
-        </form>
+            <?php endif; ?>
+          </form>
+        </div>
       </div>
-    </div>
 
-    <div class="card">
-      <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;" class="card-body">
-      <h5 class="card-title">List of Subject</h5>
+      <div class="card">
+        <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;" class="card-body">
+          <h5 class="card-title">List of Subject</h5>
           <!-- List of Subjects -->
           <table style="width: 100%; min-width: 800px;" class="table table-bordered">
             <thead>
               <tr>
-                  <th>Subject Code</th>
-                  <th>Subject Name</th>
-                  <th>Department</th>
-                  <th>Actions</th>
+                <th>Subject Code</th>
+                <th>Subject Name</th>
+                <th>Department</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               <?php while ($subject = $subjects->fetch_assoc()): ?>
-              <tr>
-                <td><?= $subject['subject_code']; ?></td>
-                <td><?= $subject['subject_name']; ?></td>
-                <td><?= $subject['department_code']; ?></td>
-                <td>
-                <a href="manage_subjects.php?edit_subject_id=<?= $subject['id']; ?>" 
-                    class="btn btn-info btn-sm">Edit</a>
-                <a href="manage_subjects.php?delete_subject_id=<?= $subject['id']; ?>" 
-                    class="btn btn-danger btn-sm delete-link"
-                    data-subject-code="<?= $subject['subject_code']; ?>">Delete</a>
-                </td>
-              </tr>
+                <tr>
+                  <td><?= $subject['subject_code']; ?></td>
+                  <td><?= $subject['subject_name']; ?></td>
+                  <td><?= $subject['department_code']; ?></td>
+                  <td>
+                    <a href="manage_subjects.php?edit_subject_id=<?= $subject['id']; ?>"
+                      class="btn btn-info btn-sm">Edit</a>
+                    <a href="manage_subjects.php?delete_subject_id=<?= $subject['id']; ?>"
+                      class="btn btn-danger btn-sm delete-link"
+                      data-subject-code="<?= $subject['subject_code']; ?>">Delete</a>
+                  </td>
+                </tr>
               <?php endwhile; ?>
             </tbody>
           </table>
 
+        </div>
       </div>
-    </div>
 
     </section>
 
@@ -520,26 +538,26 @@ $subjects = $conn->query("SELECT s.*, d.department_code FROM sms3_subjects s JOI
       modal.style.display = 'flex';
 
       confirmDeleteBtn.onclick = () => {
-          onConfirm();
-          closeModal();
+        onConfirm();
+        closeModal();
       };
 
       cancelDeleteBtn.onclick = closeModal;
 
       function closeModal() {
-          modal.style.display = 'none';
+        modal.style.display = 'none';
       }
     }
 
     document.querySelectorAll('.delete-link').forEach(button => {
       button.addEventListener('click', function(event) {
-          event.preventDefault();
-          const deleteUrl = this.href;
-          const subjectCode = this.getAttribute('data-subject-code');
+        event.preventDefault();
+        const deleteUrl = this.href;
+        const subjectCode = this.getAttribute('data-subject-code');
 
-          showConfirmationModal(`Are you sure you want to delete the Room: ${subjectCode}?`, () => {
-              window.location.href = deleteUrl;
-          });
+        showConfirmationModal(`Are you sure you want to delete the Room: ${subjectCode}?`, () => {
+          window.location.href = deleteUrl;
+        });
       });
     });
 
@@ -563,25 +581,25 @@ $subjects = $conn->query("SELECT s.*, d.department_code FROM sms3_subjects s JOI
       document.body.appendChild(popup);
 
       setTimeout(() => {
-          popup.style.opacity = '0';
-          setTimeout(() => {
-              popup.remove();
-          }, 500);
+        popup.style.opacity = '0';
+        setTimeout(() => {
+          popup.remove();
+        }, 500);
       }, 3000);
     }
 
     window.onload = function() {
       <?php if (isset($_SESSION['error_message'])): ?>
-          showPopupMessage('<?= $_SESSION['error_message']; ?>', 'error');
-          <?php unset($_SESSION['error_message']); ?>
+        showPopupMessage('<?= $_SESSION['error_message']; ?>', 'error');
+        <?php unset($_SESSION['error_message']); ?>
       <?php elseif (isset($_SESSION['success_message'])): ?>
-          showPopupMessage('<?= $_SESSION['success_message']; ?>', 'success');
-          <?php unset($_SESSION['success_message']); ?>
+        showPopupMessage('<?= $_SESSION['success_message']; ?>', 'success');
+        <?php unset($_SESSION['success_message']); ?>
       <?php endif; ?>
     };
   </script>
 
- 
+
 
   <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
 

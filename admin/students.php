@@ -3,15 +3,29 @@ require('../database.php');
 require_once 'session.php';
 checkAccess('Admin'); // Ensure only users with the 'admin' role can access this page
 
-$query = "SELECT s.*, 
-                 s.id AS student_id, 
-                 d.department_code AS department, 
-                 GROUP_CONCAT(t.id) AS timetable_ids 
-          FROM sms3_students s
-          LEFT JOIN sms3_departments d ON s.department_id = d.id
-          LEFT JOIN sms3_timetable t ON t.id IN (s.timetable_1, s.timetable_2, s.timetable_3, s.timetable_4, s.timetable_5, s.timetable_6, s.timetable_7, s.timetable_8)
-          GROUP BY s.id
-          ORDER BY s.created_at DESC";
+$query = "
+    SELECT 
+        s.*, 
+        s.id AS student_id, 
+        d.department_code AS department, 
+        ay.academic_year AS academic_year_label, 
+        GROUP_CONCAT(t.id) AS timetable_ids 
+    FROM sms3_students s
+    LEFT JOIN sms3_departments d ON s.department_id = d.id
+    LEFT JOIN sms3_academic_years ay ON s.academic_year = ay.id
+    LEFT JOIN sms3_timetable t ON t.id IN (
+        s.timetable_1, 
+        s.timetable_2, 
+        s.timetable_3, 
+        s.timetable_4, 
+        s.timetable_5, 
+        s.timetable_6, 
+        s.timetable_7, 
+        s.timetable_8
+    )
+    GROUP BY s.id
+    ORDER BY s.created_at DESC
+";
 
 $stmt = $conn->prepare($query);
 $stmt->execute();
@@ -522,7 +536,7 @@ if (isset($_GET['delete_timetable_from_student'])) {
                           htmlspecialchars($row['last_name']); ?>
                       </td>
                       <td><?= htmlspecialchars(date('Y/m/d', strtotime($row['created_at']))); ?></td>
-                      <td><?= htmlspecialchars($row['academic_year']); ?></td>
+                      <td><?= htmlspecialchars($row['academic_year_label']); ?></td>
                       <td><?= htmlspecialchars($row['department']); ?></td>
                       <td><?= htmlspecialchars($row['year_level']); ?></td>
                       <td>
@@ -841,7 +855,7 @@ if (isset($_GET['delete_timetable_from_student'])) {
     };
   </script>
 
- 
+
 
   <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
 
