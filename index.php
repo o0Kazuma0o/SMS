@@ -26,7 +26,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 
     // Function to check login in a specified table
-    function checkLogin($conn, $table, $username, $password) {
+    function checkLogin($conn, $table, $username, $password)
+    {
         $sql = "SELECT * FROM $table WHERE username = ?";
         $stmt = $conn->prepare($sql);
         if (!$stmt) {
@@ -74,6 +75,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $_SESSION['email'] = $user['email'];
         $_SESSION['phone'] = $user['phone'];
 
+        // Add student_number to session for students
+        if ($user['role'] === 'Student') {
+            $_SESSION['student_number'] = $user['student_number']; // Ensure this field exists in the table
+        }
+
         // Redirect based on role
         switch ($user['role']) {
             case 'Admin':
@@ -103,134 +109,147 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="utf-8">
-  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
 
-  <link href="https://elc-public-images.s3.ap-southeast-1.amazonaws.com/bcp-olp-logo-mini2.png" rel="icon">
+    <link href="https://elc-public-images.s3.ap-southeast-1.amazonaws.com/bcp-olp-logo-mini2.png" rel="icon">
 
-  <title>Login</title>
-  <meta content="" name="description">
-  <meta content="" name="keywords">
+    <title>Login</title>
+    <meta content="" name="description">
+    <meta content="" name="keywords">
 </head>
 <style>
     body {
-    background-color: #f4f4f4;
-    /*background-image: url('assets/img/bcp\ bg.jpg');*/
-    font-family: Arial, sans-serif;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100vh;
-    margin: 0;
-}
+        background-color: #f4f4f4;
+        /*background-image: url('assets/img/bcp\ bg.jpg');*/
+        font-family: Arial, sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        margin: 0;
+    }
 
-.logo {
-    text-align: center;
-    margin-bottom: 5px;
-}
+    .logo {
+        text-align: center;
+        margin-bottom: 5px;
+    }
 
-.logo img {
-    max-width: 30%;
-    height: auto;
-}
+    .logo img {
+        max-width: 30%;
+        height: auto;
+    }
 
-.logo p {
-    margin-top: 10px;
-    font-size: 1.2em;
-    color: #333; 
-}
+    .logo p {
+        margin-top: 10px;
+        font-size: 1.2em;
+        color: #333;
+    }
 
-.login-container {  
-    background-color: white;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    width: 300px;
-    text-align: center;
-    border: 1px solid #999797;
-    margin: 0 auto;
-}
+    .login-container {
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        width: 300px;
+        text-align: center;
+        border: 1px solid #999797;
+        margin: 0 auto;
+    }
 
-h2 {
-    color: #333;
-    margin-bottom: 20px;
-}
+    h2 {
+        color: #333;
+        margin-bottom: 20px;
+    }
 
-label {
-    display: block;
-    text-align: left;
-    color: #333;
-    margin: 10px 0 5px;
-}
+    label {
+        display: block;
+        text-align: left;
+        color: #333;
+        margin: 10px 0 5px;
+    }
 
-#username, #password {
-    border-radius: 10px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    border: 1px solid black;
-}
+    #username,
+    #password {
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        border: 1px solid black;
+    }
 
-input[type="text"],
-input[type="password"] {
-    width: 100%;
-    padding: 10px;
-    margin-bottom: 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    box-sizing: border-box;
-}
+    input[type="text"],
+    input[type="password"] {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        box-sizing: border-box;
+    }
 
-.forgot-password {
-    text-align: right;
-    margin-bottom: 20px;
-}
+    .forgot-password {
+        text-align: right;
+        margin-bottom: 20px;
+    }
 
-.forgot-password a {
-    color: #007BFF;
-    text-decoration: none;
-    font-size: 12px;
-}
+    .forgot-password a {
+        color: #007BFF;
+        text-decoration: none;
+        font-size: 12px;
+    }
 
-.forgot-password a:hover {
-    text-decoration: underline;
-}
+    .forgot-password a:hover {
+        text-decoration: underline;
+    }
 
-button {
-    background-color: #333;
-    color: white;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 5px;
-    width: 100%;
-    cursor: pointer;
-    font-size: 16px;
-    margin-top: 10px;
-}
+    button {
+        background-color: #333;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        width: 100%;
+        cursor: pointer;
+        font-size: 16px;
+        margin-top: 10px;
+    }
 
-button:hover {
-    background-color: #555;
-}
+    button:hover {
+        background-color: #555;
+    }
 
-.admission-button {
-    display: block; /* Make it block level */
-    background-color: #007BFF; /* Blue color for admission button */
-    color: white;
-    padding: 10px 0px; /* Match padding */
-    border: none; /* No border */
-    border-radius: 5px; /* Rounded corners */
-    text-decoration: none; /* Remove underline */
-    font-size: 16px; /* Match font size */
-    width: 100%; /* Full width */
-    cursor: pointer; /* Pointer cursor */
-    margin-top: 10px; /* Space from the login button */
-}
+    .admission-button {
+        display: block;
+        /* Make it block level */
+        background-color: #007BFF;
+        /* Blue color for admission button */
+        color: white;
+        padding: 10px 0px;
+        /* Match padding */
+        border: none;
+        /* No border */
+        border-radius: 5px;
+        /* Rounded corners */
+        text-decoration: none;
+        /* Remove underline */
+        font-size: 16px;
+        /* Match font size */
+        width: 100%;
+        /* Full width */
+        cursor: pointer;
+        /* Pointer cursor */
+        margin-top: 10px;
+        /* Space from the login button */
+    }
 
-.admission-button:hover {
-    background-color: #0056b3; /* Darker blue on hover */
-}
+    .admission-button:hover {
+        background-color: #0056b3;
+        /* Darker blue on hover */
+    }
 
-.popup-message {
+    .popup-message {
         position: fixed;
         top: 20px;
         right: 20px;
@@ -242,24 +261,27 @@ button:hover {
         opacity: 0;
         transition: opacity 0.5s ease-in-out;
     }
+
     .popup-message.success {
         background-color: green;
     }
+
     .popup-message.error {
         background-color: red;
     }
 </style>
+
 <body>
     <div class="logo">
         <img src="assets/img/bcp.png" alt="Logo">
-        <p>Bestink College of the Philippines</p> 
+        <p>Bestink College of the Philippines</p>
     </div>
-    
+
     <div class="login-container">
-    <h2>Log Into Your Account</h2>
+        <h2>Log Into Your Account</h2>
         <form id="loginForm" action="index.php" method="post">
             <label for="username" class="form-label">Username</label>
-            <input type="text" class="form-control" id="username" name="username" required oninput="validateUsername(this)" pattern="[a-zA-Z0-9._]+" >
+            <input type="text" class="form-control" id="username" name="username" required oninput="validateUsername(this)" pattern="[a-zA-Z0-9._]+">
 
             <label for="password">Password</label>
             <input type="password" id="password" name="password" required>
@@ -271,53 +293,54 @@ button:hover {
 
     <script>
         function validateUsername(input) {
-        // Allow only letters, numbers, dots, and underscores
-        input.value = input.value.replace(/[^a-zA-Z0-9._]/g, '');
+            // Allow only letters, numbers, dots, and underscores
+            input.value = input.value.replace(/[^a-zA-Z0-9._]/g, '');
         }
 
         function showPopupMessage(message, type = 'success') {
-      // Create the popup element
-      const popup = document.createElement('div');
-      popup.className = `popup-message ${type}`;
-      popup.innerText = message;
+            // Create the popup element
+            const popup = document.createElement('div');
+            popup.className = `popup-message ${type}`;
+            popup.innerText = message;
 
-      // Style the popup element
-      popup.style.position = 'fixed';
-      popup.style.top = '20px';
-      popup.style.right = '20px';
-      popup.style.padding = '15px';
-      popup.style.zIndex = '1000';
-      popup.style.borderRadius = '5px';
-      popup.style.color = '#fff';
-      popup.style.fontSize = '16px';
-      popup.style.backgroundColor = type === 'success' ? 'green' : 'red';
-      popup.style.opacity = '1';
-      popup.style.transition = 'opacity 0.5s ease';
+            // Style the popup element
+            popup.style.position = 'fixed';
+            popup.style.top = '20px';
+            popup.style.right = '20px';
+            popup.style.padding = '15px';
+            popup.style.zIndex = '1000';
+            popup.style.borderRadius = '5px';
+            popup.style.color = '#fff';
+            popup.style.fontSize = '16px';
+            popup.style.backgroundColor = type === 'success' ? 'green' : 'red';
+            popup.style.opacity = '1';
+            popup.style.transition = 'opacity 0.5s ease';
 
-      // Add the popup to the document
-      document.body.appendChild(popup);
+            // Add the popup to the document
+            document.body.appendChild(popup);
 
-      // Fade out after 3 seconds
-      setTimeout(() => {
-          popup.style.opacity = '0';
-          // Remove the element after the transition ends
-          setTimeout(() => {
-              popup.remove();
-          }, 500);
-      }, 3000);
-    }
+            // Fade out after 3 seconds
+            setTimeout(() => {
+                popup.style.opacity = '0';
+                // Remove the element after the transition ends
+                setTimeout(() => {
+                    popup.remove();
+                }, 500);
+            }, 3000);
+        }
 
-    // Trigger the popup based on the session message
-    window.onload = function() {
-      <?php if (isset($_SESSION['error_message'])): ?>
-          showPopupMessage('<?= $_SESSION['error_message']; ?>', 'error');
-          <?php unset($_SESSION['error_message']); ?>
-      <?php elseif (isset($_SESSION['success_message'])): ?>
-          showPopupMessage('<?= $_SESSION['success_message']; ?>', 'success');
-          <?php unset($_SESSION['success_message']); ?>
-      <?php endif; ?>
-    };
+        // Trigger the popup based on the session message
+        window.onload = function() {
+            <?php if (isset($_SESSION['error_message'])): ?>
+                showPopupMessage('<?= $_SESSION['error_message']; ?>', 'error');
+                <?php unset($_SESSION['error_message']); ?>
+            <?php elseif (isset($_SESSION['success_message'])): ?>
+                showPopupMessage('<?= $_SESSION['success_message']; ?>', 'success');
+                <?php unset($_SESSION['success_message']); ?>
+            <?php endif; ?>
+        };
     </script>
 
 </body>
+
 </html>

@@ -652,6 +652,7 @@ if (isset($_GET['delete_timetable_from_student'])) {
             // Populate the modal content
             const info = data.info;
             const content = `
+          <p><strong>Admission Type:</strong> ${info.admission_type || 'N/A'}</p>
           <p><strong>Birthdate:</strong> ${info.birthday || 'N/A'}</p>
           <p><strong>Sex:</strong> ${info.sex || 'N/A'}</p>
           <p><strong>Email:</strong> ${info.email || 'N/A'}</p>
@@ -840,15 +841,7 @@ if (isset($_GET['delete_timetable_from_student'])) {
     };
   </script>
 
-  <!-- ======= Footer ======= -->
-  <footer id="footer" class="footer">
-    <div class="copyright">
-      &copy; Copyright <strong><span>XXXXXX</span></strong>. All Rights Reserved
-    </div>
-    <div class="credits">
-      BCP
-    </div>
-  </footer><!-- End Footer -->
+ 
 
   <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
 
