@@ -2,7 +2,7 @@
 require('../database.php');
 require_once 'session.php';
 require_once 'audit_log_function.php';
-checkAccess('Registrar'); // Ensure only users with the 'admin' role can access this page
+checkAccess('Admin'); // Ensure only users with the 'admin' role can access this page
 
 // Edit timetable
 $edit_timetable = null;
@@ -510,7 +510,14 @@ if (isset($_GET['delete_row_id'])) {
 
       <hr class="sidebar-divider">
 
-      <li class="nav-heading">Enrollment</li>
+      <li class="nav-heading">Admission & Enrollment</li>
+
+      <li class="nav-item">
+        <a class="nav-link " href="admission.php">
+          <i class="bi bi-grid"></i>
+          <span>Admission</span>
+        </a>
+      </li>
 
       <li class="nav-item">
         <a class="nav-link " href="enrollment.php">
@@ -570,6 +577,22 @@ if (isset($_GET['delete_row_id'])) {
         <a class="nav-link " href="manage_timetable.php">
           <i class="bi bi-grid"></i>
           <span>Timetable</span>
+        </a>
+      </li>
+
+      <hr class="sidebar-divider">
+
+      <li class="nav-heading">MANAGE USER</li>
+      <li class="nav-item">
+        <a class="nav-link " href="audit_logs.php">
+          <i class="bi bi-grid"></i>
+          <span>Audit Logs</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link " href="manage_user.php">
+          <i class="bi bi-grid"></i>
+          <span>Users</span>
         </a>
       </li>
 
@@ -1118,6 +1141,8 @@ if (isset($_GET['delete_row_id'])) {
     </script>
 
   </main><!-- End #main -->
+
+ 
 
   <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
 

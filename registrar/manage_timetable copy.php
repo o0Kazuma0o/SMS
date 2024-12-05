@@ -22,8 +22,44 @@ if (isset($_GET['edit_timetable_id'])) {
   $stmt->close();
 }
 
-// Add timetable
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_timetable'])) {
+// Insert new section entry
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_section_entry'])) {
+  $section_id = $_POST['section_id'];
+
+  try {
+    $conn->begin_transaction();
+
+    // Insert a new timetable entry with null values for additional fields
+    $stmt = $conn->prepare("INSERT INTO sms3_timetable (section_id, subject_id, room_id, day_of_week, start_time, end_time)
+                              VALUES (?, NULL, NULL, NULL, NULL, NULL)");
+    $stmt->bind_param("i", $section_id);
+    $stmt->execute();
+
+    $timetableId = $stmt->insert_id;
+
+    // Log the action
+    logAudit($conn, $_SESSION['user_id'], 'ADD', 'sms3_timetable', $timetableId, [
+      'section_id' => $section_id,
+      'subject_id' => null,
+      'room_id' => null,
+      'day_of_week' => null,
+      'start_time' => null,
+      'end_time' => null,
+    ]);
+
+    $conn->commit();
+    $_SESSION['success_message'] = "Section entry added successfully!";
+    header('Location: manage_timetable.php');
+    exit;
+  } catch (mysqli_sql_exception $e) {
+    $conn->rollback();
+    $_SESSION['error_message'] = "Error: " . $e->getMessage();
+    header('Location: manage_timetable.php');
+    exit;
+  }
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_timetable_changes'])) {
   $section_id = $_POST['section_id'];
   $subjects = $_POST['subjects'];
   $rooms = $_POST['rooms'];
@@ -31,7 +67,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_timetable'])) 
   $start_times = $_POST['start_times'];
   $end_times = $_POST['end_times'];
 
-  if (count($subjects) === count($rooms) && count($rooms) === count($days) && count($days) === count($start_times) && count($start_times) === count($end_times)) {
+  if (
+    count($subjects) === count($rooms) && count($rooms) === count($days) &&
+    count($days) === count($start_times) && count($start_times) === count($end_times)
+  ) {
     try {
       $conn->begin_transaction();
 
@@ -42,7 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_timetable'])) 
         $start_time = $start_times[$i];
         $end_time = $end_times[$i];
 
-        // Validate for duplicate subjects in the same section
+        // Validate duplicate subject in the same section
         $stmt = $conn->prepare("
                   SELECT COUNT(*) 
                   FROM sms3_timetable 
@@ -60,12 +99,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_timetable'])) 
           exit;
         }
 
-        // Validate for time conflicts
+        // Validate time conflicts
         $stmt = $conn->prepare("
                   SELECT COUNT(*) 
                   FROM sms3_timetable 
                   WHERE section_id = ? AND day_of_week = ? 
-                  AND ((start_time < ? AND end_time > ?) OR (start_time < ? AND end_time > ?))");
+                  AND ((start_time < ? AND end_time > ?) 
+                  OR (start_time < ? AND end_time > ?))");
         $stmt->bind_param("isssss", $section_id, $day_of_week, $end_time, $start_time, $end_time, $start_time);
         $stmt->execute();
         $stmt->bind_result($conflict_count);
@@ -73,22 +113,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_timetable'])) 
         $stmt->close();
 
         if ($conflict_count > 0) {
-          $_SESSION['error_message'] = "Error: Time conflict detected on {$day_of_week} between {$start_time} and {$end_time}.";
+          $_SESSION['error_message'] = "Error: Time conflict detected.";
           $conn->rollback();
           header('Location: manage_timetable.php');
           exit;
         }
 
-        // Insert timetable entry
+        // Check for existing row with null values
         $stmt = $conn->prepare("
-                  INSERT INTO sms3_timetable (subject_id, section_id, room_id, day_of_week, start_time, end_time)
-                  VALUES (?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param("iiisss", $subject_id, $section_id, $room_id, $day_of_week, $start_time, $end_time);
+                  SELECT id 
+                  FROM sms3_timetable 
+                  WHERE section_id = ? 
+                  AND (subject_id IS NULL OR room_id IS NULL OR day_of_week IS NULL OR start_time IS NULL OR end_time IS NULL) 
+                  LIMIT 1");
+        $stmt->bind_param("i", $section_id);
         $stmt->execute();
-        $timetableId = $stmt->insert_id;
+        $stmt->bind_result($existing_row_id);
+        $stmt->fetch();
+        $stmt->close();
+
+        if ($existing_row_id) {
+          // Update the existing row
+          $stmt = $conn->prepare("
+                      UPDATE sms3_timetable 
+                      SET subject_id = ?, room_id = ?, day_of_week = ?, start_time = ?, end_time = ? 
+                      WHERE id = ?");
+          $stmt->bind_param("iisssi", $subject_id, $room_id, $day_of_week, $start_time, $end_time, $existing_row_id);
+        } else {
+          // Insert a new row
+          $stmt = $conn->prepare("
+                      INSERT INTO sms3_timetable (subject_id, section_id, room_id, day_of_week, start_time, end_time) 
+                      VALUES (?, ?, ?, ?, ?, ?)");
+          $stmt->bind_param("iiisss", $subject_id, $section_id, $room_id, $day_of_week, $start_time, $end_time);
+        }
+
+        if (!$stmt->execute()) {
+          error_log("SQL Error: " . $stmt->error); // Log SQL errors
+          $_SESSION['error_message'] = "Error processing timetable.";
+          $conn->rollback();
+          header('Location: manage_timetable.php');
+          exit;
+        }
+        $stmt->close();
 
         // Log the action
-        logAudit($conn, $_SESSION['user_id'], 'ADD', 'sms3_timetable', $timetableId, [
+        logAudit($conn, $_SESSION['user_id'], 'ADD', 'sms3_timetable', $section_id, [
           'subject_id' => $subject_id,
           'section_id' => $section_id,
           'room_id' => $room_id,
@@ -104,6 +173,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_timetable'])) 
       exit;
     } catch (mysqli_sql_exception $e) {
       $conn->rollback();
+      error_log("Transaction failed: " . $e->getMessage()); // Log error details
       $_SESSION['error_message'] = "Error: " . $e->getMessage();
       header('Location: manage_timetable.php');
       exit;
@@ -207,51 +277,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_single_timetab
 
 // Delete entire timetable for a section (or group of timetables)
 if (isset($_GET['delete_timetable_id'])) {
-  $delete_id = $_GET['delete_timetable_id'];
-
+  $sectionId = intval($_GET['delete_timetable_id']);
   try {
-    // Fetch details for audit logging
-    $stmt = $conn->prepare("
-          SELECT t.id, s.subject_code, sec.section_number, r.room_name, t.day_of_week, t.start_time, t.end_time
-          FROM sms3_timetable t
-          JOIN sms3_subjects s ON t.subject_id = s.id
-          JOIN sms3_sections sec ON t.section_id = sec.id
-          JOIN sms3_rooms r ON t.room_id = r.id
-          WHERE t.section_id = (SELECT section_id FROM sms3_timetable WHERE id = ?)
-      ");
-    $stmt->bind_param("i", $delete_id);
+    // Check if timetable exists for the given section ID
+    $stmt = $conn->prepare("SELECT COUNT(*) FROM sms3_timetable WHERE section_id = ?");
+    $stmt->bind_param("i", $sectionId);
     $stmt->execute();
-    $result = $stmt->get_result();
-    $deletedTimetables = $result->fetch_all(MYSQLI_ASSOC);
+    $stmt->bind_result($count);
+    $stmt->fetch();
     $stmt->close();
 
-    // Delete all timetable entries for a section
-    $stmt = $conn->prepare("DELETE FROM sms3_timetable WHERE section_id = (SELECT section_id FROM sms3_timetable WHERE id = ?)");
-    $stmt->bind_param("i", $delete_id);
-    $stmt->execute();
-    $stmt->close();
+    if ($count > 0) {
+      // Delete all timetables for the section
+      $stmt = $conn->prepare("DELETE FROM sms3_timetable WHERE section_id = ?");
+      $stmt->bind_param("i", $sectionId);
+      $stmt->execute();
+      $stmt->close();
 
-    // Log the deletions
-    foreach ($deletedTimetables as $timetable) {
-      logAudit($conn, $_SESSION['user_id'], 'DELETE', 'sms3_timetable', $timetable['id'], [
-        'id' => $timetable['id'], // Ensure ID is included
-        'subject_code' => $timetable['subject_code'],
-        'section_number' => $timetable['section_number'],
-        'room_name' => $timetable['room_name'],
-        'day_of_week' => $timetable['day_of_week'],
-        'start_time' => $timetable['start_time'],
-        'end_time' => $timetable['end_time']
-      ]);
+      $_SESSION['success_message'] = "Entire timetable deleted successfully!";
+    } else {
+      $_SESSION['error_message'] = "No timetable entries found for the section.";
     }
-
-    $_SESSION['success_message'] = "Entire timetable deleted successfully!";
-    header('Location: manage_timetable.php');
-    exit;
   } catch (mysqli_sql_exception $e) {
     $_SESSION['error_message'] = "Error: " . $e->getMessage();
-    header('Location: manage_timetable.php');
-    exit;
   }
+  header('Location: manage_timetable.php');
+  exit;
 }
 
 // Delete a single row from the timetable
@@ -632,17 +683,7 @@ if (isset($_GET['delete_row_id'])) {
                 </select>
               </div>
 
-              <!-- Select Multiple Rooms, Subjects and Times -->
-              <div class="form-group mt-3">
-                <label for="subjects">Select Subjects and Time:</label>
-                <div id="subject-time-list">
-                  <!-- Room,Subject and Time fields will be dynamically added here -->
-                  <button type="button" class="btn btn-secondary mt-2" onclick="addSubjectTime()">Add Room, Subject and Time</button>
-                  <button type="button" class="btn btn-danger mt-2" id="clear-btn" onclick="clearLastSubjectTime()">Clear Last Entry</button>
-                </div>
-              </div>
-
-              <button type="submit" name="create_timetable" class="btn btn-primary mt-3">Create Timetable</button>
+              <button type="submit" name="create_section_entry" class="btn btn-primary mt-3">Add Section Entry</button>
             </form>
 
           </div>
@@ -664,18 +705,22 @@ if (isset($_GET['delete_row_id'])) {
                 <?php
                 // Fetch grouped timetables from the database
                 $sql = "
-                  SELECT t.id, d.department_code, sec.section_number, 
-                      GROUP_CONCAT(DISTINCT s.subject_code SEPARATOR ', ') AS subjects,
-                      GROUP_CONCAT(DISTINCT t.day_of_week SEPARATOR ', ') AS days,
-                      GROUP_CONCAT(DISTINCT TIME_FORMAT(t.start_time, '%H:%i') SEPARATOR ', ') AS start_times,
-                      GROUP_CONCAT(DISTINCT TIME_FORMAT(t.end_time, '%H:%i') SEPARATOR ', ') AS end_times,
-                      GROUP_CONCAT(DISTINCT r.room_name SEPARATOR ', ') AS rooms
-                  FROM sms3_timetable t
-                  JOIN sms3_subjects s ON t.subject_id = s.id
-                  JOIN sms3_sections sec ON t.section_id = sec.id
-                  JOIN sms3_rooms r ON t.room_id = r.id
-                  JOIN sms3_departments d ON sec.department_id = d.id
-                  GROUP BY d.department_code, sec.section_number
+                SELECT 
+                    sec.id AS section_id,
+                    d.department_code, 
+                    sec.section_number, 
+                    GROUP_CONCAT(DISTINCT s.subject_code SEPARATOR ', ') AS subjects,
+                    GROUP_CONCAT(DISTINCT t.day_of_week SEPARATOR ', ') AS days,
+                    GROUP_CONCAT(DISTINCT TIME_FORMAT(t.start_time, '%H:%i') SEPARATOR ', ') AS start_times,
+                    GROUP_CONCAT(DISTINCT TIME_FORMAT(t.end_time, '%H:%i') SEPARATOR ', ') AS end_times,
+                    GROUP_CONCAT(DISTINCT r.room_name SEPARATOR ', ') AS rooms
+                FROM sms3_timetable t
+                JOIN sms3_sections sec ON t.section_id = sec.id
+                JOIN sms3_departments d ON sec.department_id = d.id
+                LEFT JOIN sms3_subjects s ON t.subject_id = s.id
+                LEFT JOIN sms3_rooms r ON t.room_id = r.id
+                GROUP BY sec.id, d.department_code, sec.section_number
+                ORDER BY d.department_code, sec.section_number;
               ";
                 $timetables = $conn->query($sql);
 
@@ -694,9 +739,9 @@ if (isset($_GET['delete_row_id'])) {
                     </td>
                     <td>
                       <a
-                        href="manage_timetable.php?delete_timetable_id=<?= htmlspecialchars($timetable['id']); ?>"
+                        href="manage_timetable.php?delete_section_id=<?= htmlspecialchars($timetable['section_id']); ?>"
                         class="btn btn-danger btn-sm delete-link"
-                        data-timetable-id="<?= htmlspecialchars($timetable['section_number']); ?>">
+                        data-section-id="<?= htmlspecialchars($timetable['section_id']); ?>">
                         Delete
                       </a>
                     </td>
@@ -712,28 +757,39 @@ if (isset($_GET['delete_row_id'])) {
 
     <!-- Modal for Timetable Details -->
     <div class="modal fade" id="timetableModal" tabindex="-1">
-      <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-dialog modal-dialog-centered modal-xl">
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title">Timetable Details</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;" class="modal-body">
-            <table style="width: 100%; min-width: 800px;" class="table table-bordered" id="timetable-details">
-              <thead>
-                <tr>
-                  <th>Subject</th>
-                  <th>Day</th>
-                  <th>Room</th>
-                  <th>Start Time</th>
-                  <th>End Time</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                <!-- Timetable details will be populated dynamically -->
-              </tbody>
-            </table>
+            <form id="timetableForm" action="manage_timetable.php" method="POST">
+              <input type="hidden" name="section_id" id="modal_section_id">
+              <table style="width: 100%; min-width: 800px;" class="table table-bordered" id="timetable-details">
+                <thead>
+                  <tr>
+                    <th>Subject</th>
+                    <th>Day</th>
+                    <th>Room</th>
+                    <th>Start Time</th>
+                    <th>End Time</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- Timetable details will be populated dynamically -->
+                </tbody>
+              </table>
+              <div class="d-flex justify-content-begin">
+                <button type="button" class="btn btn-primary me-2" id="addRowButton">+</button>
+                <button type="button" class="btn btn-danger" id="removeRowButton">-</button>
+              </div>
+              <div class="mt-3">
+                <button type="submit" name="save_timetable_changes" class="btn btn-success">Save Changes</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+              </div>
+            </form>
           </div>
         </div>
       </div>
@@ -741,7 +797,7 @@ if (isset($_GET['delete_row_id'])) {
 
     <!-- Modal for Editing Timetable -->
     <div class="modal fade" id="editTimetableModal" tabindex="-1">
-      <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title">Edit Timetable</h5>
@@ -805,49 +861,165 @@ if (isset($_GET['delete_row_id'])) {
 
     <!-- JavaScript for AJAX -->
     <script>
+      let currentDepartmentId = null;
       // Fetch and display timetable details in a modal
       function viewTimetableDetails(sectionNumber, departmentCode) {
+        currentDepartmentId = departmentCode;
         fetch(`fetch_timetable_details.php?section_number=${sectionNumber}&department_code=${departmentCode}`)
           .then(response => response.json())
           .then(data => {
-            var timetableDetails = document.getElementById('timetable-details').getElementsByTagName('tbody')[0];
+            const timetableDetails = document.getElementById('timetable-details').getElementsByTagName('tbody')[0];
             timetableDetails.innerHTML = ''; // Clear any previous content
 
-            data.forEach(row => {
-              var newRow = `
-            <tr>
-              <td>${row.subject_code}</td>
-              <td>${row.day_of_week}</td>
-              <td>${row.room_name}</td>
-              <td>${row.start_time}</td>
-              <td>${row.end_time}</td>
-              <td>
-              <button class="btn btn-sm btn-warning" onclick="editTimetable(${row.id})">Edit</button>
-              <button class="btn btn-sm btn-danger" onclick="deleteTimetableRow(${row.id})">Delete</button>
-              </td>
-            </tr>`;
-              timetableDetails.insertAdjacentHTML('beforeend', newRow);
+            const sectionIdField = document.getElementById('modal_section_id');
+            sectionIdField.value = data.section_id; // Now section_id is guaranteed to be available
+
+            // Log to verify the value
+            console.log("Section ID set to:", sectionIdField.value);
+
+            // Log form data to verify
+            const formData = new FormData(document.getElementById('timetableForm'));
+            formData.forEach((value, key) => {
+              console.log(key + ": " + value);
             });
 
-            var timetableModal = new bootstrap.Modal(document.getElementById('timetableModal'));
+            // If timetable data exists, populate it in the table
+            if (data.timetable.length > 0) {
+              data.timetable.forEach(row => {
+                const newRow = `
+          <tr>
+            <td>${row.subject_code}</td>
+            <td>${row.day_of_week}</td>
+            <td>${row.room_name}</td>
+            <td>${row.start_time}</td>
+            <td>${row.end_time}</td>
+            <td>
+              <button class="btn btn-sm btn-warning" onclick="editTimetable(${row.id})">Edit</button>
+              <button class="btn btn-sm btn-danger" onclick="deleteTimetableRow(${row.id})">Delete</button>
+            </td>
+          </tr>`;
+                timetableDetails.insertAdjacentHTML('beforeend', newRow);
+              });
+            } else {
+              // If no timetable exists, ensure form is still valid (e.g., `section_id` set)
+              console.log("No timetable data found for this section.");
+            }
+
+            const timetableModal = new bootstrap.Modal(document.getElementById('timetableModal'));
             timetableModal.show();
           });
       }
 
       // Delete individual timetable row
       function deleteTimetableRow(rowId) {
-        // Hide the viewTimetableDetails modal before showing the confirmation
-        var timetableModal = bootstrap.Modal.getInstance(document.getElementById('timetableModal'));
-        if (timetableModal) {
-          timetableModal.hide();
+        if (!confirm("Are you sure you want to delete this timetable entry?")) {
+          return;
         }
 
-        // Use the confirmation modal for deletion
-        showConfirmationModal1("Are you sure you want to delete this timetable entry?", () => {
-          // If confirmed, proceed with deletion
-          window.location.href = 'manage_timetable.php?delete_row_id=' + rowId;
-        });
+        fetch(`manage_timetable.php?delete_row_id=${rowId}`, {
+            method: 'GET'
+          })
+          .then(response => {
+            if (!response.ok) {
+              throw new Error("Failed to delete timetable entry.");
+            }
+            alert("Timetable entry deleted successfully!");
+            // Remove the row from the table
+            const rowElement = document.querySelector(`tr[data-row-id='${rowId}']`);
+            if (rowElement) {
+              rowElement.remove();
+            }
+          })
+          .catch(error => {
+            console.error("Error deleting timetable entry:", error);
+            alert("An error occurred while trying to delete the timetable entry.");
+          });
       }
+
+
+      document.addEventListener("DOMContentLoaded", function() {
+        const timetableTableBody = document.querySelector("#timetable-details tbody");
+
+        // Add a new row
+        document.getElementById("addRowButton").addEventListener("click", () => {
+          if (!currentDepartmentId) {
+            alert("Please view a timetable to associate the department.");
+            return;
+          }
+
+          const newRow = document.createElement("tr");
+          newRow.innerHTML = `
+        <td>
+          <select class="form-control subject-dropdown" name="subjects[]" required>
+            <option value="">Select Subject</option>
+            <!-- Options populated dynamically -->
+          </select>
+        </td>
+        <td>
+          <select class="form-control" name="days[]" required>
+            <option value="Monday">Monday</option>
+            <option value="Tuesday">Tuesday</option>
+            <option value="Wednesday">Wednesday</option>
+            <option value="Thursday">Thursday</option>
+            <option value="Friday">Friday</option>
+            <option value="Saturday">Saturday</option>
+          </select>
+        </td>
+        <td>
+          <select class="form-control room-dropdown" name="rooms[]" required>
+            <option value="">Select Room</option>
+            <!-- Options populated dynamically -->
+          </select>
+        </td>
+        <td>
+          <input type="time" class="form-control" name="start_times[]" required>
+        </td>
+        <td>
+          <input type="time" class="form-control" name="end_times[]" required>
+        </td>
+      `;
+
+          timetableTableBody.appendChild(newRow);
+          populateDropdowns(newRow, currentDepartmentId); // Pass the currentDepartmentId dynamically.
+        });
+
+        // Remove a row
+        document.getElementById("removeRowButton").addEventListener("click", () => {
+          const rows = timetableTableBody.querySelectorAll("tr");
+          if (rows.length > 0) {
+            timetableTableBody.removeChild(rows[rows.length - 1]);
+          }
+        });
+
+        // Populate Dropdowns for Subjects and Rooms
+        async function populateDropdowns(row, departmentCode) {
+          if (!departmentCode) {
+            alert("Department Code is missing.");
+            return;
+          }
+
+          try {
+            // Fetch subjects
+            const subjectResponse = await fetch(`fetch_subjects.php?department_code=${departmentCode}`);
+            const subjectOptions = await subjectResponse.text();
+            row.querySelector(".subject-dropdown").innerHTML = subjectOptions;
+
+            // Fetch rooms
+            const roomResponse = await fetch(`fetch_rooms.php?department_code=${departmentCode}`);
+            const roomOptions = await roomResponse.text();
+            row.querySelector(".room-dropdown").innerHTML = roomOptions;
+          } catch (error) {
+            console.error("Error fetching subjects or rooms:", error);
+          }
+        }
+
+        // Handle row removal
+        timetableTableBody.addEventListener("click", (event) => {
+          if (event.target.classList.contains("remove-row")) {
+            event.target.closest("tr").remove();
+          }
+        });
+      });
 
       function showConfirmationModal1(message, onConfirm) {
         const modal = document.getElementById('confirmationModal');
@@ -875,48 +1047,54 @@ if (isset($_GET['delete_row_id'])) {
         }
       }
 
-      // Edit timetable details
       function editTimetable(timetableId) {
         fetch(`fetch_single_timetable_detail.php?id=${timetableId}`)
-          .then(response => response.json())
+          .then(response => {
+            if (!response.ok) {
+              throw new Error("Failed to fetch timetable details.");
+            }
+            return response.json();
+          })
           .then(data => {
-            if (!data || !data.department_id) {
-              throw new Error('Invalid timetable data');
+            console.log("Fetched data:", data); // Log data for debugging
+            if (!data || !data.id) {
+              alert("Error: Timetable data not found.");
+              return;
             }
 
-            // Populate the form with the existing timetable data
+            // Populate modal fields
             document.getElementById('editTimetableId').value = data.id;
             document.getElementById('editDay').value = data.day_of_week;
             document.getElementById('editStartTime').value = data.start_time;
             document.getElementById('editEndTime').value = data.end_time;
 
-            // Fetch and populate subjects based on the department
+            // Populate the subjects dropdown
             fetch(`fetch_subjects.php?department_id=${data.department_id}`)
-              .then(response => response.text()) // Expecting HTML as response
+              .then(response => response.text())
               .then(subjectOptions => {
                 const subjectDropdown = document.getElementById('editSubject');
-                subjectDropdown.innerHTML = subjectOptions; // Replace dropdown content
-                subjectDropdown.value = data.subject_id; // Pre-select the current subject
+                subjectDropdown.innerHTML = subjectOptions;
+                subjectDropdown.value = data.subject_id;
               })
-              .catch(error => console.error('Error fetching subjects:', error));
+              .catch(error => console.error("Error fetching subjects:", error));
 
-            // Fetch and populate rooms based on the department
+            // Populate the rooms dropdown
             fetch(`fetch_rooms.php?department_id=${data.department_id}`)
-              .then(response => response.text()) // Expecting HTML as response
+              .then(response => response.text())
               .then(roomOptions => {
                 const roomDropdown = document.getElementById('editRoom');
-                roomDropdown.innerHTML = roomOptions; // Replace dropdown content
-                roomDropdown.value = data.room_id; // Pre-select the current room
+                roomDropdown.innerHTML = roomOptions;
+                roomDropdown.value = data.room_id;
               })
-              .catch(error => console.error('Error fetching rooms:', error));
+              .catch(error => console.error("Error fetching rooms:", error));
 
-            // Hide the "View Timetable" modal
-            var timetableModal = bootstrap.Modal.getInstance(document.getElementById('timetableModal'));
-            timetableModal.hide();
-
-            // Show the "Edit Timetable" modal
-            var editTimetableModal = new bootstrap.Modal(document.getElementById('editTimetableModal'));
-            editTimetableModal.show();
+            // Show the edit modal
+            const editModal = new bootstrap.Modal(document.getElementById('editTimetableModal'));
+            editModal.show();
+          })
+          .catch(error => {
+            console.error("Error during fetch or modal population:", error);
+            alert("An error occurred while trying to edit the timetable.");
           });
       }
 
@@ -950,64 +1128,6 @@ if (isset($_GET['delete_row_id'])) {
         fetch('fetch_subjects.php?department_id=' + departmentId)
           .then(response => response.text())
           .then(data => document.getElementById('subject_id').innerHTML = data);
-      }
-
-      // Add Subject, Room, Day, and Time dynamically
-      function addSubjectTime() {
-        var subjectTimeList = document.getElementById('subject-time-list');
-        var departmentId = document.getElementById('department_id').value;
-
-        if (!document.getElementById('section_id').value) {
-          alert("Please select a department and section first.");
-          return;
-        }
-
-        fetch('fetch_subjects.php?department_id=' + departmentId)
-          .then(response => response.text())
-          .then(subjectOptions => {
-            fetch('fetch_rooms.php?department_id=' + departmentId)
-              .then(response => response.text())
-              .then(roomOptions => {
-                var newEntry = `
-                    <div class="form-group mt-2 subject-time-entry">
-                        <label for="subject_id">Subject:</label>
-                        <select class="form-control" name="subjects[]" required>
-                          ${subjectOptions}
-                        </select>
-                        <label for="room_id" class="mt-2">Room:</label>
-                        <select class="form-control" name="rooms[]" required>
-                          ${roomOptions}
-                        </select>
-                        <label for="days[]" class="mt-2">Day:</label>
-                        <select class="form-control mt-2" name="days[]" required>
-                            <option value="Monday">Monday</option>
-                            <option value="Tuesday">Tuesday</option>
-                            <option value="Wednesday">Wednesday</option>
-                            <option value="Thursday">Thursday</option>
-                            <option value="Friday">Friday</option>
-                            <option value="Saturday">Saturday</option>
-                        </select>
-                        <label for="start_times[]" class="mt-2">Start Time:</label>
-                        <input type="time" class="form-control" name="start_times[]" required>
-                        <label for="end_times[]" class="mt-2">End Time:</label>
-                        <input type="time" class="form-control" name="end_times[]" required>
-                    </div>
-                    <br>
-                `;
-                subjectTimeList.insertAdjacentHTML('beforeend', newEntry);
-              });
-          })
-          .catch(error => console.error('Error fetching subjects or rooms:', error));
-      }
-
-      // Clear the last added subject, room, day, and time entry
-      function clearLastSubjectTime() {
-        var subjectTimeList = document.getElementById('subject-time-list');
-        var entries = subjectTimeList.getElementsByClassName('subject-time-entry');
-
-        if (entries.length > 0) {
-          subjectTimeList.removeChild(entries[entries.length - 1]); // Remove the last added field group
-        }
       }
 
       // Validation to check if a section has duplicate subjects or overlapping times on the same day
@@ -1067,15 +1187,32 @@ if (isset($_GET['delete_row_id'])) {
         }
       }
 
-      document.querySelectorAll('.delete-link').forEach(button => {
-        button.addEventListener('click', function(event) {
+      document.querySelectorAll('.delete-link').forEach(link => {
+        link.addEventListener('click', function(event) {
           event.preventDefault();
-          const deleteUrl = this.href;
-          const sectionNumber = this.getAttribute('data-timetable-id');
 
-          showConfirmationModal(`Are you sure you want to delete the timetable for Section: ${sectionNumber}?`, () => {
-            window.location.href = deleteUrl;
-          });
+          const sectionId = this.getAttribute('data-section-id');
+          if (!sectionId) {
+            alert("Invalid section ID.");
+            return;
+          }
+
+          if (confirm(`Are you sure you want to delete all timetable entries for Section ID: ${sectionId}?`)) {
+            fetch(`manage_timetable.php?delete_timetable_id=${sectionId}`, {
+                method: 'GET'
+              })
+              .then(response => {
+                if (!response.ok) {
+                  throw new Error("Failed to delete timetable.");
+                }
+                alert("Entire timetable deleted successfully!");
+                location.reload(); // Refresh the page
+              })
+              .catch(error => {
+                console.error("Error deleting timetable:", error);
+                alert("An error occurred while trying to delete the timetable.");
+              });
+          }
         });
       });
 
@@ -1118,6 +1255,8 @@ if (isset($_GET['delete_row_id'])) {
     </script>
 
   </main><!-- End #main -->
+
+
 
   <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
 
