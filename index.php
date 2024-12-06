@@ -35,7 +35,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             die("Unauthorized table access.");
         }
 
-        $sql = "SELECT * FROM $table WHERE username = ?";
+        $nameField = $table === 'sms3_students'
+            ? "CONCAT(first_name, ' ', COALESCE(middle_name, ''), ' ', last_name) AS name"
+            : "name";
+
+        $sql = "SELECT *, $nameField FROM $table WHERE username = ?";
         $stmt = $conn->prepare($sql);
         if (!$stmt) {
             error_log("Database statement preparation failed: " . $conn->error);
@@ -72,7 +76,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $_SESSION['name'] = htmlspecialchars($user['name']);
         $_SESSION['role'] = htmlspecialchars($user['role']);
         $_SESSION['email'] = htmlspecialchars($user['email']);
-        $_SESSION['phone'] = htmlspecialchars($user['phone']);
 
         // Add student number for students
         if ($user['role'] === 'Student') {
