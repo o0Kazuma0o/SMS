@@ -8,7 +8,7 @@ require_once '../database.php'; // Update path if needed to include your databas
 
 function checkAccess($requiredRole = 'Student') {
     if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role'] !== $requiredRole) {
-        header("Location: /SMS/index.php");
+        header("Location: /index.php");
         exit;
     }
 }

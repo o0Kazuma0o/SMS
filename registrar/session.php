@@ -19,7 +19,7 @@ define('INACTIVITY_TIMEOUT', 300); // 300 seconds = 5 minutes
 function checkAccess($requiredRole) {
     // Check if the user is logged in
     if (!isset($_SESSION['user_id']) || !isset($_SESSION['role'])) {
-        header("Location: /SMS/index.php");
+        header("Location: /index.php");
         exit;
     }
 
@@ -28,7 +28,7 @@ function checkAccess($requiredRole) {
     //    Session has expired due to inactivity
     //    session_unset();
     //    session_destroy();
-    //    header("Location: /SMS/index.php?timeout=true");
+    //    header("Location: /index.php?timeout=true");
     //    exit;
     //}
 
@@ -41,7 +41,7 @@ function checkAccess($requiredRole) {
         if (isset($_SERVER['HTTP_REFERER'])) {
             header("Location: " . $_SERVER['HTTP_REFERER']);
         } else {
-            header("Location: /SMS/index.php");
+            header("Location: /index.php");
         }
         exit;
     }
