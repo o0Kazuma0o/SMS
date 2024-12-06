@@ -6,23 +6,23 @@ checkAccess('Registrar'); // Ensure only users with the 'admin' role can access 
 // Edit department
 $edit_department = null;
 if (isset($_GET['edit_department_id'])) {
-    $edit_department_id = $_GET['edit_department_id'];
+  $edit_department_id = $_GET['edit_department_id'];
 
-    // Fetch the department details to pre-fill the form for editing
-    $stmt = $conn->prepare("SELECT * FROM sms3_departments WHERE id = ?");
-    $stmt->bind_param("i", $edit_department_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $edit_department = $result->fetch_assoc();
-    $stmt->close();
+  // Fetch the department details to pre-fill the form for editing
+  $stmt = $conn->prepare("SELECT * FROM sms3_departments WHERE id = ?");
+  $stmt->bind_param("i", $edit_department_id);
+  $stmt->execute();
+  $result = $stmt->get_result();
+  $edit_department = $result->fetch_assoc();
+  $stmt->close();
 }
 
 // Add department
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_department'])) {
-    $department_code = $_POST['department_code'];
-    $department_name = $_POST['department_name'];
+  $department_code = $_POST['department_code'];
+  $department_name = $_POST['department_name'];
 
-    try{
+  try {
     // Insert department if department code is unique
     $stmt = $conn->prepare("INSERT INTO sms3_departments (department_code, department_name) VALUES (?, ?)");
     $stmt->bind_param("ss", $department_code, $department_name);
@@ -33,25 +33,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_department'])) {
     // Redirect to manage_departments.php
     header('Location: manage_departments.php');
     exit;
+  } catch (mysqli_sql_exception $e) {
+    if ($e->getCode() == 1062) { // Duplicate entry error code
+      $_SESSION['error_message'] = "Error: Duplicate entry for department code or name.";
+    } else {
+      $_SESSION['error_message'] = "Error: " . $e->getMessage();
     }
-    catch (mysqli_sql_exception $e) {
-        if ($e->getCode() == 1062) { // Duplicate entry error code
-            $_SESSION['error_message'] = "Error: Duplicate entry for department code or name.";
-        } else {
-            $_SESSION['error_message'] = "Error: " . $e->getMessage();
-        }
-        header('Location: manage_departments.php'); // Redirect to show error
-        exit;
-    }
+    header('Location: manage_departments.php'); // Redirect to show error
+    exit;
+  }
 }
 
 // Update department
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_department'])) {
-    $department_id = $_POST['department_id'];  // The ID of the department being updated
-    $department_code = $_POST['department_code'];
-    $department_name = $_POST['department_name'];
+  $department_id = $_POST['department_id'];  // The ID of the department being updated
+  $department_code = $_POST['department_code'];
+  $department_name = $_POST['department_name'];
 
-    try{
+  try {
     // Update the department in the database
     $stmt = $conn->prepare("UPDATE sms3_departments SET department_code = ?, department_name = ? WHERE id = ?");
     $stmt->bind_param("ssi", $department_code, $department_name, $department_id);
@@ -63,22 +62,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_department']))
     // Redirect to manage_departments.php after updating
     header('Location: manage_departments.php');
     exit;
+  } catch (mysqli_sql_exception $e) {
+    if ($e->getCode() == 1062) { // Duplicate entry error code
+      $_SESSION['error_message'] = "Error: Duplicate entry for department code or name.";
+    } else {
+      $_SESSION['error_message'] = "Error: " . $e->getMessage();
     }
-    catch (mysqli_sql_exception $e) {
-        if ($e->getCode() == 1062) { // Duplicate entry error code
-            $_SESSION['error_message'] = "Error: Duplicate entry for department code or name.";
-        } else {
-            $_SESSION['error_message'] = "Error: " . $e->getMessage();
-        }
-        header('Location: manage_departments.php'); // Redirect to show error
-        exit;
-    }
+    header('Location: manage_departments.php'); // Redirect to show error
+    exit;
+  }
 }
 
 // Delete department
 if (isset($_GET['delete_department_id'])) {
-    $delete_id = $_GET['delete_department_id'];
-    try{
+  $delete_id = $_GET['delete_department_id'];
+  try {
     $stmt = $conn->prepare("DELETE FROM sms3_departments WHERE id = ?");
     $stmt->bind_param("i", $delete_id);
     $stmt->execute();
@@ -89,16 +87,15 @@ if (isset($_GET['delete_department_id'])) {
     // Redirect to manage_departments.php
     header('Location: manage_departments.php');
     exit;
+  } catch (mysqli_sql_exception $e) {
+    if ($e->getCode() == 1451) { // Foreign key constraint error code
+      $_SESSION['error_message'] = "Error: This department is still connected to other data.";
+    } else {
+      $_SESSION['error_message'] = "Error: " . $e->getMessage();
     }
-    catch (mysqli_sql_exception $e) {
-        if ($e->getCode() == 1451) { // Foreign key constraint error code
-            $_SESSION['error_message'] = "Error: This department is still connected to other data.";
-        } else {
-            $_SESSION['error_message'] = "Error: " . $e->getMessage();
-        }
-        header('Location: manage_departments.php'); // Redirect to show error
-        exit;
-    }
+    header('Location: manage_departments.php'); // Redirect to show error
+    exit;
+  }
 }
 
 // Fetch all departments
@@ -138,58 +135,65 @@ $departments = $conn->query("SELECT * FROM sms3_departments");
 
   <style>
     .modal {
-        display: none; 
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.5);
-        justify-content: center;
-        align-items: center;
-        z-index: 1000;
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
     }
+
     .modal-content {
-        background-color: #fff;
-        padding: 20px;
-        border-radius: 5px;
-        text-align: center;
-        width: 300px;
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 5px;
+      text-align: center;
+      width: 300px;
     }
+
     .modal-buttons {
-        margin-top: 20px;
-        display: flex;
-        justify-content: space-between;
+      margin-top: 20px;
+      display: flex;
+      justify-content: space-between;
     }
+
     .btn-danger {
-        background-color: #dc3545;
-        color: white;
+      background-color: #dc3545;
+      color: white;
     }
+
     .btn-secondary {
-        background-color: #6c757d;
-        color: white;
+      background-color: #6c757d;
+      color: white;
     }
+
     .btn:hover {
-        opacity: 0.8;
+      opacity: 0.8;
     }
 
     .popup-message {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        z-index: 1000;
-        padding: 15px;
-        border-radius: 5px;
-        font-size: 16px;
-        color: #fff;
-        opacity: 0;
-        transition: opacity 0.5s ease-in-out;
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1000;
+      padding: 15px;
+      border-radius: 5px;
+      font-size: 16px;
+      color: #fff;
+      opacity: 0;
+      transition: opacity 0.5s ease-in-out;
     }
+
     .popup-message.success {
-        background-color: green;
+      background-color: green;
     }
+
     .popup-message.error {
-        background-color: red;
+      background-color: red;
     }
   </style>
 
@@ -265,27 +269,13 @@ $departments = $conn->query("SELECT * FROM sms3_departments");
 
     <ul class="sidebar-nav" id="sidebar-nav">
 
-      <div class="flex items-center w-full p-1 pl-6" style="display: flex; align-items: center; padding: 3px; width: 40px; background-color: transparent; height: 4rem;">
-        <div class="flex items-center justify-center" style="display: flex; align-items: center; justify-content: center;">
-            <img src="https://elc-public-images.s3.ap-southeast-1.amazonaws.com/bcp-olp-logo-mini2.png" alt="Logo" style="width: 30px; height: auto;">
+      <div style="display: flex; flex-direction: column; align-items: center; padding: 16px;">
+        <div style="display: flex; align-items: center; justify-content: center; width: 7rem; height: 8rem; overflow: hidden;">
+          <img src="/assets/img/bcp.png" alt="Logo" style="width: 100%; height: 100%; object-fit: cover;">
         </div>
       </div>
 
-      <div style="display: flex; flex-direction: column; align-items: center; padding: 16px;">
-        <div style="display: flex; align-items: center; justify-content: center; width: 96px; height: 96px; border-radius: 50%; background-color: #334155; color: #e2e8f0; font-size: 48px; font-weight: bold; text-transform: uppercase; line-height: 1;">
-            LC
-        </div>
-        <div style="display: flex; flex-direction: column; align-items: center; margin-top: 24px; text-align: center;">
-            <div style="font-weight: 500; color: #fff;">
-                Name
-            </div>
-            <div style="margin-top: 4px; font-size: 14px; color: #fff;">
-                ID
-            </div>
-        </div>
-    </div>
-
-    <hr class="sidebar-divider">
+      <hr class="sidebar-divider">
 
       <li class="nav-item">
         <a class="nav-link " href="Dashboard.php">
@@ -298,7 +288,7 @@ $departments = $conn->query("SELECT * FROM sms3_departments");
 
       <li class="nav-heading">Enrollment</li>
 
-            <li class="nav-item">
+      <li class="nav-item">
         <a class="nav-link " href="enrollment.php">
           <i class="bi bi-grid"></i>
           <span>Enrollment</span>
@@ -377,73 +367,73 @@ $departments = $conn->query("SELECT * FROM sms3_departments");
       </nav>
     </div><!-- End Page Title -->
 
-  <div id="confirmationModal" class="modal">
+    <div id="confirmationModal" class="modal">
       <div class="modal-content">
-          <p id="confirmationMessage">Are you sure you want to delete this department?</p>
-          <div class="modal-buttons">
-              <button id="confirmDelete" class="btn btn-danger">Delete</button>
-              <button id="cancelDelete" class="btn btn-secondary">Cancel</button>
-          </div>
+        <p id="confirmationMessage">Are you sure you want to delete this department?</p>
+        <div class="modal-buttons">
+          <button id="confirmDelete" class="btn btn-danger">Delete</button>
+          <button id="cancelDelete" class="btn btn-secondary">Cancel</button>
+        </div>
       </div>
-  </div>
+    </div>
 
     <section class="section dashboard">
       <div class="card">
         <div class="card-body">
           <h5 class="card-title"><?php if (isset($_GET['edit_department_id'])): ?>
-          Edit Department
-          <?php else: ?>
-          Add Department
-          <?php endif; ?>
+              Edit Department
+            <?php else: ?>
+              Add Department
+            <?php endif; ?>
           </h5>
 
           <!-- Add/Edit Department Form -->
           <form action="manage_departments.php" method="POST" class="mb-4">
-              <div class="form-group">
-                  <label for="department_name">Department Name:</label>
-                  <input type="text" class="form-control" name="department_name" id="department_name" required
-                  value="<?= isset($edit_department) ? $edit_department['department_name'] : ''; ?>">
-              </div>
+            <div class="form-group">
+              <label for="department_name">Department Name:</label>
+              <input type="text" class="form-control" name="department_name" id="department_name" required
+                value="<?= isset($edit_department) ? $edit_department['department_name'] : ''; ?>">
+            </div>
 
-              <div class="form-group mt-2">
-                  <label for="department_name">Department Code:</label>
-                  <input type="text" class="form-control" name="department_code" id="department_code" required
-                  value="<?= isset($edit_department) ? $edit_department['department_code'] : ''; ?>">
-              </div>
-              <?php if (isset($edit_department)): ?>
+            <div class="form-group mt-2">
+              <label for="department_name">Department Code:</label>
+              <input type="text" class="form-control" name="department_code" id="department_code" required
+                value="<?= isset($edit_department) ? $edit_department['department_code'] : ''; ?>">
+            </div>
+            <?php if (isset($edit_department)): ?>
               <input type="hidden" name="department_id" value="<?= $edit_department['id']; ?>">
               <button type="submit" name="update_department" class="btn btn-warning mt-3">Update Department</button>
-                <?php else: ?>
+            <?php else: ?>
               <button type="submit" name="add_department" class="btn btn-primary mt-3">Add Department</button>
-                <?php endif; ?>
+            <?php endif; ?>
           </form>
         </div>
       </div>
       <div class="card">
         <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;" class="card-body">
-        <h5 class="card-title">Department List</h5>
+          <h5 class="card-title">Department List</h5>
           <!-- List of Departments -->
           <table style="width: 100%; min-width: 800px;" class="table table-bordered">
             <thead>
-                <tr>
-                    <th>Department Code</th>
-                    <th>Department Name</th>
-                    <th>Actions</th>
-                </tr>
+              <tr>
+                <th>Department Code</th>
+                <th>Department Name</th>
+                <th>Actions</th>
+              </tr>
             </thead>
             <tbody>
               <?php while ($department = $departments->fetch_assoc()): ?>
-              <tr>
-                <td><?= $department['department_code']; ?></td>
-                <td><?= $department['department_name']; ?></td>
-                <td>
-                  <a href="manage_departments.php?edit_department_id=<?= $department['id']; ?>" 
-                    class="btn btn-info btn-sm">Edit</a>
-                  <a href="manage_departments.php?delete_department_id=<?= $department['id']; ?>" 
-                    class="btn btn-danger btn-sm delete-link" 
-                    data-department-name="<?= $department['department_name']; ?>">Delete</a>
-                </td>
-              </tr>
+                <tr>
+                  <td><?= $department['department_code']; ?></td>
+                  <td><?= $department['department_name']; ?></td>
+                  <td>
+                    <a href="manage_departments.php?edit_department_id=<?= $department['id']; ?>"
+                      class="btn btn-info btn-sm">Edit</a>
+                    <a href="manage_departments.php?delete_department_id=<?= $department['id']; ?>"
+                      class="btn btn-danger btn-sm delete-link"
+                      data-department-name="<?= $department['department_name']; ?>">Delete</a>
+                  </td>
+                </tr>
               <?php endwhile; ?>
             </tbody>
           </table>
@@ -464,26 +454,26 @@ $departments = $conn->query("SELECT * FROM sms3_departments");
       modal.style.display = 'flex';
 
       confirmDeleteBtn.onclick = () => {
-          onConfirm();
-          closeModal();
+        onConfirm();
+        closeModal();
       };
 
       cancelDeleteBtn.onclick = closeModal;
 
       function closeModal() {
-          modal.style.display = 'none';
+        modal.style.display = 'none';
       }
     }
 
     document.querySelectorAll('.delete-link').forEach(button => {
       button.addEventListener('click', function(event) {
-          event.preventDefault();
-          const deleteUrl = this.href;
-          const departmentName = this.getAttribute('data-department-name');
+        event.preventDefault();
+        const deleteUrl = this.href;
+        const departmentName = this.getAttribute('data-department-name');
 
-          showConfirmationModal(`Are you sure you want to delete the Department: ${departmentName}?`, () => {
-              window.location.href = deleteUrl;
-          });
+        showConfirmationModal(`Are you sure you want to delete the Department: ${departmentName}?`, () => {
+          window.location.href = deleteUrl;
+        });
       });
     });
 
@@ -511,27 +501,27 @@ $departments = $conn->query("SELECT * FROM sms3_departments");
 
       // Fade out after 3 seconds
       setTimeout(() => {
-          popup.style.opacity = '0';
-          // Remove the element after the transition ends
-          setTimeout(() => {
-              popup.remove();
-          }, 500);
+        popup.style.opacity = '0';
+        // Remove the element after the transition ends
+        setTimeout(() => {
+          popup.remove();
+        }, 500);
       }, 3000);
     }
 
     // Trigger the popup based on the session message
     window.onload = function() {
       <?php if (isset($_SESSION['error_message'])): ?>
-          showPopupMessage('<?= $_SESSION['error_message']; ?>', 'error');
-          <?php unset($_SESSION['error_message']); ?>
+        showPopupMessage('<?= $_SESSION['error_message']; ?>', 'error');
+        <?php unset($_SESSION['error_message']); ?>
       <?php elseif (isset($_SESSION['success_message'])): ?>
-          showPopupMessage('<?= $_SESSION['success_message']; ?>', 'success');
-          <?php unset($_SESSION['success_message']); ?>
+        showPopupMessage('<?= $_SESSION['success_message']; ?>', 'success');
+        <?php unset($_SESSION['success_message']); ?>
       <?php endif; ?>
     };
   </script>
 
- 
+
 
   <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
 

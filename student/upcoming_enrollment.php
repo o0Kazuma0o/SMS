@@ -33,61 +33,62 @@ $sectionsResult = $stmt->get_result();
 
 $sections = [];
 while ($row = $sectionsResult->fetch_assoc()) {
-    if ($row['available'] > 0) {
-        $sections[$row['id']]['section_number'] = $row['section_number'];
-        $sections[$row['id']]['available'] = $row['available'];
-        $sections[$row['id']]['subjects'][] = $row;
-    }
+  if ($row['available'] > 0) {
+    $sections[$row['id']]['section_number'] = $row['section_number'];
+    $sections[$row['id']]['available'] = $row['available'];
+    $sections[$row['id']]['subjects'][] = $row;
+  }
 }
 $stmt->close();
 
 // Function to handle enrollment
-function enrollInTimetables($studentId, $selectedTimetables) {
-    global $conn;
+function enrollInTimetables($studentId, $selectedTimetables)
+{
+  global $conn;
 
-    // Prepare the INSERT statement with dynamic columns for timetables
-    $timetablePlaceholders = implode(', ', array_map(fn($n) => "timetable_$n", range(1, count($selectedTimetables))));
+  // Prepare the INSERT statement with dynamic columns for timetables
+  $timetablePlaceholders = implode(', ', array_map(fn($n) => "timetable_$n", range(1, count($selectedTimetables))));
 
-    $query = "
+  $query = "
         INSERT INTO sms3_pending_enrollment (student_id, $timetablePlaceholders)
         VALUES (?, " . str_repeat('?, ', count($selectedTimetables) - 1) . "?)
     ";
 
-    $stmt = $conn->prepare($query);
+  $stmt = $conn->prepare($query);
 
-    // Merge the student ID and timetable IDs for parameter binding
-    $params = array_merge([$studentId], $selectedTimetables);
-    $stmt->bind_param(str_repeat('i', count($params)), ...$params);
+  // Merge the student ID and timetable IDs for parameter binding
+  $params = array_merge([$studentId], $selectedTimetables);
+  $stmt->bind_param(str_repeat('i', count($params)), ...$params);
 
-    if ($stmt->execute()) {
-        echo json_encode(['status' => 'success', 'message' => 'Enrollment successful!']);
-    } else {
-        echo json_encode(['status' => 'error', 'message' => 'Error: ' . $stmt->error]);
-    }
+  if ($stmt->execute()) {
+    echo json_encode(['status' => 'success', 'message' => 'Enrollment successful!']);
+  } else {
+    echo json_encode(['status' => 'error', 'message' => 'Error: ' . $stmt->error]);
+  }
 
-    $stmt->close();
+  $stmt->close();
 }
 
 // Handle AJAX request for enrollment
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    header('Content-Type: application/json');
+  header('Content-Type: application/json');
 
-    $inputData = json_decode(file_get_contents('php://input'), true);
+  $inputData = json_decode(file_get_contents('php://input'), true);
 
-    if (json_last_error() !== JSON_ERROR_NONE) {
-        echo json_encode(['status' => 'error', 'message' => 'Invalid JSON data received.']);
-        exit;
-    }
-
-    if (!isset($inputData['enroll'], $inputData['timetables'])) {
-        echo json_encode(['status' => 'error', 'message' => 'Missing enrollment data.']);
-        exit;
-    }
-
-    $selectedTimetables = array_slice($inputData['timetables'], 0, 8); // Limit to 8 timetables
-
-    enrollInTimetables($studentId, $selectedTimetables);
+  if (json_last_error() !== JSON_ERROR_NONE) {
+    echo json_encode(['status' => 'error', 'message' => 'Invalid JSON data received.']);
     exit;
+  }
+
+  if (!isset($inputData['enroll'], $inputData['timetables'])) {
+    echo json_encode(['status' => 'error', 'message' => 'Missing enrollment data.']);
+    exit;
+  }
+
+  $selectedTimetables = array_slice($inputData['timetables'], 0, 8); // Limit to 8 timetables
+
+  enrollInTimetables($studentId, $selectedTimetables);
+  exit;
 }
 ?>
 
@@ -103,7 +104,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <meta content="" name="keywords">
 
   <!-- Favicons -->
- <link href="https://elc-public-images.s3.ap-southeast-1.amazonaws.com/bcp-olp-logo-mini2.png" rel="icon">
+  <link href="https://elc-public-images.s3.ap-southeast-1.amazonaws.com/bcp-olp-logo-mini2.png" rel="icon">
 
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -124,16 +125,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
   <style>
     .day-button {
-        margin-right: 10px;
-        padding: 5px 10px;
+      margin-right: 10px;
+      padding: 5px 10px;
     }
-    .day-button.active, .section-button.active {
-        background-color: #007bff;
-        color: #fff;
+
+    .day-button.active,
+    .section-button.active {
+      background-color: #007bff;
+      color: #fff;
     }
-    .day-button:hover, .section-button:hover {
-        background-color: gray;
-        color: #fff;
+
+    .day-button:hover,
+    .section-button:hover {
+      background-color: gray;
+      color: #fff;
     }
   </style>
 </head>
@@ -188,7 +193,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               <hr class="dropdown-divider">
             </li>
 
-<li>
+            <li>
               <a class="dropdown-item d-flex align-items-center" href="../logout.php">
                 <i class="bi bi-box-arrow-right"></i>
                 <span>Sign Out</span>
@@ -208,27 +213,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <ul class="sidebar-nav" id="sidebar-nav">
 
-      <div class="flex items-center w-full p-1 pl-6" style="display: flex; align-items: center; padding: 3px; width: 40px; background-color: transparent; height: 4rem;">
-        <div class="flex items-center justify-center" style="display: flex; align-items: center; justify-content: center;">
-            <img src="https://elc-public-images.s3.ap-southeast-1.amazonaws.com/bcp-olp-logo-mini2.png" alt="Logo" style="width: 30px; height: auto;">
+      <div style="display: flex; flex-direction: column; align-items: center; padding: 16px;">
+        <div style="display: flex; align-items: center; justify-content: center; width: 7rem; height: 8rem; overflow: hidden;">
+          <img src="/assets/img/bcp.png" alt="Logo" style="width: 100%; height: 100%; object-fit: cover;">
         </div>
       </div>
 
-      <div style="display: flex; flex-direction: column; align-items: center; padding: 16px;">
-        <div style="display: flex; align-items: center; justify-content: center; width: 96px; height: 96px; border-radius: 50%; background-color: #334155; color: #e2e8f0; font-size: 48px; font-weight: bold; text-transform: uppercase; line-height: 1;">
-            LC
-        </div>
-        <div style="display: flex; flex-direction: column; align-items: center; margin-top: 24px; text-align: center;">
-            <div style="font-weight: 500; color: #fff;">
-                Name
-            </div>
-            <div style="margin-top: 4px; font-size: 14px; color: #fff;">
-                ID
-            </div>
-        </div>
-    </div>
-
-    <hr class="sidebar-divider">
+      <hr class="sidebar-divider">
 
       <li class="nav-item">
         <a class="nav-link " href="Dashboard.php">
@@ -278,50 +269,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div><!-- End Page Title -->
 
     <section class="section dashboard">
-    <div class="row">
+      <div class="row">
 
-      <div class="card mb-4">
-        <div class="card-body">
-          <h5 class="card-title">Filter Sections by Days</h5>
-          <div class="mb-3">
+        <div class="card mb-4">
+          <div class="card-body">
+            <h5 class="card-title">Filter Sections by Days</h5>
+            <div class="mb-3">
               <label class="form-label">Select Weekdays:</label>
               <div id="weekday-buttons" class="d-flex flex-wrap">
-                  <?php foreach (['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as $day): ?>
-                      <button type="button" class="btn btn-outline-primary day-button" data-day="<?= $day ?>" onclick="toggleDay(this)">
-                          <?= $day ?>
-                      </button>
-                  <?php endforeach; ?>
+                <?php foreach (['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as $day): ?>
+                  <button type="button" class="btn btn-outline-primary day-button" data-day="<?= $day ?>" onclick="toggleDay(this)">
+                    <?= $day ?>
+                  </button>
+                <?php endforeach; ?>
               </div>
-          </div>
-          <div class="mb-3">
-          <label class="form-label">Available Sections:</label>
-            <div id="section-buttons" class="d-flex flex-wrap">
-              <!-- Section buttons populated here -->
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Available Sections:</label>
+              <div id="section-buttons" class="d-flex flex-wrap">
+                <!-- Section buttons populated here -->
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <div class="card">
-        <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;" class="card-body">
+        <div class="card">
+          <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;" class="card-body">
             <h5 class="card-title">Section Schedule</h5>
             <table style="width: 100%; min-width: 800px;" id="schedule-table" class="table table-striped" style="display: none;">
-                <thead>
-                    <tr>
-                        <th>Section</th>
-                        <th>Subject</th>
-                        <th>Day</th>
-                        <th>Start Time</th>
-                        <th>End Time</th>
-                    </tr>
-                </thead>
-                <tbody id="schedule-body"></tbody>
+              <thead>
+                <tr>
+                  <th>Section</th>
+                  <th>Subject</th>
+                  <th>Day</th>
+                  <th>Start Time</th>
+                  <th>End Time</th>
+                </tr>
+              </thead>
+              <tbody id="schedule-body"></tbody>
             </table>
             <button id="enroll-button" class="btn btn-success" style="display: none;">Enroll</button>
+          </div>
         </div>
-      </div>
 
-    </div>
+      </div>
     </section>
 
   </main><!-- End #main -->
@@ -334,121 +325,121 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     let selectedSection = null;
 
     function toggleDay(button) {
-        const day = button.getAttribute('data-day');
-        if (button.classList.contains('active')) {
-            button.classList.remove('active');
-            selectedDays = selectedDays.filter(d => d !== day);
+      const day = button.getAttribute('data-day');
+      if (button.classList.contains('active')) {
+        button.classList.remove('active');
+        selectedDays = selectedDays.filter(d => d !== day);
+      } else {
+        if (selectedDays.length < 3) {
+          button.classList.add('active');
+          selectedDays.push(day);
         } else {
-            if (selectedDays.length < 3) {
-                button.classList.add('active');
-                selectedDays.push(day);
-            } else {
-                alert("You can select up to 3 days.");
-            }
+          alert("You can select up to 3 days.");
         }
+      }
 
-        clearScheduleTable();
-        if (selectedDays.length === 0) {
-            document.getElementById('section-buttons').innerHTML = '';
-        } else {
-            filterSectionsByDays();
-        }
+      clearScheduleTable();
+      if (selectedDays.length === 0) {
+        document.getElementById('section-buttons').innerHTML = '';
+      } else {
+        filterSectionsByDays();
+      }
     }
 
     function filterSectionsByDays() {
-        const sectionButtons = document.getElementById('section-buttons');
-        sectionButtons.innerHTML = '';
+      const sectionButtons = document.getElementById('section-buttons');
+      sectionButtons.innerHTML = '';
 
-        for (const [sectionId, sectionData] of Object.entries(sectionsData)) {
-            const sectionDays = sectionData.subjects.map(subject => subject.day_of_week);
-            const containsAllSelectedDays = selectedDays.every(day => sectionDays.includes(day));
+      for (const [sectionId, sectionData] of Object.entries(sectionsData)) {
+        const sectionDays = sectionData.subjects.map(subject => subject.day_of_week);
+        const containsAllSelectedDays = selectedDays.every(day => sectionDays.includes(day));
 
-            if (containsAllSelectedDays && sectionData.available > 0) {
-                const button = document.createElement('button');
-                button.classList.add('btn', 'btn-outline-primary', 'section-button', 'me-2', 'mb-2');
-                button.textContent = `Section ${sectionData.section_number} (Slots: ${sectionData.available})`;
-                button.setAttribute('data-section-id', sectionId);
-                button.onclick = () => toggleSectionSelection(button);
-                sectionButtons.appendChild(button);
-            }
+        if (containsAllSelectedDays && sectionData.available > 0) {
+          const button = document.createElement('button');
+          button.classList.add('btn', 'btn-outline-primary', 'section-button', 'me-2', 'mb-2');
+          button.textContent = `Section ${sectionData.section_number} (Slots: ${sectionData.available})`;
+          button.setAttribute('data-section-id', sectionId);
+          button.onclick = () => toggleSectionSelection(button);
+          sectionButtons.appendChild(button);
         }
+      }
     }
 
     function toggleSectionSelection(button) {
-        if (button.classList.contains('active')) {
-            button.classList.remove('active');
-            selectedSection = null;
-            clearScheduleTable();
-        } else {
-            document.querySelectorAll('.section-button').forEach(btn => btn.classList.remove('active'));
-            button.classList.add('active');
-            selectedSection = button.getAttribute('data-section-id');
-            displaySectionDetails(selectedSection);
-        }
+      if (button.classList.contains('active')) {
+        button.classList.remove('active');
+        selectedSection = null;
+        clearScheduleTable();
+      } else {
+        document.querySelectorAll('.section-button').forEach(btn => btn.classList.remove('active'));
+        button.classList.add('active');
+        selectedSection = button.getAttribute('data-section-id');
+        displaySectionDetails(selectedSection);
+      }
     }
 
     function displaySectionDetails(sectionId) {
-        scheduleBody.innerHTML = '';
-        const section = sectionsData[sectionId];
-        section.subjects.forEach(subject => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
+      scheduleBody.innerHTML = '';
+      const section = sectionsData[sectionId];
+      section.subjects.forEach(subject => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
                 <td>${section.section_number}</td>
                 <td>${subject.subject_name}</td>
                 <td>${subject.day_of_week}</td>
                 <td>${subject.start_time}</td>
                 <td>${subject.end_time}</td>
             `;
-            scheduleBody.appendChild(row);
-        });
-        scheduleTable.style.display = section.subjects.length ? 'table' : 'none';
-        document.getElementById('enroll-button').style.display = section.subjects.length ? 'block' : 'none';
+        scheduleBody.appendChild(row);
+      });
+      scheduleTable.style.display = section.subjects.length ? 'table' : 'none';
+      document.getElementById('enroll-button').style.display = section.subjects.length ? 'block' : 'none';
     }
 
     function clearScheduleTable() {
-        scheduleBody.innerHTML = '';
-        scheduleTable.style.display = 'none';
-        document.getElementById('enroll-button').style.display = 'none';
+      scheduleBody.innerHTML = '';
+      scheduleTable.style.display = 'none';
+      document.getElementById('enroll-button').style.display = 'none';
     }
 
     document.getElementById('enroll-button').onclick = function() {
-        if (!selectedSection) {
-            alert("Please select a section before enrolling.");
-            return;
-        }
+      if (!selectedSection) {
+        alert("Please select a section before enrolling.");
+        return;
+      }
 
-        const selectedSections = [selectedSection];
-        const selectedTimetables = sectionsData[selectedSection].subjects.map(sub => sub.timetable_id);
+      const selectedSections = [selectedSection];
+      const selectedTimetables = sectionsData[selectedSection].subjects.map(sub => sub.timetable_id);
 
-        fetch('upcoming_enrollment.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                enroll: true,
-                sections: selectedSections,
-                timetables: selectedTimetables
-            })
+      fetch('upcoming_enrollment.php', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            enroll: true,
+            sections: selectedSections,
+            timetables: selectedTimetables
+          })
         })
         .then(response => response.json())
         .then(data => {
-            if (data.status === 'success') {
-                alert(data.message);
-                location.reload();
-            } else {
-                console.error("Server error:", data.message);
-                alert(`Enrollment failed: ${data.message}`);
-            }
+          if (data.status === 'success') {
+            alert(data.message);
+            location.reload();
+          } else {
+            console.error("Server error:", data.message);
+            alert(`Enrollment failed: ${data.message}`);
+          }
         })
         .catch(error => {
-            console.error("Error during enrollment:", error);
-            alert("An error occurred while enrolling. Please try again later.");
+          console.error("Error during enrollment:", error);
+          alert("An error occurred while enrolling. Please try again later.");
         });
     };
   </script>
 
- 
+
 
   <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
 

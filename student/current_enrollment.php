@@ -189,23 +189,9 @@ if (!empty($timetable_ids)) {
 
     <ul class="sidebar-nav" id="sidebar-nav">
 
-      <div class="flex items-center w-full p-1 pl-6" style="display: flex; align-items: center; padding: 3px; width: 40px; background-color: transparent; height: 4rem;">
-        <div class="flex items-center justify-center" style="display: flex; align-items: center; justify-content: center;">
-          <img src="https://elc-public-images.s3.ap-southeast-1.amazonaws.com/bcp-olp-logo-mini2.png" alt="Logo" style="width: 30px; height: auto;">
-        </div>
-      </div>
-
       <div style="display: flex; flex-direction: column; align-items: center; padding: 16px;">
-        <div style="display: flex; align-items: center; justify-content: center; width: 96px; height: 96px; border-radius: 50%; background-color: #334155; color: #e2e8f0; font-size: 48px; font-weight: bold; text-transform: uppercase; line-height: 1;">
-          LC
-        </div>
-        <div style="display: flex; flex-direction: column; align-items: center; margin-top: 24px; text-align: center;">
-          <div style="font-weight: 500; color: #fff;">
-            Name
-          </div>
-          <div style="margin-top: 4px; font-size: 14px; color: #fff;">
-            ID
-          </div>
+        <div style="display: flex; align-items: center; justify-content: center; width: 7rem; height: 8rem; overflow: hidden;">
+          <img src="/assets/img/bcp.png" alt="Logo" style="width: 100%; height: 100%; object-fit: cover;">
         </div>
       </div>
 
@@ -275,7 +261,7 @@ if (!empty($timetable_ids)) {
               <div class="col-md-4"><strong>Academic Year:</strong> <?= htmlspecialchars($student['academic_year']) ?> - <?= htmlspecialchars($student['semester']) ?></div>
             </div>
           </div>
-          
+
         </div>
       </div>
 
@@ -321,7 +307,7 @@ if (!empty($timetable_ids)) {
 
   </main><!-- End #main -->
 
- 
+
 
   <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
 

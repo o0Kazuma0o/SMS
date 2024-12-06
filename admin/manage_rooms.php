@@ -7,15 +7,15 @@ checkAccess('Admin'); // Ensure only users with the 'admin' role can access this
 // Edit room
 $edit_room = null;
 if (isset($_GET['edit_room_id'])) {
-    $edit_room_id = $_GET['edit_room_id'];
+  $edit_room_id = $_GET['edit_room_id'];
 
-    // Fetch the room details to pre-fill the form for editing
-    $stmt = $conn->prepare("SELECT * FROM sms3_rooms WHERE id = ?");
-    $stmt->bind_param("i", $edit_room_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $edit_room = $result->fetch_assoc();
-    $stmt->close();
+  // Fetch the room details to pre-fill the form for editing
+  $stmt = $conn->prepare("SELECT * FROM sms3_rooms WHERE id = ?");
+  $stmt->bind_param("i", $edit_room_id);
+  $stmt->execute();
+  $result = $stmt->get_result();
+  $edit_room = $result->fetch_assoc();
+  $stmt->close();
 }
 
 // Add room
@@ -24,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_room'])) {
   $location = $_POST['location'];
   $department_id = $_POST['department_id'];
 
-  try{
+  try {
     // Insert room
     $stmt = $conn->prepare("INSERT INTO sms3_rooms (room_name, location, department_id) VALUES (?, ?, ?)");
     $stmt->bind_param("ssi", $room_name, $location, $department_id);
@@ -39,14 +39,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_room'])) {
     header('Location: manage_rooms.php');
     exit;
   } catch (mysqli_sql_exception $e) {
-        if ($e->getCode() == 1062) { // Duplicate entry error code
-            $_SESSION['error_message'] = "Error: Duplicate entry for department code or name.";
-        } else {
-            $_SESSION['error_message'] = "Error: " . $e->getMessage();
-        }
-        header('Location: manage_rooms.php'); // Redirect to show error
-        exit;
+    if ($e->getCode() == 1062) { // Duplicate entry error code
+      $_SESSION['error_message'] = "Error: Duplicate entry for department code or name.";
+    } else {
+      $_SESSION['error_message'] = "Error: " . $e->getMessage();
     }
+    header('Location: manage_rooms.php'); // Redirect to show error
+    exit;
+  }
 }
 
 // Update room
@@ -81,13 +81,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_room'])) {
     header('Location: manage_rooms.php');
     exit;
   } catch (mysqli_sql_exception $e) {
-      if ($e->getCode() == 1062) { // Duplicate entry error code
-          $_SESSION['error_message'] = "Error: Duplicate entry for department code or name.";
-      } else {
-          $_SESSION['error_message'] = "Error: " . $e->getMessage();
-      }
-      header('Location: manage_rooms.php'); // Redirect to show error
-      exit;
+    if ($e->getCode() == 1062) { // Duplicate entry error code
+      $_SESSION['error_message'] = "Error: Duplicate entry for department code or name.";
+    } else {
+      $_SESSION['error_message'] = "Error: " . $e->getMessage();
+    }
+    header('Location: manage_rooms.php'); // Redirect to show error
+    exit;
   }
 }
 
@@ -115,14 +115,14 @@ if (isset($_GET['delete_room_id'])) {
     header('Location: manage_rooms.php');
     exit;
   } catch (mysqli_sql_exception $e) {
-        if ($e->getCode() == 1451) { // Foreign key constraint error code
-            $_SESSION['error_message'] = "Error: This room is still connected to other data.";
-        } else {
-            $_SESSION['error_message'] = "Error: " . $e->getMessage();
-        }
-        header('Location: manage_rooms.php'); // Redirect to show error
-        exit;
+    if ($e->getCode() == 1451) { // Foreign key constraint error code
+      $_SESSION['error_message'] = "Error: This room is still connected to other data.";
+    } else {
+      $_SESSION['error_message'] = "Error: " . $e->getMessage();
     }
+    header('Location: manage_rooms.php'); // Redirect to show error
+    exit;
+  }
 }
 
 // Fetch all rooms
@@ -163,58 +163,65 @@ $rooms = $conn->query("SELECT r.*, d.department_code FROM sms3_rooms r JOIN sms3
 
   <style>
     .modal {
-        display: none; 
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.5);
-        justify-content: center;
-        align-items: center;
-        z-index: 1000;
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
     }
+
     .modal-content {
-        background-color: #fff;
-        padding: 20px;
-        border-radius: 5px;
-        text-align: center;
-        width: 300px;
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 5px;
+      text-align: center;
+      width: 300px;
     }
+
     .modal-buttons {
-        margin-top: 20px;
-        display: flex;
-        justify-content: space-between;
+      margin-top: 20px;
+      display: flex;
+      justify-content: space-between;
     }
+
     .btn-danger {
-        background-color: #dc3545;
-        color: white;
+      background-color: #dc3545;
+      color: white;
     }
+
     .btn-secondary {
-        background-color: #6c757d;
-        color: white;
+      background-color: #6c757d;
+      color: white;
     }
+
     .btn:hover {
-        opacity: 0.8;
+      opacity: 0.8;
     }
 
     .popup-message {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        z-index: 1000;
-        padding: 15px;
-        border-radius: 5px;
-        font-size: 16px;
-        color: #fff;
-        opacity: 0;
-        transition: opacity 0.5s ease-in-out;
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1000;
+      padding: 15px;
+      border-radius: 5px;
+      font-size: 16px;
+      color: #fff;
+      opacity: 0;
+      transition: opacity 0.5s ease-in-out;
     }
+
     .popup-message.success {
-        background-color: green;
+      background-color: green;
     }
+
     .popup-message.error {
-        background-color: red;
+      background-color: red;
     }
   </style>
 </head>
@@ -269,7 +276,7 @@ $rooms = $conn->query("SELECT r.*, d.department_code FROM sms3_rooms r JOIN sms3
               <hr class="dropdown-divider">
             </li>
 
-<li>
+            <li>
               <a class="dropdown-item d-flex align-items-center" href="../logout.php">
                 <i class="bi bi-box-arrow-right"></i>
                 <span>Sign Out</span>
@@ -289,27 +296,13 @@ $rooms = $conn->query("SELECT r.*, d.department_code FROM sms3_rooms r JOIN sms3
 
     <ul class="sidebar-nav" id="sidebar-nav">
 
-      <div class="flex items-center w-full p-1 pl-6" style="display: flex; align-items: center; padding: 3px; width: 40px; background-color: transparent; height: 4rem;">
-        <div class="flex items-center justify-center" style="display: flex; align-items: center; justify-content: center;">
-            <img src="https://elc-public-images.s3.ap-southeast-1.amazonaws.com/bcp-olp-logo-mini2.png" alt="Logo" style="width: 30px; height: auto;">
+      <div style="display: flex; flex-direction: column; align-items: center; padding: 16px;">
+        <div style="display: flex; align-items: center; justify-content: center; width: 7rem; height: 8rem; overflow: hidden;">
+          <img src="/assets/img/bcp.png" alt="Logo" style="width: 100%; height: 100%; object-fit: cover;">
         </div>
       </div>
 
-      <div style="display: flex; flex-direction: column; align-items: center; padding: 16px;">
-        <div style="display: flex; align-items: center; justify-content: center; width: 96px; height: 96px; border-radius: 50%; background-color: #334155; color: #e2e8f0; font-size: 48px; font-weight: bold; text-transform: uppercase; line-height: 1;">
-            LC
-        </div>
-        <div style="display: flex; flex-direction: column; align-items: center; margin-top: 24px; text-align: center;">
-            <div style="font-weight: 500; color: #fff;">
-                Name
-            </div>
-            <div style="margin-top: 4px; font-size: 14px; color: #fff;">
-                ID
-            </div>
-        </div>
-    </div>
-
-    <hr class="sidebar-divider">
+      <hr class="sidebar-divider">
 
       <li class="nav-item">
         <a class="nav-link " href="Dashboard.php">
@@ -425,100 +418,100 @@ $rooms = $conn->query("SELECT r.*, d.department_code FROM sms3_rooms r JOIN sms3
 
     <div id="confirmationModal" class="modal">
       <div class="modal-content">
-          <p id="confirmationMessage">Are you sure you want to delete this room?</p>
-          <div class="modal-buttons">
-              <button id="confirmDelete" class="btn btn-danger">Delete</button>
-              <button id="cancelDelete" class="btn btn-secondary">Cancel</button>
-          </div>
+        <p id="confirmationMessage">Are you sure you want to delete this room?</p>
+        <div class="modal-buttons">
+          <button id="confirmDelete" class="btn btn-danger">Delete</button>
+          <button id="cancelDelete" class="btn btn-secondary">Cancel</button>
+        </div>
       </div>
     </div>
 
 
     <section class="section dashboard">
-    <div class="row">
+      <div class="row">
 
-      <div class="card">
-        <div class="card-body">
-        <h5 class="card-title"><?php if (isset($_GET['edit_room_id'])): ?>
-          Edit Room
-        <?php else: ?>
-          Add Room
-        <?php endif; ?>
-        </h5>
-          <form action="manage_rooms.php" method="POST" class="mb-4">
-            <div class="form-group">
-              <label for="room_name">Room Name:</label>
-              <input type="text" class="form-control" name="room_name" id="room_name" required
-                    value="<?= isset($edit_room) ? $edit_room['room_name'] : ''; ?>">
-            </div>
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title"><?php if (isset($_GET['edit_room_id'])): ?>
+                Edit Room
+              <?php else: ?>
+                Add Room
+              <?php endif; ?>
+            </h5>
+            <form action="manage_rooms.php" method="POST" class="mb-4">
+              <div class="form-group">
+                <label for="room_name">Room Name:</label>
+                <input type="text" class="form-control" name="room_name" id="room_name" required
+                  value="<?= isset($edit_room) ? $edit_room['room_name'] : ''; ?>">
+              </div>
 
-            <div class="form-group mt-2">
-              <label for="location">Location:</label>
-              <select class="form-control" name="location" id="location" required>
-                <option value="2nd Floor" <?= isset($edit_room) && $edit_room['location'] == '2nd Floor' ? 'selected' : ''; ?>>2nd Floor</option>
-                <option value="3rd Floor" <?= isset($edit_room) && $edit_room['location'] == '3rd Floor' ? 'selected' : ''; ?>>3rd Floor</option>
-                <option value="4th Floor" <?= isset($edit_room) && $edit_room['location'] == '4th Floor' ? 'selected' : ''; ?>>4th Floor</option>
-                <option value="5th Floor" <?= isset($edit_room) && $edit_room['location'] == '5th Floor' ? 'selected' : ''; ?>>5th Floor</option>
-              </select>
-            </div>
+              <div class="form-group mt-2">
+                <label for="location">Location:</label>
+                <select class="form-control" name="location" id="location" required>
+                  <option value="2nd Floor" <?= isset($edit_room) && $edit_room['location'] == '2nd Floor' ? 'selected' : ''; ?>>2nd Floor</option>
+                  <option value="3rd Floor" <?= isset($edit_room) && $edit_room['location'] == '3rd Floor' ? 'selected' : ''; ?>>3rd Floor</option>
+                  <option value="4th Floor" <?= isset($edit_room) && $edit_room['location'] == '4th Floor' ? 'selected' : ''; ?>>4th Floor</option>
+                  <option value="5th Floor" <?= isset($edit_room) && $edit_room['location'] == '5th Floor' ? 'selected' : ''; ?>>5th Floor</option>
+                </select>
+              </div>
 
-            <div class="form-group mt-2">
-            <label for="department_id">Assign to Department:</label>
-            <select class="form-control" name="department_id" id="department_id" required>
-              <!-- Fetch Departments -->
-              <?php
-              $departments = $conn->query("SELECT * FROM sms3_departments");
-              while ($department = $departments->fetch_assoc()): ?>
-                <option value="<?= $department['id']; ?>" <?= isset($edit_room) && $edit_room['department_id'] == $department['id'] ? 'selected' : ''; ?>>
-                  <?= $department['department_code']; ?>
-                </option>
-              <?php endwhile; ?>
-            </select>
-            </div>
+              <div class="form-group mt-2">
+                <label for="department_id">Assign to Department:</label>
+                <select class="form-control" name="department_id" id="department_id" required>
+                  <!-- Fetch Departments -->
+                  <?php
+                  $departments = $conn->query("SELECT * FROM sms3_departments");
+                  while ($department = $departments->fetch_assoc()): ?>
+                    <option value="<?= $department['id']; ?>" <?= isset($edit_room) && $edit_room['department_id'] == $department['id'] ? 'selected' : ''; ?>>
+                      <?= $department['department_code']; ?>
+                    </option>
+                  <?php endwhile; ?>
+                </select>
+              </div>
 
-            <?php if (isset($edit_room)): ?>
-              <input type="hidden" name="room_id" value="<?= $edit_room['id']; ?>">
-              <button type="submit" name="update_room" class="btn btn-warning mt-3">Update Room</button>
-            <?php else: ?>
-              <button type="submit" name="add_room" class="btn btn-primary mt-3">Add Room</button>
-            <?php endif; ?>
-          </form>
+              <?php if (isset($edit_room)): ?>
+                <input type="hidden" name="room_id" value="<?= $edit_room['id']; ?>">
+                <button type="submit" name="update_room" class="btn btn-warning mt-3">Update Room</button>
+              <?php else: ?>
+                <button type="submit" name="add_room" class="btn btn-primary mt-3">Add Room</button>
+              <?php endif; ?>
+            </form>
+          </div>
         </div>
-      </div>
 
-      <div class="card">
-        <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;" class="card-body">
-        <h5 class="card-title">Room List</h5>
-          <table style="width: 100%; min-width: 800px;" class="table table-bordered">
-            <thead>
+        <div class="card">
+          <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;" class="card-body">
+            <h5 class="card-title">Room List</h5>
+            <table style="width: 100%; min-width: 800px;" class="table table-bordered">
+              <thead>
                 <tr>
-                    <th>Room Name</th>
-                    <th>Location</th>
-                    <th>Department</th>
-                    <th>Actions</th>
+                  <th>Room Name</th>
+                  <th>Location</th>
+                  <th>Department</th>
+                  <th>Actions</th>
                 </tr>
-            </thead>
-            <tbody>
-              <?php while ($room = $rooms->fetch_assoc()): ?>
-                <tr>
+              </thead>
+              <tbody>
+                <?php while ($room = $rooms->fetch_assoc()): ?>
+                  <tr>
                     <td><?= $room['room_name']; ?></td>
                     <td><?= $room['location']; ?></td>
                     <td><?= $room['department_code']; ?></td>
                     <td>
-                    <a href="manage_rooms.php?edit_room_id=<?= $room['id']; ?>" 
-                      class="btn btn-info btn-sm">Edit</a>
-                    <a href="manage_rooms.php?delete_room_id=<?= $room['id']; ?>" 
-                      class="btn btn-danger btn-sm delete-link" 
-                      data-room-name="<?= $room['room_name']; ?>">Delete</a>
+                      <a href="manage_rooms.php?edit_room_id=<?= $room['id']; ?>"
+                        class="btn btn-info btn-sm">Edit</a>
+                      <a href="manage_rooms.php?delete_room_id=<?= $room['id']; ?>"
+                        class="btn btn-danger btn-sm delete-link"
+                        data-room-name="<?= $room['room_name']; ?>">Delete</a>
                     </td>
-                </tr>
-              <?php endwhile; ?>
-            </tbody>
-          </table>
+                  </tr>
+                <?php endwhile; ?>
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
 
-    </div>
+      </div>
     </section>
 
   </main><!-- End #main -->
@@ -534,26 +527,26 @@ $rooms = $conn->query("SELECT r.*, d.department_code FROM sms3_rooms r JOIN sms3
       modal.style.display = 'flex';
 
       confirmDeleteBtn.onclick = () => {
-          onConfirm();
-          closeModal();
+        onConfirm();
+        closeModal();
       };
 
       cancelDeleteBtn.onclick = closeModal;
 
       function closeModal() {
-          modal.style.display = 'none';
+        modal.style.display = 'none';
       }
     }
 
     document.querySelectorAll('.delete-link').forEach(button => {
       button.addEventListener('click', function(event) {
-          event.preventDefault();
-          const deleteUrl = this.href;
-          const roomName = this.getAttribute('data-room-name');
+        event.preventDefault();
+        const deleteUrl = this.href;
+        const roomName = this.getAttribute('data-room-name');
 
-          showConfirmationModal(`Are you sure you want to delete the Room: ${roomName}?`, () => {
-              window.location.href = deleteUrl;
-          });
+        showConfirmationModal(`Are you sure you want to delete the Room: ${roomName}?`, () => {
+          window.location.href = deleteUrl;
+        });
       });
     });
 
@@ -577,25 +570,25 @@ $rooms = $conn->query("SELECT r.*, d.department_code FROM sms3_rooms r JOIN sms3
       document.body.appendChild(popup);
 
       setTimeout(() => {
-          popup.style.opacity = '0';
-          setTimeout(() => {
-              popup.remove();
-          }, 500);
+        popup.style.opacity = '0';
+        setTimeout(() => {
+          popup.remove();
+        }, 500);
       }, 3000);
     }
 
     window.onload = function() {
       <?php if (isset($_SESSION['error_message'])): ?>
-          showPopupMessage('<?= $_SESSION['error_message']; ?>', 'error');
-          <?php unset($_SESSION['error_message']); ?>
+        showPopupMessage('<?= $_SESSION['error_message']; ?>', 'error');
+        <?php unset($_SESSION['error_message']); ?>
       <?php elseif (isset($_SESSION['success_message'])): ?>
-          showPopupMessage('<?= $_SESSION['success_message']; ?>', 'success');
-          <?php unset($_SESSION['success_message']); ?>
+        showPopupMessage('<?= $_SESSION['success_message']; ?>', 'success');
+        <?php unset($_SESSION['success_message']); ?>
       <?php endif; ?>
     };
   </script>
 
- 
+
 
   <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
 

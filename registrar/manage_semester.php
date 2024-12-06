@@ -5,39 +5,39 @@ checkAccess('Registrar'); // Ensure only users with the 'admin' role can access 
 
 // Add a new semester
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_semester'])) {
-    $semester_name = $_POST['semester_name'];
+  $semester_name = $_POST['semester_name'];
 
-    // Insert the new semester with 'Inactive' status
-    $stmt = $conn->prepare("INSERT INTO sms3_semesters (name, status) VALUES (?, 'Inactive')");
-    $stmt->bind_param("s", $semester_name);
+  // Insert the new semester with 'Inactive' status
+  $stmt = $conn->prepare("INSERT INTO sms3_semesters (name, status) VALUES (?, 'Inactive')");
+  $stmt->bind_param("s", $semester_name);
 
-    if ($stmt->execute()) {
-        $_SESSION['success_message'] = "New semester added successfully!";
-    } else {
-        $_SESSION['error_message'] = "Failed to add semester.";
-    }
-    $stmt->close();
-    header("Location: manage_semester.php");
-    exit;
+  if ($stmt->execute()) {
+    $_SESSION['success_message'] = "New semester added successfully!";
+  } else {
+    $_SESSION['error_message'] = "Failed to add semester.";
+  }
+  $stmt->close();
+  header("Location: manage_semester.php");
+  exit;
 }
 
 // Set a semester as active
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['set_active'])) {
-    $semester_id = $_POST['semester_id'];
+  $semester_id = $_POST['semester_id'];
 
-    // Set all semesters to 'Inactive' before setting the selected one to 'Active'
-    $conn->query("UPDATE sms3_semesters SET status = 'Inactive'");
-    $stmt = $conn->prepare("UPDATE sms3_semesters SET status = 'Active' WHERE id = ?");
-    $stmt->bind_param("i", $semester_id);
+  // Set all semesters to 'Inactive' before setting the selected one to 'Active'
+  $conn->query("UPDATE sms3_semesters SET status = 'Inactive'");
+  $stmt = $conn->prepare("UPDATE sms3_semesters SET status = 'Active' WHERE id = ?");
+  $stmt->bind_param("i", $semester_id);
 
-    if ($stmt->execute()) {
-        $_SESSION['success_message'] = "Semester set to Active!";
-    } else {
-        $_SESSION['error_message'] = "Failed to activate semester.";
-    }
-    $stmt->close();
-    header("Location: manage_semester.php");
-    exit;
+  if ($stmt->execute()) {
+    $_SESSION['success_message'] = "Semester set to Active!";
+  } else {
+    $_SESSION['error_message'] = "Failed to activate semester.";
+  }
+  $stmt->close();
+  header("Location: manage_semester.php");
+  exit;
 }
 
 // Fetch all semesters for display
@@ -147,27 +147,13 @@ $semesters = $conn->query("SELECT * FROM sms3_semesters ORDER BY id DESC");
 
     <ul class="sidebar-nav" id="sidebar-nav">
 
-      <div class="flex items-center w-full p-1 pl-6" style="display: flex; align-items: center; padding: 3px; width: 40px; background-color: transparent; height: 4rem;">
-        <div class="flex items-center justify-center" style="display: flex; align-items: center; justify-content: center;">
-            <img src="https://elc-public-images.s3.ap-southeast-1.amazonaws.com/bcp-olp-logo-mini2.png" alt="Logo" style="width: 30px; height: auto;">
+      <div style="display: flex; flex-direction: column; align-items: center; padding: 16px;">
+        <div style="display: flex; align-items: center; justify-content: center; width: 7rem; height: 8rem; overflow: hidden;">
+          <img src="/assets/img/bcp.png" alt="Logo" style="width: 100%; height: 100%; object-fit: cover;">
         </div>
       </div>
 
-      <div style="display: flex; flex-direction: column; align-items: center; padding: 16px;">
-        <div style="display: flex; align-items: center; justify-content: center; width: 96px; height: 96px; border-radius: 50%; background-color: #334155; color: #e2e8f0; font-size: 48px; font-weight: bold; text-transform: uppercase; line-height: 1;">
-            LC
-        </div>
-        <div style="display: flex; flex-direction: column; align-items: center; margin-top: 24px; text-align: center;">
-            <div style="font-weight: 500; color: #fff;">
-                Name
-            </div>
-            <div style="margin-top: 4px; font-size: 14px; color: #fff;">
-                ID
-            </div>
-        </div>
-    </div>
-
-    <hr class="sidebar-divider">
+      <hr class="sidebar-divider">
 
       <li class="nav-item">
         <a class="nav-link " href="Dashboard.php">
@@ -180,7 +166,7 @@ $semesters = $conn->query("SELECT * FROM sms3_semesters ORDER BY id DESC");
 
       <li class="nav-heading">Enrollment</li>
 
-            <li class="nav-item">
+      <li class="nav-item">
         <a class="nav-link " href="enrollment.php">
           <i class="bi bi-grid"></i>
           <span>Enrollment</span>
@@ -242,7 +228,7 @@ $semesters = $conn->query("SELECT * FROM sms3_semesters ORDER BY id DESC");
       </li>
 
       <hr class="sidebar-divider">
-      
+
     </ul>
 
   </aside><!-- End Sidebar-->
@@ -260,60 +246,60 @@ $semesters = $conn->query("SELECT * FROM sms3_semesters ORDER BY id DESC");
     </div><!-- End Page Title -->
 
     <section class="section dashboard">
-    <div class="row">
+      <div class="row">
 
-      <div class="card">
-        <div class="card-body">
-        <h5 class="card-title">Add Semester</h5>
-          <form action="manage_semester.php" method="POST">
-            <div class="form-group">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Add Semester</h5>
+            <form action="manage_semester.php" method="POST">
+              <div class="form-group">
                 <label for="semester_name">Semester Name:</label>
                 <input type="text" class="form-control" name="semester_name" id="semester_name" required placeholder="e.g., 1st Semester">
-            </div>
-            <button type="submit" name="add_semester" class="btn btn-primary mt-3">Add Semester</button>
-          </form>
+              </div>
+              <button type="submit" name="add_semester" class="btn btn-primary mt-3">Add Semester</button>
+            </form>
+          </div>
         </div>
-      </div>
 
-      <div class="card">
-        <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;" class="card-body">
-        <h5 class="card-title">Manage Semester</h5>
-        <table style="width: 100%; min-width: 800px;" class="table table-bordered">
-          <thead>
-            <tr>
-              <th>Semester Name</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-          <?php while ($semester = $semesters->fetch_assoc()): ?>
-            <tr>
-              <td><?= htmlspecialchars($semester['name']); ?></td>
-              <td><?= htmlspecialchars($semester['status']); ?></td>
-              <td>
-              <?php if ($semester['status'] !== 'Active'): ?>
-                <form action="manage_semester.php" method="POST" style="display:inline;">
-                  <input type="hidden" name="semester_id" value="<?= $semester['id']; ?>">
-                  <button type="submit" name="set_active" class="btn btn-warning btn-sm">Set as Active</button>
-                </form>
-                <?php else: ?>
-                  <span class="badge bg-success">Active</Wspan>
-                <?php endif; ?>
-              </td>
-            </tr>
-            <?php endwhile; ?>
-            </tbody>
-          </table>
+        <div class="card">
+          <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;" class="card-body">
+            <h5 class="card-title">Manage Semester</h5>
+            <table style="width: 100%; min-width: 800px;" class="table table-bordered">
+              <thead>
+                <tr>
+                  <th>Semester Name</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <?php while ($semester = $semesters->fetch_assoc()): ?>
+                  <tr>
+                    <td><?= htmlspecialchars($semester['name']); ?></td>
+                    <td><?= htmlspecialchars($semester['status']); ?></td>
+                    <td>
+                      <?php if ($semester['status'] !== 'Active'): ?>
+                        <form action="manage_semester.php" method="POST" style="display:inline;">
+                          <input type="hidden" name="semester_id" value="<?= $semester['id']; ?>">
+                          <button type="submit" name="set_active" class="btn btn-warning btn-sm">Set as Active</button>
+                        </form>
+                      <?php else: ?>
+                        <span class="badge bg-success">Active</Wspan>
+                        <?php endif; ?>
+                    </td>
+                  </tr>
+                <?php endwhile; ?>
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
 
-    </div>
+      </div>
     </section>
 
   </main><!-- End #main -->
 
- 
+
 
   <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
 
