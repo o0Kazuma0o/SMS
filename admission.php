@@ -7,7 +7,7 @@ $departmentss = $conn->query("SELECT * FROM sms3_departments");
 $departments = $conn->query("SELECT id, department_name, department_code FROM sms3_departments");
 $departmentNames = [];
 while ($department = $departments->fetch_assoc()) {
-    $departmentNames[$department['id']] = $department['department_name'];
+  $departmentNames[$department['id']] = $department['department_name'];
 }
 ?>
 
@@ -39,20 +39,21 @@ while ($department = $departments->fetch_assoc()) {
 
   <style>
     .title {
-        background-color: #1e3a8a;
-        color: #6b7280; /* Gray color for the text */
-        padding: 20px;
-        margin-bottom: 2rem;
-        text-align: center;
+      background-color: #1e3a8a;
+      color: #6b7280;
+      /* Gray color for the text */
+      padding: 20px;
+      margin-bottom: 2rem;
+      text-align: center;
     }
 
     .requirements {
-        text-align: center;
+      text-align: center;
     }
 
     .register {
-        padding: 1rem;
-        margin-bottom: 20px;
+      padding: 1rem;
+      margin-bottom: 20px;
     }
 
     input[type="number"]::-webkit-outer-spin-button,
@@ -60,6 +61,7 @@ while ($department = $departments->fetch_assoc()) {
       -webkit-appearance: none;
       margin: 0;
     }
+
     input[type="number"] {
       appearance: textfield;
     }
@@ -70,10 +72,12 @@ while ($department = $departments->fetch_assoc()) {
 
     .requirements-section {
       margin-top: 20px;
-      padding: 15px; /* Adding padding for better spacing */
+      padding: 15px;
+      /* Adding padding for better spacing */
     }
 
-    .requirements-section h2, .requirements-section h3 {
+    .requirements-section h2,
+    .requirements-section h3 {
       color: #1e3a8a;
     }
 
@@ -87,25 +91,31 @@ while ($department = $departments->fetch_assoc()) {
 
     .requirements-section li {
       font-size: 15px;
-      color: #6b7280; /* Gray text for list items */
+      color: #6b7280;
+      /* Gray text for list items */
     }
 
     /* Responsive Adjustments */
     @media (max-width: 768px) {
       .requirements-section {
         margin-top: 40px;
-        text-align: center; /* Center align content on smaller screens */
+        text-align: center;
+        /* Center align content on smaller screens */
       }
 
       .requirements-section ul {
-        list-style-type: none; /* Remove bullet points for mobile screens */
-        padding-left: 0; /* Remove padding */
+        list-style-type: none;
+        /* Remove bullet points for mobile screens */
+        padding-left: 0;
+        /* Remove padding */
       }
 
       .requirements-section li {
         margin-bottom: 10px;
-        font-size: 14px; /* Slightly reduce font size */
-        color: #6b7280; /* Ensure gray color on mobile as well */
+        font-size: 14px;
+        /* Slightly reduce font size */
+        color: #6b7280;
+        /* Ensure gray color on mobile as well */
       }
 
       .requirements-section h4 {
@@ -119,13 +129,18 @@ while ($department = $departments->fetch_assoc()) {
 
 <body>
 
-<?php if (isset($message)): ?>
-  <div class="<?php echo $success ? 'alert alert-success' : 'alert alert-danger'; ?>">
-    <?php echo $message; ?>
-  </div>
-<?php endif; ?>
+  <?php if (isset($message)): ?>
+    <div class="<?php echo $success ? 'alert alert-success' : 'alert alert-danger'; ?>">
+      <?php echo $message; ?>
+    </div>
+  <?php endif; ?>
 
   <main class="main">
+    <div style="position: absolute; top: 10px; left: 10px;">
+      <a href="index.php" style="text-decoration: none; background-color: #1e3a8a; color: white; padding: 10px 20px; border-radius: 5px; font-weight: bold;">
+        &larr; Back
+      </a>
+    </div>
     <div class="title text-center mb-1" style="background-color: #1e3a8a; color: white;">
       <!-- Placeholder for the school logo -->
       <img src="assets/img/bcp.png" alt="School Logo" width="75">
@@ -150,12 +165,12 @@ while ($department = $departments->fetch_assoc()) {
                       <!-- Row 1: Admission Type and Working Student -->
                       <div class="row form-row">
                         <div class="col-md-6">
-                        <label for="program" class="form-label">Program</label>
+                          <label for="program" class="form-label">Program</label>
                           <select class="form-select" id="program" name="program" required>
                             <option value="" disabled selected>Select a Program</option>
                             <?php while ($department = $departmentss->fetch_assoc()): ?>
                               <option value="<?= htmlspecialchars($department['id']); ?>">
-                                  <?= htmlspecialchars($department['department_name']); ?>
+                                <?= htmlspecialchars($department['department_name']); ?>
                               </option>
                             <?php endwhile; ?>
                           </select>
@@ -173,7 +188,7 @@ while ($department = $departments->fetch_assoc()) {
                           <div class="text-danger" id="admissiontype-error"></div>
                           <br>
                           <label class="form-check-label">
-                            <input type="checkbox" class="form-check-input" name="workingstudent" id="workingstudent" onchange="updateCheckboxValueInfo(this)"> 
+                            <input type="checkbox" class="form-check-input" name="workingstudent" id="workingstudent" onchange="updateCheckboxValueInfo(this)">
                             Are you a Working Student?
                             <input type="hidden" name="workingstudent" id="workingstudent-hidden" value="No">
                           </label>
@@ -215,14 +230,14 @@ while ($department = $departments->fetch_assoc()) {
                       <!-- Row 3: Sex, Civil Status, Religion -->
                       <div class="row form-row">
                         <div class="col-md-3">
-                            <label for="sex" class="form-label">Sex</label>
-                            <select class="form-select" id="sex" name="sex" required>
-                              <option value="" disabled selected></option>
-                              <!-- Options here -->
-                              <option value="Male">Male</option>
-                              <option value="Female">Female</option>
-                            </select>
-                            <div class="text-danger" id="sex-error"></div>
+                          <label for="sex" class="form-label">Sex</label>
+                          <select class="form-select" id="sex" name="sex" required>
+                            <option value="" disabled selected></option>
+                            <!-- Options here -->
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                          </select>
+                          <div class="text-danger" id="sex-error"></div>
                         </div>
                         <div class="col-md-3">
                           <label for="civilstatus" class="form-label">Civil Status</label>
@@ -327,7 +342,7 @@ while ($department = $departments->fetch_assoc()) {
                       </div>
                       <div class="d-flex justify-content-end">
                         <button type="button" class="btn btn-primary" onclick="validateAddress()">Next</button>
-                      </div>                      
+                      </div>
                     </form>
                   </div>
                 </div>
@@ -335,7 +350,7 @@ while ($department = $departments->fetch_assoc()) {
               <div class="accordion-item">
                 <h2 class="accordion-header" id="headingThree">
                   <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree" disabled>
-                  Parent's/Guardian's Information
+                    Parent's/Guardian's Information
                   </button>
                 </h2>
                 <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#admission">
@@ -409,14 +424,14 @@ while ($department = $departments->fetch_assoc()) {
                           <div class="text-danger" id="occupation-error"></div>
                           <br>
                           <label class="form-check-label">
-                            <input type="checkbox" class="form-check-input" name="member4ps" id="member4ps" onchange="updateCheckboxValue4ps(this)"> 
+                            <input type="checkbox" class="form-check-input" name="member4ps" id="member4ps" onchange="updateCheckboxValue4ps(this)">
                             Parent / Guardian member of 4Ps?
                             <input type="hidden" name="member4ps" id="member4ps-hidden" value="No">
                           </label>
                         </div>
                       </div>
                       <div class="d-flex justify-content-end">
-                       <button type="button" class="btn btn-primary" onclick="validateGuardianInfo()">Next</button> 
+                        <button type="button" class="btn btn-primary" onclick="validateGuardianInfo()">Next</button>
                       </div>
                     </form>
                   </div>
@@ -506,7 +521,7 @@ while ($department = $departments->fetch_assoc()) {
                 </div>
               </div>
               <div class="accordion-item">
-                <h2 class="accordion-header" id="headingSix"> 
+                <h2 class="accordion-header" id="headingSix">
                   <button class="accordion-button collapsed" id="summaryButton" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSix" aria-expanded="false" aria-controls="collapseSix" disabled>
                     Summary
                   </button>
@@ -515,44 +530,44 @@ while ($department = $departments->fetch_assoc()) {
                   <div class="accordion-body">
                     <form action="admission.php" id="summary" method="POST" class="mb-4">
                       <!--Summary of all the information -->
-                      
+
                     </form>
                   </div>
                 </div>
               </div>
-    
+
             </div><!-- End Default Accordion Example -->
           </div>
         </div>
-      </div> 
+      </div>
       <div class="card register col-lg-3 mt-1">
         <div class="card requirements">
           <div class="requirements-section">
             <h3><strong>Requirements</strong></h3>
             <p>Original Copy of the following documents shall be submitted</p>
-            
+
             <hr>
-            
+
             <h5>College New/Freshmen</h5>
             <ul>
-                <li>Form 138 (Report Card)</li>
-                <li>Form 137</li>
-                <li>Certificate of Good Moral</li>
-                <li>PSA Authenticated Birth Certificate</li>
-                <li>Passport Size ID Picture (White Background, Formal Attire) - 2pcs</li>
-                <li>Barangay Clearance</li>
+              <li>Form 138 (Report Card)</li>
+              <li>Form 137</li>
+              <li>Certificate of Good Moral</li>
+              <li>PSA Authenticated Birth Certificate</li>
+              <li>Passport Size ID Picture (White Background, Formal Attire) - 2pcs</li>
+              <li>Barangay Clearance</li>
             </ul>
 
             <hr>
 
             <h5>College Transferee</h5>
             <ul>
-                <li>Transcript of Records from Previous School</li>
-                <li>Honorable Dismissal</li>
-                <li>Certificate of Good Moral</li>
-                <li>PSA Authenticated Birth Certificate</li>
-                <li>Passport Size ID Picture (White Background, Formal Attire) - 2pcs</li>
-                <li>Barangay Clearance</li>
+              <li>Transcript of Records from Previous School</li>
+              <li>Honorable Dismissal</li>
+              <li>Certificate of Good Moral</li>
+              <li>PSA Authenticated Birth Certificate</li>
+              <li>Passport Size ID Picture (White Background, Formal Attire) - 2pcs</li>
+              <li>Barangay Clearance</li>
             </ul>
           </div>
 
@@ -584,7 +599,7 @@ while ($department = $departments->fetch_assoc()) {
     const yyyy = today.getFullYear();
     const mm = String(today.getMonth() + 1).padStart(2, '0');
     const dd = String(today.getDate()).padStart(2, '0');
-    
+
     // Set maxDate to 16 years ago to ensure the user is at least 16 years old
     const maxDate = `${yyyy - 8}-${mm}-${dd}`; // 16 years ago from today
     const minDate = `${yyyy - 100}-${mm}-${dd}`; // 100 years ago (older limit)
@@ -644,7 +659,7 @@ while ($department = $departments->fetch_assoc()) {
           } else {
             input.style.border = '';
           }
-          input.addEventListener('input', function () {
+          input.addEventListener('input', function() {
             if (input.value.trim()) {
               input.style.border = '';
               document.getElementById(input.id + '-error').innerText = '';
@@ -662,7 +677,7 @@ while ($department = $departments->fetch_assoc()) {
         } else {
           select.style.border = '';
         }
-        select.addEventListener('change', function () {
+        select.addEventListener('change', function() {
           if (select.value !== '') {
             select.style.border = '';
             document.getElementById(select.id + '-error').innerText = '';
@@ -683,7 +698,7 @@ while ($department = $departments->fetch_assoc()) {
       } else {
         email.style.border = '';
       }
-      email.addEventListener('input', function () {
+      email.addEventListener('input', function() {
         if (emailRegex.test(email.value)) {
           email.style.border = '';
           document.getElementById('email-error').innerText = '';
@@ -700,7 +715,7 @@ while ($department = $departments->fetch_assoc()) {
         contactnumber.style.border = '';
       }
 
-      contactnumber.addEventListener('input', function () {
+      contactnumber.addEventListener('input', function() {
         if (contactnumber.value.length === 11 && /^\d{11}$/.test(contactnumber.value)) {
           contactnumber.style.border = '';
           document.getElementById('contactnumber-error').innerText = '';
@@ -724,8 +739,8 @@ while ($department = $departments->fetch_assoc()) {
       } else {
         birthday.style.border = '';
       }
-      birthday.addEventListener('input', function () {
-      const inputDate = new Date(birthday.value);
+      birthday.addEventListener('input', function() {
+        const inputDate = new Date(birthday.value);
         if (birthday.value && inputDate <= new Date(maxDate) && inputDate >= new Date(minDate)) {
           birthday.style.border = '';
           document.getElementById('birthday-error').innerText = '';
@@ -737,11 +752,15 @@ while ($department = $departments->fetch_assoc()) {
       if (valid) {
         // Collect form data
         const formData = new FormData(form);
-        formData.forEach((value, key) => { basicInfo[key] = value; });
+        formData.forEach((value, key) => {
+          basicInfo[key] = value;
+        });
         // Move to the next accordion and unlock it
         document.querySelector('#headingOne button').disabled = false;
         document.querySelector('#headingTwo button').disabled = false;
-        var nextAccordion = new bootstrap.Collapse(document.getElementById('collapseTwo'), {toggle: true});
+        var nextAccordion = new bootstrap.Collapse(document.getElementById('collapseTwo'), {
+          toggle: true
+        });
       } else {
         form.reportValidity();
       }
@@ -760,12 +779,12 @@ while ($department = $departments->fetch_assoc()) {
           } else {
             input.style.border = '';
           }
-          input.addEventListener('input', function () {
-          if (input.value.trim()) {
-            input.style.border = '';
-            document.getElementById(input.id + '-error').innerText = '';
-          }
-        });
+          input.addEventListener('input', function() {
+            if (input.value.trim()) {
+              input.style.border = '';
+              document.getElementById(input.id + '-error').innerText = '';
+            }
+          });
         }
       });
 
@@ -778,7 +797,7 @@ while ($department = $departments->fetch_assoc()) {
         } else {
           select.style.border = '';
         }
-        select.addEventListener('change', function () {
+        select.addEventListener('change', function() {
           if (select.value !== '') {
             select.style.border = '';
             document.getElementById(select.id + '-error').innerText = '';
@@ -788,9 +807,13 @@ while ($department = $departments->fetch_assoc()) {
 
       if (valid) {
         const formData = new FormData(form);
-        formData.forEach((value, key) => { addressInfo[key] = value; });
+        formData.forEach((value, key) => {
+          addressInfo[key] = value;
+        });
         document.querySelector('#headingThree button').disabled = false;
-        var nextAccordion = new bootstrap.Collapse(document.getElementById('collapseThree'), {toggle: true});
+        var nextAccordion = new bootstrap.Collapse(document.getElementById('collapseThree'), {
+          toggle: true
+        });
       } else {
         form.reportValidity();
       }
@@ -809,12 +832,12 @@ while ($department = $departments->fetch_assoc()) {
           } else {
             input.style.border = '';
           }
-          input.addEventListener('input', function () {
-          if (input.value.trim()) {
-            input.style.border = '';
-            document.getElementById(input.id + '-error').innerText = '';
-          }
-        });
+          input.addEventListener('input', function() {
+            if (input.value.trim()) {
+              input.style.border = '';
+              document.getElementById(input.id + '-error').innerText = '';
+            }
+          });
         }
       });
 
@@ -827,7 +850,7 @@ while ($department = $departments->fetch_assoc()) {
         } else {
           select.style.border = '';
         }
-        input.addEventListener('input', function () {
+        input.addEventListener('input', function() {
           if (input.value.trim()) {
             input.style.border = '';
             document.getElementById(input.id + '-error').innerText = '';
@@ -839,70 +862,78 @@ while ($department = $departments->fetch_assoc()) {
 
       if (valid) {
         const formData = new FormData(form);
-        formData.forEach((value, key) => { guardianInfo[key] = value; });
+        formData.forEach((value, key) => {
+          guardianInfo[key] = value;
+        });
         document.querySelector('#headingFour button').disabled = false;
-        var nextAccordion = new bootstrap.Collapse(document.getElementById('collapseFour'), {toggle: true});
+        var nextAccordion = new bootstrap.Collapse(document.getElementById('collapseFour'), {
+          toggle: true
+        });
       } else {
         form.reportValidity();
       }
     }
 
     function validateEducation() {
-    const form = document.getElementById('education-form');
-    let valid = true;
+      const form = document.getElementById('education-form');
+      let valid = true;
 
-    form.querySelectorAll('input').forEach((input) => {
-      if (input.hasAttribute('required')) {
-        if (!input.value.trim()) {
-          input.style.border = '2px solid red';
-          const errorElement = document.getElementById(input.id + '-error');
-          if (errorElement) {
-            errorElement.innerText = 'This field is required';
-          }
-          valid = false;
-        } else {
-          input.style.border = '';
-          const errorElement = document.getElementById(input.id + '-error');
-          if (errorElement) {
-            errorElement.innerText = '';
-          }
-        }
-        input.addEventListener('input', function () {
-          if (input.value.trim()) {
+      form.querySelectorAll('input').forEach((input) => {
+        if (input.hasAttribute('required')) {
+          if (!input.value.trim()) {
+            input.style.border = '2px solid red';
+            const errorElement = document.getElementById(input.id + '-error');
+            if (errorElement) {
+              errorElement.innerText = 'This field is required';
+            }
+            valid = false;
+          } else {
             input.style.border = '';
-            document.getElementById(input.id + '-error').innerText = '';
+            const errorElement = document.getElementById(input.id + '-error');
+            if (errorElement) {
+              errorElement.innerText = '';
+            }
           }
-        });
-      }
-    });
-
-    // Validate year graduated fields (pyear, syear, lyear)
-    ['pyear', 'syear', 'lyear'].forEach((yearId) => {
-      const yearInput = document.getElementById(yearId);
-      if (yearInput) { // Ensure the field exists before validation
-        const yearValue = parseInt(yearInput.value);
-        const currentYear = new Date().getFullYear();
-        
-        if (yearInput.value.length !== 4 || isNaN(yearValue) || yearValue < currentYear - 100 || yearValue > currentYear) {
-          document.getElementById(yearId + '-error').innerText = 'Please enter a valid 4-digit year not exceeding 100 years ago';
-          yearInput.style.border = '2px solid red';
-          valid = false;
-        } else {
-          yearInput.style.border = '';
-          document.getElementById(yearId + '-error').innerText = ''; // Clear error
+          input.addEventListener('input', function() {
+            if (input.value.trim()) {
+              input.style.border = '';
+              document.getElementById(input.id + '-error').innerText = '';
+            }
+          });
         }
-      }
-    });
+      });
 
-    if (valid) {
-      const formData = new FormData(form);
-      formData.forEach((value, key) => { educationInfo[key] = value; });
-      document.querySelector('#headingFive button').disabled = false;
-      var nextAccordion = new bootstrap.Collapse(document.getElementById('collapseFive'), { toggle: true });
-    } else {
-      form.reportValidity();
+      // Validate year graduated fields (pyear, syear, lyear)
+      ['pyear', 'syear', 'lyear'].forEach((yearId) => {
+        const yearInput = document.getElementById(yearId);
+        if (yearInput) { // Ensure the field exists before validation
+          const yearValue = parseInt(yearInput.value);
+          const currentYear = new Date().getFullYear();
+
+          if (yearInput.value.length !== 4 || isNaN(yearValue) || yearValue < currentYear - 100 || yearValue > currentYear) {
+            document.getElementById(yearId + '-error').innerText = 'Please enter a valid 4-digit year not exceeding 100 years ago';
+            yearInput.style.border = '2px solid red';
+            valid = false;
+          } else {
+            yearInput.style.border = '';
+            document.getElementById(yearId + '-error').innerText = ''; // Clear error
+          }
+        }
+      });
+
+      if (valid) {
+        const formData = new FormData(form);
+        formData.forEach((value, key) => {
+          educationInfo[key] = value;
+        });
+        document.querySelector('#headingFive button').disabled = false;
+        var nextAccordion = new bootstrap.Collapse(document.getElementById('collapseFive'), {
+          toggle: true
+        });
+      } else {
+        form.reportValidity();
+      }
     }
-  }
 
     function validateReferral() {
       const form = document.getElementById('referral-form');
@@ -918,7 +949,7 @@ while ($department = $departments->fetch_assoc()) {
           select.style.border = '';
           document.getElementById(select.id + '-error').innerText = ''; // Clear error message
         }
-        select.addEventListener('change', function () {
+        select.addEventListener('change', function() {
           if (select.value !== '') {
             select.style.border = '';
             document.getElementById(select.id + '-error').innerText = '';
@@ -929,12 +960,16 @@ while ($department = $departments->fetch_assoc()) {
       if (valid) {
         // Collect the referral info
         const formData = new FormData(form);
-        formData.forEach((value, key) => { referralInfo[key] = value; });
-        
+        formData.forEach((value, key) => {
+          referralInfo[key] = value;
+        });
+
         // Move to the summary accordion and enable it
         document.getElementById('headingSix').querySelector('button').disabled = false;
-        var nextAccordion = new bootstrap.Collapse(document.getElementById('collapseSix'), {toggle: true});
-        
+        var nextAccordion = new bootstrap.Collapse(document.getElementById('collapseSix'), {
+          toggle: true
+        });
+
         // Generate the summary now that all sections are validated
         generateSummary();
       } else {
@@ -943,26 +978,26 @@ while ($department = $departments->fetch_assoc()) {
     }
 
     function generateSummary() {
-    const summaryElement = document.getElementById('summary');
-    let summaryHtml = '';
+      const summaryElement = document.getElementById('summary');
+      let summaryHtml = '';
 
-    // Pass PHP array to JavaScript
-    const departmentNames = <?= json_encode($departmentNames); ?>;
-    const departmentId = basicInfo.program; // ID stored in the program field
-    const departmentName = departmentNames[departmentId] || "Unknown Program";
+      // Pass PHP array to JavaScript
+      const departmentNames = <?= json_encode($departmentNames); ?>;
+      const departmentId = basicInfo.program; // ID stored in the program field
+      const departmentName = departmentNames[departmentId] || "Unknown Program";
 
-    // Combine Last Name, First Name, and Middle Name
-    const fullName = `${basicInfo.firstname} ${basicInfo.middlename} ${basicInfo.lastname}` + (basicInfo.suffix ? ` ${basicInfo.suffix}` : '');
+      // Combine Last Name, First Name, and Middle Name
+      const fullName = `${basicInfo.firstname} ${basicInfo.middlename} ${basicInfo.lastname}` + (basicInfo.suffix ? ` ${basicInfo.suffix}` : '');
 
-    const fullAddress = `${addressInfo.address}, ${addressInfo.barangay}, ${addressInfo.municipality} - ${addressInfo.region}`;
+      const fullAddress = `${addressInfo.address}, ${addressInfo.barangay}, ${addressInfo.municipality} - ${addressInfo.region}`;
 
-    // Combine Parent and Guardian Names
-    const fatherFullName = `${guardianInfo.father_lastname}, ${guardianInfo.father_firstname} ${guardianInfo.father_middlename}`;
-    const motherFullName = `${guardianInfo.mother_lastname}, ${guardianInfo.mother_firstname} ${guardianInfo.mother_middlename}`;
-    const guardianFullName = `${guardianInfo.guardian_lastname}, ${guardianInfo.guardian_firstname} ${guardianInfo.guardian_middlename}`;
+      // Combine Parent and Guardian Names
+      const fatherFullName = `${guardianInfo.father_lastname}, ${guardianInfo.father_firstname} ${guardianInfo.father_middlename}`;
+      const motherFullName = `${guardianInfo.mother_lastname}, ${guardianInfo.mother_firstname} ${guardianInfo.mother_middlename}`;
+      const guardianFullName = `${guardianInfo.guardian_lastname}, ${guardianInfo.guardian_firstname} ${guardianInfo.guardian_middlename}`;
 
-    // Basic Information Section in Two Columns
-    summaryHtml += `
+      // Basic Information Section in Two Columns
+      summaryHtml += `
       <h4>Basic Information</h4>
       <div class="row">
         <div class="col-md-6">
@@ -986,8 +1021,8 @@ while ($department = $departments->fetch_assoc()) {
       <hr>
     `;
 
-    // Parent/Guardian Information in Two Columns
-    summaryHtml += `
+      // Parent/Guardian Information in Two Columns
+      summaryHtml += `
       <h4>Parent/Guardian Information</h4>
       <div class="row">
         <div class="col-md-6">
@@ -1004,8 +1039,8 @@ while ($department = $departments->fetch_assoc()) {
       <hr>
     `;
 
-    // Educational Background in Two Columns
-    summaryHtml += `
+      // Educational Background in Two Columns
+      summaryHtml += `
       <h4>Educational Background</h4>
       <div class="row">
         <div class="col-md-6">
@@ -1022,23 +1057,23 @@ while ($department = $departments->fetch_assoc()) {
       <hr>
     `;
 
-    // Referral Section
-    summaryHtml += `
+      // Referral Section
+      summaryHtml += `
       <h4>Referral</h4>
       <p><strong>How did you hear about our school?</strong> ${referralInfo.how}</p>
       <hr>
     `;
 
-    // Add the Submit button
-    summaryHtml += `
+      // Add the Submit button
+      summaryHtml += `
       <div class="d-flex justify-content-end">
         <button type="button" class="btn btn-success" onclick="confirmAndSubmitData()">Submit</button>
       </div>
     `;
 
-    // Display the generated HTML inside the summary element
-    summaryElement.innerHTML = summaryHtml;
-  }
+      // Display the generated HTML inside the summary element
+      summaryElement.innerHTML = summaryHtml;
+    }
 
     // Restrict text fields (names) to letters, spaces, apostrophes, and hyphens only
     function validateLettersOnly(input) {
@@ -1063,17 +1098,17 @@ while ($department = $departments->fetch_assoc()) {
     }
 
     function confirmAndSubmitData() {
-      
+
       const allValid = validateAllFormsAndShowSummary();
-    
+
       // If validation fails, stop further execution
       if (!allValid) {
-          return;
+        return;
       }
       // Create a custom confirmation dialog
       const confirmationDialog = document.createElement('div');
       confirmationDialog.className = 'confirmation-dialog';
-      
+
       confirmationDialog.innerHTML = `
       <div class="d-flex justify-content-center"></div>
         <div class="confirmation-dialog-content">
@@ -1112,7 +1147,7 @@ while ($department = $departments->fetch_assoc()) {
       document.body.appendChild(confirmationDialog);
 
       // Handle confirmation button click
-      document.getElementById('confirmSubmit').addEventListener('click', function () {
+      document.getElementById('confirmSubmit').addEventListener('click', function() {
         // Submit data if the user confirms
         submitDataToDatabase();
         // Remove the confirmation dialog and overlay after submission
@@ -1120,7 +1155,7 @@ while ($department = $departments->fetch_assoc()) {
       });
 
       // Handle cancel button click
-      document.getElementById('cancelSubmit').addEventListener('click', function () {
+      document.getElementById('cancelSubmit').addEventListener('click', function() {
         // Remove the confirmation dialog and overlay if the user cancels
         closeConfirmationDialog();
       });
@@ -1128,212 +1163,212 @@ while ($department = $departments->fetch_assoc()) {
 
       // Function to close the confirmation dialog
       function closeConfirmationDialog() {
-      if (confirmationDialog.parentNode) {
-        confirmationDialog.parentNode.removeChild(confirmationDialog);
+        if (confirmationDialog.parentNode) {
+          confirmationDialog.parentNode.removeChild(confirmationDialog);
         }
-      if (overlay.parentNode) {
-        overlay.parentNode.removeChild(overlay);
+        if (overlay.parentNode) {
+          overlay.parentNode.removeChild(overlay);
         }
       }
     }
 
-  function submitDataToDatabase() {
-    // Collect all data from the form objects
-    const data = {
-      basicInfo: basicInfo,
-      addressInfo: addressInfo,
-      guardianInfo: guardianInfo,
-      educationInfo: educationInfo,
-      referralInfo: referralInfo
-    };
+    function submitDataToDatabase() {
+      // Collect all data from the form objects
+      const data = {
+        basicInfo: basicInfo,
+        addressInfo: addressInfo,
+        guardianInfo: guardianInfo,
+        educationInfo: educationInfo,
+        referralInfo: referralInfo
+      };
 
-    // Function to show a custom popup notification
-    function showPopupMessage(message, type = 'success') {
-      // Create the popup element
-      const popup = document.createElement('div');
-      popup.className = `popup-message ${type}`;
-      popup.innerText = message;
+      // Function to show a custom popup notification
+      function showPopupMessage(message, type = 'success') {
+        // Create the popup element
+        const popup = document.createElement('div');
+        popup.className = `popup-message ${type}`;
+        popup.innerText = message;
 
-      // Style the popup element
-      popup.style.position = 'fixed';
-      popup.style.top = '20px';
-      popup.style.right = '20px';
-      popup.style.padding = '15px';
-      popup.style.zIndex = '1000';
-      popup.style.borderRadius = '5px';
-      popup.style.color = '#fff';
-      popup.style.fontSize = '16px';
-      popup.style.backgroundColor = type === 'success' ? 'green' : 'red';
-      popup.style.opacity = '1';
-      popup.style.transition = 'opacity 0.5s ease';
+        // Style the popup element
+        popup.style.position = 'fixed';
+        popup.style.top = '20px';
+        popup.style.right = '20px';
+        popup.style.padding = '15px';
+        popup.style.zIndex = '1000';
+        popup.style.borderRadius = '5px';
+        popup.style.color = '#fff';
+        popup.style.fontSize = '16px';
+        popup.style.backgroundColor = type === 'success' ? 'green' : 'red';
+        popup.style.opacity = '1';
+        popup.style.transition = 'opacity 0.5s ease';
 
-      // Add the popup to the document
-      document.body.appendChild(popup);
+        // Add the popup to the document
+        document.body.appendChild(popup);
 
-      // Fade out after 3 seconds
-      setTimeout(() => {
-        popup.style.opacity = '0';
-        // Remove the element after the transition ends
+        // Fade out after 3 seconds
         setTimeout(() => {
-          popup.remove();
-        }, 500);
-      }, 3000);
-    }
-
-    // Send an AJAX request to save the data to the database
-    fetch('database_admission.php', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(data)
-    })
-    .then(response => response.json())
-    .then(result => {
-      if (result.success) {
-        showPopupMessage('Application submitted successfully!', 'success');
-        // Redirect to index.php after a short delay (optional)
-        setTimeout(() => {
-          window.location.href = 'index.php';
-        }, 2000); // Redirects after 2 seconds
-      } else {
-        showPopupMessage('Failed to submit the application. Please try again.', 'error');
+          popup.style.opacity = '0';
+          // Remove the element after the transition ends
+          setTimeout(() => {
+            popup.remove();
+          }, 500);
+        }, 3000);
       }
-    })
-    .catch(error => {
-      console.error('Error:', error);
-      showPopupMessage('An error occurred while submitting the application.', 'error');
-    });
-  }
 
-  function validateAllFormsAndShowSummary() {
-    let allValid = true; // Flag to track if all forms are valid
-
-    // Function to handle showing the accordion and focusing on the first invalid field
-    function focusOnInvalidSection(sectionId, invalidField) {
-        var accordion = new bootstrap.Collapse(document.getElementById(sectionId), { toggle: true });
-        invalidField.focus();
-    }
-
-    // Function to close all accordions except the specified one
-    function closeAllAccordionsExcept(exceptAccordionId) {
-        const accordions = document.querySelectorAll('.accordion-collapse');
-        accordions.forEach((accordion) => {
-            if (accordion.id !== exceptAccordionId) {
-                var collapseInstance = new bootstrap.Collapse(accordion, { toggle: false });
-                collapseInstance.hide(); // Collapse the section
-            }
+      // Send an AJAX request to save the data to the database
+      fetch('database_admission.php', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(result => {
+          if (result.success) {
+            showPopupMessage('Application submitted successfully!', 'success');
+            // Redirect to index.php after a short delay (optional)
+            setTimeout(() => {
+              window.location.href = 'index.php';
+            }, 2000); // Redirects after 2 seconds
+          } else {
+            showPopupMessage('Failed to submit the application. Please try again.', 'error');
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          showPopupMessage('An error occurred while submitting the application.', 'error');
         });
     }
 
-    // Close the summary accordion function
-    function closeSummaryAccordion() {
-        var summaryAccordion = new bootstrap.Collapse(document.getElementById('collapseSix'), { toggle: false });
-        summaryAccordion.hide(); // Explicitly hide the summary accordion
-    }
+    function validateAllFormsAndShowSummary() {
+      let allValid = true; // Flag to track if all forms are valid
 
-    // Basic Information Form Validation
-    const basicInfoForm = document.getElementById('basic-info-form');
-    let basicInfoValid = validateFormFields(basicInfoForm);
-    if (!basicInfoValid) {
+      // Function to handle showing the accordion and focusing on the first invalid field
+      function focusOnInvalidSection(sectionId, invalidField) {
+        var accordion = new bootstrap.Collapse(document.getElementById(sectionId), {
+          toggle: true
+        });
+        invalidField.focus();
+      }
+
+      // Function to close all accordions except the specified one
+      function closeAllAccordionsExcept(exceptAccordionId) {
+        const accordions = document.querySelectorAll('.accordion-collapse');
+        accordions.forEach((accordion) => {
+          if (accordion.id !== exceptAccordionId) {
+            var collapseInstance = new bootstrap.Collapse(accordion, {
+              toggle: false
+            });
+            collapseInstance.hide(); // Collapse the section
+          }
+        });
+      }
+
+      // Close the summary accordion function
+      function closeSummaryAccordion() {
+        var summaryAccordion = new bootstrap.Collapse(document.getElementById('collapseSix'), {
+          toggle: false
+        });
+        summaryAccordion.hide(); // Explicitly hide the summary accordion
+      }
+
+      // Basic Information Form Validation
+      const basicInfoForm = document.getElementById('basic-info-form');
+      let basicInfoValid = validateFormFields(basicInfoForm);
+      if (!basicInfoValid) {
         allValid = false;
         closeAllAccordionsExcept('collapseOne');
         focusOnInvalidSection('collapseOne', basicInfoForm.querySelector('.is-invalid'));
-        disableSubsequentAccordions('collapseOne');
-        ; // Disable submit button if there's an error
+        disableSubsequentAccordions('collapseOne');; // Disable submit button if there's an error
         closeSummaryAccordion(); // Close summary accordion
         return false; // Stop further validation
-    }
+      }
 
-    // Address Form Validation
-    const addressForm = document.getElementById('address-form');
-    let addressValid = validateFormFields(addressForm);
-    if (!addressValid) {
+      // Address Form Validation
+      const addressForm = document.getElementById('address-form');
+      let addressValid = validateFormFields(addressForm);
+      if (!addressValid) {
         allValid = false;
         closeAllAccordionsExcept('collapseTwo');
         focusOnInvalidSection('collapseTwo', addressForm.querySelector('.is-invalid'));
-        disableSubsequentAccordions('collapseTwo');
-        ; // Disable submit button if there's an error
+        disableSubsequentAccordions('collapseTwo');; // Disable submit button if there's an error
         closeSummaryAccordion(); // Close summary accordion
         return false; // Stop further validation
-    }
+      }
 
-    // Guardian Form Validation
-    const guardianForm = document.getElementById('guardian-form');
-    let guardianValid = validateFormFields(guardianForm);
-    if (!guardianValid) {
+      // Guardian Form Validation
+      const guardianForm = document.getElementById('guardian-form');
+      let guardianValid = validateFormFields(guardianForm);
+      if (!guardianValid) {
         allValid = false;
         closeAllAccordionsExcept('collapseThree');
         focusOnInvalidSection('collapseThree', guardianForm.querySelector('.is-invalid'));
-        disableSubsequentAccordions('collapseThree');
-        ; // Disable submit button if there's an error
+        disableSubsequentAccordions('collapseThree');; // Disable submit button if there's an error
         closeSummaryAccordion(); // Close summary accordion
         return false; // Stop further validation
-    }
+      }
 
-    // Education Form Validation
-    const educationForm = document.getElementById('education-form');
-    let educationValid = validateFormFields(educationForm);
-    if (!educationValid) {
+      // Education Form Validation
+      const educationForm = document.getElementById('education-form');
+      let educationValid = validateFormFields(educationForm);
+      if (!educationValid) {
         allValid = false;
         closeAllAccordionsExcept('collapseFour');
         focusOnInvalidSection('collapseFour', educationForm.querySelector('.is-invalid'));
-        disableSubsequentAccordions('collapseFour');
-        ; // Disable submit button if there's an error
+        disableSubsequentAccordions('collapseFour');; // Disable submit button if there's an error
         closeSummaryAccordion(); // Close summary accordion
         return false; // Stop further validation
-    }
+      }
 
-    // Referral Form Validation
-    const referralForm = document.getElementById('referral-form');
-    let referralValid = validateFormFields(referralForm);
-    if (!referralValid) {
+      // Referral Form Validation
+      const referralForm = document.getElementById('referral-form');
+      let referralValid = validateFormFields(referralForm);
+      if (!referralValid) {
         allValid = false;
         closeAllAccordionsExcept('collapseFive');
         focusOnInvalidSection('collapseFive', referralForm.querySelector('.is-invalid'));
-        disableSubsequentAccordions('collapseFive');
-        ; // Disable submit button if there's an error
+        disableSubsequentAccordions('collapseFive');; // Disable submit button if there's an error
         closeSummaryAccordion(); // Close summary accordion
         return false; // Stop further validation
+      }
+      return true;
     }
-    return true;
-  }
 
-  // Function to validate form fields
-  function validateFormFields(form) {
-    let valid = true;
-    form.querySelectorAll('input, select, textarea').forEach((field) => {
+    // Function to validate form fields
+    function validateFormFields(form) {
+      let valid = true;
+      form.querySelectorAll('input, select, textarea').forEach((field) => {
         if (field.hasAttribute('required') && !field.value.trim()) {
-            field.classList.add('is-invalid');
-            valid = false;
+          field.classList.add('is-invalid');
+          valid = false;
         } else {
-            field.classList.remove('is-invalid');
+          field.classList.remove('is-invalid');
         }
-    });
-    return valid;
-  }
-
-  // Function to disable subsequent accordions
-  function disableSubsequentAccordions(currentAccordionId) {
-    const accordionHeaders = document.querySelectorAll('.accordion-header button');
-    let disable = false;
-    accordionHeaders.forEach((button) => {
-        if (button.getAttribute('data-bs-target') === `#${currentAccordionId}`) {
-            disable = true; // Start disabling from the next accordion
-        } else if (disable) {
-            button.disabled = true;
-        }
-    });
-  }
-
-  // Function to enable a specific accordion
-  function enableAccordion(accordionId) {
-    const button = document.querySelector(`button[data-bs-target="#${accordionId}"]`);
-    if (button) {
-        button.disabled = false;
+      });
+      return valid;
     }
-  }
 
+    // Function to disable subsequent accordions
+    function disableSubsequentAccordions(currentAccordionId) {
+      const accordionHeaders = document.querySelectorAll('.accordion-header button');
+      let disable = false;
+      accordionHeaders.forEach((button) => {
+        if (button.getAttribute('data-bs-target') === `#${currentAccordionId}`) {
+          disable = true; // Start disabling from the next accordion
+        } else if (disable) {
+          button.disabled = true;
+        }
+      });
+    }
+
+    // Function to enable a specific accordion
+    function enableAccordion(accordionId) {
+      const button = document.querySelector(`button[data-bs-target="#${accordionId}"]`);
+      if (button) {
+        button.disabled = false;
+      }
+    }
   </script>
 
   <!-- ======= Footer ======= -->

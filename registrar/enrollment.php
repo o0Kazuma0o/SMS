@@ -105,65 +105,65 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['enrollment_id'], $_PO
   $status = $_POST['status'];
 
   try {
-      if ($status === 'Rejected') {
-          // Delete the enrollment record
-          $stmt = $conn->prepare("DELETE FROM sms3_pending_enrollment WHERE id = ?");
-          $stmt->bind_param("i", $enrollmentId);
-          $stmt->execute();
-          $stmt->close();
+    if ($status === 'Rejected') {
+      // Delete the enrollment record
+      $stmt = $conn->prepare("DELETE FROM sms3_pending_enrollment WHERE id = ?");
+      $stmt->bind_param("i", $enrollmentId);
+      $stmt->execute();
+      $stmt->close();
 
-          echo json_encode(['status' => 'success', 'message' => 'Enrollment rejected successfully.']);
-          exit; // Stop script execution after sending the JSON response
-      } elseif ($status === 'Approved') {
-          // Fetch pending enrollment details
-          $stmt = $conn->prepare("
+      echo json_encode(['status' => 'success', 'message' => 'Enrollment rejected successfully.']);
+      exit; // Stop script execution after sending the JSON response
+    } elseif ($status === 'Approved') {
+      // Fetch pending enrollment details
+      $stmt = $conn->prepare("
               SELECT student_id, timetable_1, timetable_2, timetable_3, timetable_4, timetable_5, timetable_6, timetable_7, timetable_8
               FROM sms3_pending_enrollment WHERE id = ?
           ");
-          $stmt->bind_param("i", $enrollmentId);
-          $stmt->execute();
-          $result = $stmt->get_result();
-          $enrollmentData = $result->fetch_assoc();
-          $stmt->close();
+      $stmt->bind_param("i", $enrollmentId);
+      $stmt->execute();
+      $result = $stmt->get_result();
+      $enrollmentData = $result->fetch_assoc();
+      $stmt->close();
 
-          if ($enrollmentData) {
-              // Update student record with timetable
-              $stmt = $conn->prepare("
+      if ($enrollmentData) {
+        // Update student record with timetable
+        $stmt = $conn->prepare("
                   UPDATE sms3_students
                   SET timetable_1 = ?, timetable_2 = ?, timetable_3 = ?, timetable_4 = ?, timetable_5 = ?, timetable_6 = ?, timetable_7 = ?, timetable_8 = ?, status = 'Enrolled', admission_type = 'Continuing'
                   WHERE id = ?
               ");
-              $stmt->bind_param(
-                  "iiiiiiiii",
-                  $enrollmentData['timetable_1'],
-                  $enrollmentData['timetable_2'],
-                  $enrollmentData['timetable_3'],
-                  $enrollmentData['timetable_4'],
-                  $enrollmentData['timetable_5'],
-                  $enrollmentData['timetable_6'],
-                  $enrollmentData['timetable_7'],
-                  $enrollmentData['timetable_8'],
-                  $enrollmentData['student_id']
-              );
-              $stmt->execute();
-              $stmt->close();
+        $stmt->bind_param(
+          "iiiiiiiii",
+          $enrollmentData['timetable_1'],
+          $enrollmentData['timetable_2'],
+          $enrollmentData['timetable_3'],
+          $enrollmentData['timetable_4'],
+          $enrollmentData['timetable_5'],
+          $enrollmentData['timetable_6'],
+          $enrollmentData['timetable_7'],
+          $enrollmentData['timetable_8'],
+          $enrollmentData['student_id']
+        );
+        $stmt->execute();
+        $stmt->close();
 
-              // Delete the pending enrollment record
-              $stmt = $conn->prepare("DELETE FROM sms3_pending_enrollment WHERE id = ?");
-              $stmt->bind_param("i", $enrollmentId);
-              $stmt->execute();
-              $stmt->close();
+        // Delete the pending enrollment record
+        $stmt = $conn->prepare("DELETE FROM sms3_pending_enrollment WHERE id = ?");
+        $stmt->bind_param("i", $enrollmentId);
+        $stmt->execute();
+        $stmt->close();
 
-              echo json_encode(['status' => 'success', 'message' => 'Enrollment approved successfully.']);
-              exit; // Stop script execution
-          } else {
-              echo json_encode(['status' => 'error', 'message' => 'Failed to fetch enrollment details.']);
-              exit; // Stop script execution
-          }
+        echo json_encode(['status' => 'success', 'message' => 'Enrollment approved successfully.']);
+        exit; // Stop script execution
+      } else {
+        echo json_encode(['status' => 'error', 'message' => 'Failed to fetch enrollment details.']);
+        exit; // Stop script execution
       }
+    }
   } catch (Exception $e) {
-      echo json_encode(['status' => 'error', 'message' => 'An unexpected error occurred.']);
-      exit; // Stop script execution
+    echo json_encode(['status' => 'error', 'message' => 'An unexpected error occurred.']);
+    exit; // Stop script execution
   }
 }
 
@@ -572,6 +572,9 @@ if (isset($_GET['delete_timetable_from_enrollment'])) {
                       <td><?= htmlspecialchars($row['admission_type']); ?></td>
                       <td><?= htmlspecialchars($row['department_code']); ?></td>
                       <td>
+                        <button class="btn btn-info btn-sm" onclick="viewReceipt(<?= $row['student_number']; ?>)">View Requirements</button>
+                      </td>
+                      <td>
                         <button class="btn btn-info btn-sm" onclick="viewTimetableDetails(<?= $row['enrollment_id']; ?>)">View Timetable</button>
                       </td>
                       <td><?= htmlspecialchars($row['created_at']); ?></td>
@@ -878,7 +881,7 @@ if (isset($_GET['delete_timetable_from_enrollment'])) {
     };
   </script>
 
- 
+
 
   <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
 

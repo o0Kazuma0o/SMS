@@ -1,7 +1,7 @@
 <?php
 require('../database.php');
 require_once 'session.php';
-checkAccess('Admin'); // Ensure only users with the 'admin' role can access this page
+checkAccess('Staff'); // Ensure only users with the 'admin' role can access this page
 
 // Function to generate student number
 function generateStudentNumber($conn)
@@ -291,7 +291,7 @@ if (!$result) {
 
       <hr class="sidebar-divider">
 
-      <li class="nav-heading">Admission & Enrollment</li>
+      <li class="nav-heading">Admission</li>
 
       <li class="nav-item">
         <a class="nav-link " href="admission.php">
@@ -300,85 +300,8 @@ if (!$result) {
         </a>
       </li>
 
-      <li class="nav-item">
-        <a class="nav-link " href="enrollment.php">
-          <i class="bi bi-grid"></i>
-          <span>Enrollment</span>
-        </a>
-      </li>
-
-      <li class="nav-item">
-        <a class="nav-link " href="students.php">
-          <i class="bi bi-grid"></i>
-          <span>Students</span>
-        </a>
-      </li><!-- End System Nav -->
-
       <hr class="sidebar-divider">
 
-      <li class="nav-heading">TEST REGISTRAR</li>
-
-      <li class="nav-item">
-        <a class="nav-link " href="manage_academic_year.php">
-          <i class="bi bi-grid"></i>
-          <span>Academic Year</span>
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link " href="manage_semester.php">
-          <i class="bi bi-grid"></i>
-          <span>Semester</span>
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link " href="manage_departments.php">
-          <i class="bi bi-grid"></i>
-          <span>Department</span>
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link " href="manage_rooms.php">
-          <i class="bi bi-grid"></i>
-          <span>Rooms</span>
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link " href="manage_sections.php">
-          <i class="bi bi-grid"></i>
-          <span>Sections</span>
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link " href="manage_subjects.php">
-          <i class="bi bi-grid"></i>
-          <span>Subjects</span>
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link " href="manage_timetable.php">
-          <i class="bi bi-grid"></i>
-          <span>Timetable</span>
-        </a>
-      </li>
-
-      <hr class="sidebar-divider">
-
-      <li class="nav-heading">MANAGE USER</li>
-
-      <li class="nav-item">
-        <a class="nav-link " href="audit_logs.php">
-          <i class="bi bi-grid"></i>
-          <span>Audit Logs</span>
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link " href="manage_user.php">
-          <i class="bi bi-grid"></i>
-          <span>Users</span>
-        </a>
-      </li>
-
-      <hr class="sidebar-divider">
     </ul>
 
   </aside><!-- End Sidebar-->

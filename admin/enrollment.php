@@ -581,6 +581,7 @@ if (isset($_GET['delete_timetable_from_enrollment'])) {
                   <th>Student</th>
                   <th>Admission Type</th>
                   <th>Department</th>
+                  <th>Receipt</th>
                   <th>Subjects</th>
                   <th>Date Submitted</th>
                   <th>Action</th>
@@ -594,6 +595,9 @@ if (isset($_GET['delete_timetable_from_enrollment'])) {
                       <td><?= htmlspecialchars($row['first_name'] . ' ' . $row['last_name']); ?></td>
                       <td><?= htmlspecialchars($row['admission_type']); ?></td>
                       <td><?= htmlspecialchars($row['department_code']); ?></td>
+                      <td>
+                        <button class="btn btn-info btn-sm" onclick="viewReceipt(<?= $row['student_number']; ?>)">View Requirements</button>
+                      </td>
                       <td>
                         <button class="btn btn-info btn-sm" onclick="viewTimetableDetails(<?= $row['enrollment_id']; ?>)">View Timetable</button>
                       </td>

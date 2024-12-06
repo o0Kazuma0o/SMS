@@ -3,20 +3,73 @@ require('../database.php');
 require_once 'session.php';
 checkAccess('Admin'); // Ensure only users with the 'admin' role can access this page
 
-// Handle form submission to add an academic year
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['academic_year'])) {
-  $academicYear = $_POST['academic_year'];
-  $setCurrent = isset($_POST['set_current']) ? 1 : 0;
-  
-  if (addAcademicYear($academicYear, $setCurrent)) {
-      $success = "Academic year added successfully.";
-  } else {
-      $error = "Error adding academic year.";
+// Add academic year
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_academic_year'])) {
+  $academic_year = $_POST['academic_year'];
+
+  try {
+    // Insert academic year
+    $stmt = $conn->prepare("INSERT INTO sms3_academic_years (academic_year, is_current) VALUES (?, 0)");
+    $stmt->bind_param("s", $academic_year);
+    $stmt->execute();
+    $_SESSION['success_message'] = "Academic year added successfully!";
+    header('Location: manage_academic_year.php');
+    exit;
+  } catch (mysqli_sql_exception $e) {
+    $_SESSION['error_message'] = $e->getCode() == 1062
+      ? "Error: Duplicate academic year."
+      : "Error: " . $e->getMessage();
+    header('Location: manage_academic_year.php');
+    exit;
   }
 }
 
-// Get all academic years
-$academicYears = getAcademicYears();
+// Set academic year as current
+if (isset($_GET['set_current_academic_year_id'])) {
+  $set_current_id = intval($_GET['set_current_academic_year_id']);
+
+  try {
+    // Reset all academic years
+    $conn->query("UPDATE sms3_academic_years SET is_current = 0");
+
+    // Set the selected academic year as current
+    $stmt = $conn->prepare("UPDATE sms3_academic_years SET is_current = 1 WHERE id = ?");
+    $stmt->bind_param("i", $set_current_id);
+    $stmt->execute();
+    $stmt->close();
+
+    $_SESSION['success_message'] = "Academic year set as current!";
+  } catch (mysqli_sql_exception $e) {
+    $_SESSION['error_message'] = "Error: " . $e->getMessage();
+  }
+
+  header('Location: manage_academic_year.php');
+  exit;
+}
+
+// Delete academic year
+if (isset($_GET['delete_academic_year_id'])) {
+  $delete_id = intval($_GET['delete_academic_year_id']);
+
+  try {
+    $stmt = $conn->prepare("DELETE FROM sms3_academic_years WHERE id = ?");
+    $stmt->bind_param("i", $delete_id);
+    $stmt->execute();
+    $stmt->close();
+
+    $_SESSION['success_message'] = "Academic year deleted successfully!";
+  } catch (mysqli_sql_exception $e) {
+    $_SESSION['error_message'] = $e->getCode() == 1451
+      ? "Error: This academic year is still linked to other data."
+      : "Error: " . $e->getMessage();
+  }
+
+  header('Location: manage_academic_year.php');
+  exit;
+}
+
+// Fetch all academic years
+$academic_years = $conn->query("SELECT * FROM sms3_academic_years ORDER BY id DESC");
 ?>
 
 <!DOCTYPE html>
@@ -56,10 +109,12 @@ $academicYears = getAcademicYears();
       margin: 10px 0;
       border-radius: 5px;
     }
+
     .alert-success {
       background-color: #d4edda;
       color: #155724;
     }
+
     .alert-danger {
       background-color: #f8d7da;
       color: #721c24;
@@ -147,25 +202,25 @@ $academicYears = getAcademicYears();
 
       <div class="flex items-center w-full p-1 pl-6" style="display: flex; align-items: center; padding: 3px; width: 40px; background-color: transparent; height: 4rem;">
         <div class="flex items-center justify-center" style="display: flex; align-items: center; justify-content: center;">
-            <img src="https://elc-public-images.s3.ap-southeast-1.amazonaws.com/bcp-olp-logo-mini2.png" alt="Logo" style="width: 30px; height: auto;">
+          <img src="https://elc-public-images.s3.ap-southeast-1.amazonaws.com/bcp-olp-logo-mini2.png" alt="Logo" style="width: 30px; height: auto;">
         </div>
       </div>
 
       <div style="display: flex; flex-direction: column; align-items: center; padding: 16px;">
         <div style="display: flex; align-items: center; justify-content: center; width: 96px; height: 96px; border-radius: 50%; background-color: #334155; color: #e2e8f0; font-size: 48px; font-weight: bold; text-transform: uppercase; line-height: 1;">
-            LC
+          LC
         </div>
         <div style="display: flex; flex-direction: column; align-items: center; margin-top: 24px; text-align: center;">
-            <div style="font-weight: 500; color: #fff;">
-                Name
-            </div>
-            <div style="margin-top: 4px; font-size: 14px; color: #fff;">
-                ID
-            </div>
+          <div style="font-weight: 500; color: #fff;">
+            Name
+          </div>
+          <div style="margin-top: 4px; font-size: 14px; color: #fff;">
+            ID
+          </div>
         </div>
-    </div>
+      </div>
 
-    <hr class="sidebar-divider">
+      <hr class="sidebar-divider">
 
       <li class="nav-item">
         <a class="nav-link " href="Dashboard.php">
@@ -292,8 +347,9 @@ $academicYears = getAcademicYears();
                   <label for="academicYear" class="form-label">Academic Year</label>
                   <input type="text" class="form-control" id="academicYear" name="academic_year" placeholder="2023-2024" required>
                 </div>
-                <button type="submit" class="btn btn-primary">Add Academic Year</button>
+                <button type="submit" name="add_academic_year" class="btn btn-primary">Add Academic Year</button>
               </form>
+
             </div>
           </div>
         </div>
@@ -306,33 +362,36 @@ $academicYears = getAcademicYears();
               <table style="width: 100%; min-width: 800px;" class="table">
                 <thead>
                   <tr>
-                    <th scope="col">Academic Year</th>
-                    <th scope="col">Set as Current</th>
-                    <th scope="col">Actions</th>
+                    <th>Academic Year</th>
+                    <th>Set as Current</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <?php
-                  $query = "SELECT * FROM sms3_academic_years ORDER BY id DESC";
-                  $result = $conn->query($query);
-                  if ($result->num_rows > 0) {
-                    $i = 1;
-                    while ($row = $result->fetch_assoc()) {
-                      $isCurrent = $row['is_current'] ? 'Yes' : 'No';
-                      echo "<tr>
-                              <td>" . $row['academic_year'] . "</td>
-                              <td>" . ($row['is_current'] ? '<span class="badge bg-success">Current</span>' : '<button class="btn btn-sm btn-primary" onclick="setCurrentAcademicYear(' . $row['id'] . ')">Set as Current</button>') . "</td>
-                              <td>
-                                <button class='btn btn-sm btn-danger' onclick='deleteAcademicYear(" . $row['id'] . ")'>Delete</button>
-                              </td>
-                            </tr>";
-                    }
-                  } else {
-                    echo "<tr><td colspan='4' class='text-center'>No academic years found</td></tr>";
-                  }
-                  ?>
+                  <?php if ($academic_years->num_rows > 0): ?>
+                    <?php while ($row = $academic_years->fetch_assoc()): ?>
+                      <tr>
+                        <td><?= htmlspecialchars($row['academic_year']); ?></td>
+                        <td>
+                          <?= $row['is_current']
+                            ? '<span class="badge bg-success">Current</span>'
+                            : '<a href="manage_academic_year.php?set_current_academic_year_id=' . $row['id'] . '" class="btn btn-sm btn-primary">Set as Current</a>' ?>
+                        </td>
+                        <td>
+                          <a href="manage_academic_year.php?delete_academic_year_id=<?= $row['id']; ?>"
+                            class="btn btn-sm btn-danger"
+                            onclick="return confirm('Are you sure you want to delete this academic year?');">Delete</a>
+                        </td>
+                      </tr>
+                    <?php endwhile; ?>
+                  <?php else: ?>
+                    <tr>
+                      <td colspan="3" class="text-center">No academic years found.</td>
+                    </tr>
+                  <?php endif; ?>
                 </tbody>
               </table>
+              
             </div>
           </div>
         </div>
@@ -342,54 +401,70 @@ $academicYears = getAcademicYears();
   </main><!-- End #main -->
 
   <script>
-  function setCurrentAcademicYear(id) {
-    if (confirm('Are you sure you want to set this academic year as current?')) {
-      fetch('set_academic_year.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id })
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-            alert('Academic year set as current successfully.');
-            location.reload();
-        } else {
-            alert('Failed to set the academic year.');
-        }
-      })
-      .catch(error => {
-        console.error('Error:', error);
-        alert('An error occurred while setting the academic year.');
-      });
-    }
-  }
-
-  function deleteAcademicYear(id) {
-    if (confirm('Are you sure you want to delete this academic year?')) {
-      fetch('delete_academic_year.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id })
-      })
-      .then(response => response.json())
-      .then(data => {
-          if (data.success) {
-              alert('Academic year deleted successfully.');
+    function setCurrentAcademicYear(id) {
+      if (confirm('Are you sure you want to set this academic year as current?')) {
+        fetch('set_academic_year.php', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              id
+            })
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              alert('Academic year set as current successfully.');
               location.reload();
-          } else {
-              alert('Failed to delete the academic year.');
-          }
-      })
-      .catch(error => {
-        console.error('Error:', error);
-        alert('An error occurred while deleting the academic year.');
-      });
+            } else {
+              alert('Failed to set the academic year.');
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while setting the academic year.');
+          });
+      }
     }
-  }
+
+    function deleteAcademicYear(id) {
+      if (confirm('Are you sure you want to delete this academic year?')) {
+        fetch('manage_academic_year.php', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              delete_id: id
+            })
+          })
+          .then(response => {
+            if (!response.ok) {
+              // Handle non-200 responses
+              return response.text().then(text => {
+                throw new Error(`HTTP ${response.status}: ${text}`);
+              });
+            }
+            return response.json();
+          })
+          .then(data => {
+            if (data.success) {
+              alert(data.message);
+              location.reload(); // Reload the page to update the list
+            } else {
+              alert(data.message);
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while deleting the academic year.');
+          });
+      }
+    }
   </script>
 
- 
+
 
   <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
 

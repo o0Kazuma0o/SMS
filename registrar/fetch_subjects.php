@@ -15,7 +15,7 @@ if (isset($_GET['department_id']) && !empty($_GET['department_id'])) {
 
     echo '<option value="">Select Subject</option>';
     while ($subject = $subjects->fetch_assoc()) {
-        echo '<option value="' . $subject['id'] . '">' . $subject['subject_code'] . '</option>';
+        echo '<option value="' . $subject['id'] . '">' . $subject['subject_name'] . '</option>';
     }
 } else {
     // If no valid department is selected, return default option

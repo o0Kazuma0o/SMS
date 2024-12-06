@@ -1,24 +1,25 @@
 <?php
-session_start();
-require('database.php');
+session_start([
+    'cookie_httponly' => true,
+    'cookie_secure' => true, // Ensure you're using HTTPS
+    'use_strict_mode' => true,
+]);
 
-//$timeoutMessage = '';
-//if (isset($_GET['timeout']) && $_GET['timeout'] === 'true') {
-//    $timeoutMessage = "Your session has expired due to inactivity. Please log in again.";
-//}
+require('database.php');
 
 // Check if the form is submitted
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $username = $_POST['username'];
     $password = $_POST['password'];
 
+    // Validate username format
     if (!preg_match('/^[a-zA-Z0-9._]+$/', $username)) {
         $_SESSION['error_message'] = 'Invalid username format. Only letters, numbers, dots, and underscores are allowed.';
         header('Location: index.php');
         exit;
     }
 
-    // Validate input
+    // Ensure both fields are filled
     if (empty($username) || empty($password)) {
         $_SESSION['error_message'] = 'Please fill in both fields.';
         header('Location: index.php');
@@ -28,11 +29,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Function to check login in a specified table
     function checkLogin($conn, $table, $username, $password)
     {
+        // Whitelist allowed table names
+        $allowedTables = ['sms3_user', 'sms3_students'];
+        if (!in_array($table, $allowedTables)) {
+            die("Unauthorized table access.");
+        }
+
         $sql = "SELECT * FROM $table WHERE username = ?";
         $stmt = $conn->prepare($sql);
         if (!$stmt) {
-            // If prepare() fails, display error message and exit
-            die("Failed to prepare statement: " . $conn->error);
+            error_log("Database statement preparation failed: " . $conn->error);
+            die("An error occurred. Please try again later.");
         }
 
         $stmt->bind_param('s', $username);
@@ -43,41 +50,33 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if ($result->num_rows > 0) {
             $user = $result->fetch_assoc();
 
-            // Password verification
+            // Verify the password
             if (password_verify($password, $user['password'])) {
                 return $user;
-            } else {
-                // Debugging output for password verification failure
-                error_log("Password verification failed for user: " . $username);
             }
-        } else {
-            // Debugging output for user not found
-            error_log("No user found with username: " . $username);
         }
-
         return false;
     }
 
-    // Check in the `sms3_user` table for admin/staff roles
+    // Attempt login in different tables
     $user = checkLogin($conn, 'sms3_user', $username, $password);
 
     if (!$user) {
-        // Check in the `sms3_students` table for student role
         $user = checkLogin($conn, 'sms3_students', $username, $password);
     }
 
     if ($user) {
-        // Set session variables
+        // Securely set session variables
         $_SESSION['user_id'] = $user['id'];
-        $_SESSION['username'] = $user['username'];
-        $_SESSION['name'] = $user['name'];
-        $_SESSION['role'] = $user['role'];
-        $_SESSION['email'] = $user['email'];
-        $_SESSION['phone'] = $user['phone'];
+        $_SESSION['username'] = htmlspecialchars($user['username']);
+        $_SESSION['name'] = htmlspecialchars($user['name']);
+        $_SESSION['role'] = htmlspecialchars($user['role']);
+        $_SESSION['email'] = htmlspecialchars($user['email']);
+        $_SESSION['phone'] = htmlspecialchars($user['phone']);
 
-        // Add student_number to session for students
+        // Add student number for students
         if ($user['role'] === 'Student') {
-            $_SESSION['student_number'] = $user['student_number']; // Ensure this field exists in the table
+            $_SESSION['student_number'] = htmlspecialchars($user['student_number']);
         }
 
         // Redirect based on role
@@ -91,15 +90,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             case 'Superadmin':
                 header("Location: Superdashboard.php");
                 break;
+            case 'Staff':
+                header("Location: staff/Dashboard.php");
+                break;
             case 'Student':
                 header("Location: student/Dashboard.php");
                 break;
             default:
-                header("Location: index.php"); // Redirect to a default page if role not matched
+                header("Location: index.php");
         }
-        exit; // Ensure script stops after redirect
+        exit;
     } else {
-        // If login fails, set an error message
         $_SESSION['error_message'] = 'Invalid username or password.';
         header('Location: index.php');
         exit;

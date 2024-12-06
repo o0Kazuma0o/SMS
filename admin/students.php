@@ -521,6 +521,7 @@ if (isset($_GET['delete_timetable_from_student'])) {
                   <th>Program</th>
                   <th>Year Level</th>
                   <th>Information</th>
+                  <th>Requirements</th>
                   <th>Subjects</th>
                   <th>Status</th>
                 </tr>
@@ -541,6 +542,9 @@ if (isset($_GET['delete_timetable_from_student'])) {
                       <td><?= htmlspecialchars($row['year_level']); ?></td>
                       <td>
                         <button class="btn btn-info btn-sm" onclick="viewInformation(<?= $row['id'] ?>)">View Information</button>
+                      </td>
+                      <td>
+                        <button class="btn btn-info btn-sm" onclick="viewRequirements(<?= $row['id'] ?>)">View Requirements</button>
                       </td>
                       <td>
                         <button class="btn btn-info btn-sm" onclick="viewTimetableDetails(<?= $row['id']; ?>)">View Timetable</button>
