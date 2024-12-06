@@ -19,7 +19,7 @@ define('INACTIVITY_TIMEOUT', 300); // 300 seconds = 5 minutes
 function checkAccess($requiredRole) {
     // Check if the user is logged in
     if (!isset($_SESSION['user_id']) || !isset($_SESSION['role'])) {
-        header("Location: admission.bcpsms3.com");
+        header("Location: /index.php");
         exit;
     }
 
@@ -41,7 +41,7 @@ function checkAccess($requiredRole) {
         if (isset($_SERVER['HTTP_REFERER'])) {
             header("Location: " . $_SERVER['HTTP_REFERER']);
         } else {
-            header("Location: admission.bcpsms3.com");
+            header("Location: /index.php");
         }
         exit;
     }

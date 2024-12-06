@@ -6,5 +6,5 @@ session_unset();
 session_destroy();
 
 // Redirect to the login page
-header("Location: admission.bcpsms3.com");
+header("Location: /index.php");
 exit;
