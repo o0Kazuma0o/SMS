@@ -361,7 +361,7 @@ $departments = $conn->query("SELECT * FROM sms3_departments");
       <h1>Department</h1>
       <nav>
         <ol class="breadcrumb">
-          <li class="breadcrumb-item"><a href="index.html">Home</a></li>
+          <li class="breadcrumb-item"><a href="Dashboard.php">Home</a></li>
           <li class="breadcrumb-item active">Department</li>
         </ol>
       </nav>

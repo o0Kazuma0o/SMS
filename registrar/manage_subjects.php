@@ -396,7 +396,7 @@ $subjects = $conn->query("SELECT s.*, d.department_code FROM sms3_subjects s JOI
       <h1>Subjects</h1>
       <nav>
         <ol class="breadcrumb">
-          <li class="breadcrumb-item"><a href="index.html">Home</a></li>
+          <li class="breadcrumb-item"><a href="Dashboard.php">Home</a></li>
           <li class="breadcrumb-item active">Subjects</li>
         </ol>
       </nav>

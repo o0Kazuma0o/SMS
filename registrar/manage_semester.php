@@ -51,7 +51,7 @@ $semesters = $conn->query("SELECT * FROM sms3_semesters ORDER BY id DESC");
   <meta charset="utf-8">
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
 
-  <title>Dashboard - Title</title>
+  <title>Semester</title>
   <meta content="" name="description">
   <meta content="" name="keywords">
 
@@ -239,7 +239,7 @@ $semesters = $conn->query("SELECT * FROM sms3_semesters ORDER BY id DESC");
       <h1>Dashboard</h1>
       <nav>
         <ol class="breadcrumb">
-          <li class="breadcrumb-item"><a href="index.html">Home</a></li>
+          <li class="breadcrumb-item"><a href="Dashboard.php">Home</a></li>
           <li class="breadcrumb-item active">Semester</li>
         </ol>
       </nav>

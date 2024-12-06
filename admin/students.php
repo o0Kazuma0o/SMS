@@ -245,7 +245,7 @@ if (isset($_GET['delete_timetable_from_student'])) {
   <meta charset="utf-8">
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
 
-  <title>Admission</title>
+  <title>Students</title>
   <meta content="" name="description">
   <meta content="" name="keywords">
 
@@ -474,11 +474,11 @@ if (isset($_GET['delete_timetable_from_student'])) {
   <main id="main" class="main">
 
     <div class="pagetitle">
-      <h1>Enrollment</h1>
+      <h1>Students</h1>
       <nav>
         <ol class="breadcrumb">
           <li class="breadcrumb-item"><a href="Dashboard.php">Dashboard</a></li>
-          <li class="breadcrumb-item active">Enrollment</li>
+          <li class="breadcrumb-item active">Students</li>
         </ol>
       </nav>
     </div><!-- End Page Title -->

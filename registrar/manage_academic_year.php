@@ -79,7 +79,7 @@ $academic_years = $conn->query("SELECT * FROM sms3_academic_years ORDER BY id DE
   <meta charset="utf-8">
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
 
-  <title>Academic</title>
+  <title>Academic Year</title>
   <meta content="" name="description">
   <meta content="" name="keywords">
 
@@ -281,11 +281,11 @@ $academic_years = $conn->query("SELECT * FROM sms3_academic_years ORDER BY id DE
   <main id="main" class="main">
 
     <div class="pagetitle">
-      <h1>Dashboard</h1>
+      <h1>Academic Year</h1>
       <nav>
         <ol class="breadcrumb">
-          <li class="breadcrumb-item"><a href="index.html">Home</a></li>
-          <li class="breadcrumb-item active">Dashboard</li>
+          <li class="breadcrumb-item"><a href="Dashboard.php">Home</a></li>
+          <li class="breadcrumb-item active">Academic Year</li>
         </ol>
       </nav>
     </div><!-- End Page Title -->
