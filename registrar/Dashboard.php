@@ -2,6 +2,63 @@
 require('../database.php');
 require_once 'session.php';
 checkAccess('Registrar'); // Ensure only users with the 'admin' role can access this page
+
+// Fetch the total number of pending enrollments
+$sql_enrollment = "SELECT COUNT(*) as total_pending_enrollments FROM sms3_pending_enrollment";
+$result_enrollment = $conn->query($sql_enrollment);
+$total_pending_enrollments = 0;
+
+if ($result_enrollment && $row_enrollment = $result_enrollment->fetch_assoc()) {
+  $total_pending_enrollments = $row_enrollment['total_pending_enrollments'];
+}
+
+// Fetch the total number of students
+$sql_students = "SELECT COUNT(*) as total_students FROM sms3_students";
+$result_students = $conn->query($sql_students);
+$total_students = 0;
+
+if ($result_students && $row_students = $result_students->fetch_assoc()) {
+  $total_students = $row_students['total_students'];
+}
+
+// Fetch student count grouped by department
+$sql_departments = "
+    SELECT 
+        d.department_name AS department_name, 
+        COUNT(s.id) AS student_count
+    FROM sms3_students s
+    LEFT JOIN sms3_departments d ON s.department_id = d.id
+    GROUP BY s.department_id
+";
+$result_departments = $conn->query($sql_departments);
+
+$department_labels = [];
+$student_counts = [];
+
+if ($result_departments) {
+  while ($row = $result_departments->fetch_assoc()) {
+    $department_labels[] = $row['department_name'] ? $row['department_name'] : "Unassigned";
+    $student_counts[] = $row['student_count'];
+  }
+}
+
+// Fetch student enrollment status counts
+$sql_enrollment_status = "
+    SELECT 
+        COUNT(CASE WHEN status = 'Enrolled' THEN 1 END) AS enrolled_count,
+        COUNT(CASE WHEN status = 'Not Enrolled' THEN 1 END) AS not_enrolled_count
+    FROM sms3_students
+";
+$result_enrollment_status = $conn->query($sql_enrollment_status);
+
+$enrolled_count = 0;
+$not_enrolled_count = 0;
+
+if ($result_enrollment_status) {
+  $row = $result_enrollment_status->fetch_assoc();
+  $enrolled_count = $row['enrolled_count'];
+  $not_enrolled_count = $row['not_enrolled_count'];
+}
 ?>
 
 <!DOCTYPE html>
@@ -235,46 +292,11 @@ checkAccess('Registrar'); // Ensure only users with the 'admin' role can access 
         <div class="col-lg-12">
           <div class="row">
 
-            <!-- Sales Card -->
-            <div class="col-xxl-4 col-md-6">
-              <div class="card info-card sales-card">
-
-                <div class="filter">
-                  <a class="icon" href="#" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></a>
-                  <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
-                    <li class="dropdown-header text-start">
-                      <h6>Filter</h6>
-                    </li>
-
-                    <li><a class="dropdown-item" href="#">Today</a></li>
-                    <li><a class="dropdown-item" href="#">This Month</a></li>
-                    <li><a class="dropdown-item" href="#">This Year</a></li>
-                  </ul>
-                </div>
-
-                <div class="card-body">
-                  <h5 class="card-title">Sales <span>| Today</span></h5>
-
-                  <div class="d-flex align-items-center">
-                    <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
-                      <i class="bi bi-cart"></i>
-                    </div>
-                    <div class="ps-3">
-                      <h6>145</h6>
-                      <span class="text-success small pt-1 fw-bold">12%</span> <span class="text-muted small pt-2 ps-1">increase</span>
-
-                    </div>
-                  </div>
-                </div>
-
-              </div>
-            </div><!-- End Sales Card -->
-
-            <!-- Revenue Card -->
-            <div class="col-xxl-4 col-md-6">
+            <!-- Enrollment Card -->
+            <div class="col-xxl-6 col-md-6">
               <div class="card info-card revenue-card">
 
-                <div class="filter">
+                <!--<div class="filter">
                   <a class="icon" href="#" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></a>
                   <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
                     <li class="dropdown-header text-start">
@@ -285,218 +307,121 @@ checkAccess('Registrar'); // Ensure only users with the 'admin' role can access 
                     <li><a class="dropdown-item" href="#">This Month</a></li>
                     <li><a class="dropdown-item" href="#">This Year</a></li>
                   </ul>
-                </div>
+                </div> -->
 
                 <div class="card-body">
-                  <h5 class="card-title">Revenue <span>| This Month</span></h5>
+                  <h5 class="card-title">Enrollments <span>| Pending</span></h5>
 
                   <div class="d-flex align-items-center">
                     <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
-                      <i class="bi bi-currency-dollar"></i>
+                      <i class="bi bi-journal-bookmark-fill"></i>
                     </div>
                     <div class="ps-3">
-                      <h6>$3,264</h6>
-                      <span class="text-success small pt-1 fw-bold">8%</span> <span class="text-muted small pt-2 ps-1">increase</span>
-
+                      <h6><?php echo $total_pending_enrollments; ?></h6>
+                      <span class="text-muted small pt-2 ps-1">Total Pending Enrollments</span>
                     </div>
                   </div>
                 </div>
 
               </div>
-            </div><!-- End Revenue Card -->
+            </div><!-- End Enrollment Card -->
 
-            <!-- Customers Card -->
-            <div class="col-xxl-4 col-xl-12">
+            <!-- Total Students Card -->
+            <div class="col-xxl-6 col-xl-12">
 
               <div class="card info-card customers-card">
 
-                <div class="filter">
-                  <a class="icon" href="#" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></a>
-                  <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
-                    <li class="dropdown-header text-start">
-                      <h6>Filter</h6>
-                    </li>
-
-                    <li><a class="dropdown-item" href="#">Today</a></li>
-                    <li><a class="dropdown-item" href="#">This Month</a></li>
-                    <li><a class="dropdown-item" href="#">This Year</a></li>
-                  </ul>
-                </div>
-
                 <div class="card-body">
-                  <h5 class="card-title">Customers <span>| This Year</span></h5>
+                  <h5 class="card-title">Students <span>| Total</span></h5>
 
                   <div class="d-flex align-items-center">
                     <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
                       <i class="bi bi-people"></i>
                     </div>
                     <div class="ps-3">
-                      <h6>1244</h6>
-                      <span class="text-danger small pt-1 fw-bold">12%</span> <span class="text-muted small pt-2 ps-1">decrease</span>
-
+                      <h6><?php echo $total_students; ?></h6>
+                      <span class="text-muted small pt-2 ps-1">Total Registered Students</span>
                     </div>
                   </div>
-
                 </div>
+
               </div>
 
             </div><!-- End Customers Card -->
 
-            <!-- Reports -->
-            <div class="col-12">
+            <!-- Students by Department -->
+            <div class="col-lg-6">
               <div class="card">
-
-                <div class="filter">
-                  <a class="icon" href="#" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></a>
-                  <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
-                    <li class="dropdown-header text-start">
-                      <h6>Filter</h6>
-                    </li>
-
-                    <li><a class="dropdown-item" href="#">Today</a></li>
-                    <li><a class="dropdown-item" href="#">This Month</a></li>
-                    <li><a class="dropdown-item" href="#">This Year</a></li>
-                  </ul>
-                </div>
-
                 <div class="card-body">
-                  <h5 class="card-title">Reports <span>/Today</span></h5>
+                  <h5 class="card-title">Students by Department</h5>
 
-                  <!-- Line Chart -->
-                  <div id="reportsChart"></div>
+                  <!-- Pie Chart -->
+                  <div id="departmentPieChart"></div>
 
                   <script>
                     document.addEventListener("DOMContentLoaded", () => {
-                      new ApexCharts(document.querySelector("#reportsChart"), {
-                        series: [{
-                          name: 'Sales',
-                          data: [31, 40, 28, 51, 42, 82, 56],
-                        }, {
-                          name: 'Revenue',
-                          data: [11, 32, 45, 32, 34, 52, 41]
-                        }, {
-                          name: 'Customers',
-                          data: [15, 11, 32, 18, 9, 24, 11]
-                        }],
+                      const departmentLabels = <?php echo json_encode($department_labels); ?>;
+                      const studentCounts = <?php echo json_encode($student_counts); ?>;
+
+                      new ApexCharts(document.querySelector("#departmentPieChart"), {
+                        series: studentCounts,
                         chart: {
                           height: 350,
-                          type: 'area',
+                          type: 'pie',
                           toolbar: {
-                            show: false
-                          },
-                        },
-                        markers: {
-                          size: 4
-                        },
-                        colors: ['#4154f1', '#2eca6a', '#ff771d'],
-                        fill: {
-                          type: "gradient",
-                          gradient: {
-                            shadeIntensity: 1,
-                            opacityFrom: 0.3,
-                            opacityTo: 0.4,
-                            stops: [0, 90, 100]
+                            show: true
                           }
                         },
-                        dataLabels: {
-                          enabled: false
+                        labels: departmentLabels,
+                        title: {
+                          text: "Students Distribution by Department",
+                          align: "center"
                         },
-                        stroke: {
-                          curve: 'smooth',
-                          width: 2
-                        },
-                        xaxis: {
-                          type: 'datetime',
-                          categories: ["2018-09-19T00:00:00.000Z", "2018-09-19T01:30:00.000Z", "2018-09-19T02:30:00.000Z", "2018-09-19T03:30:00.000Z", "2018-09-19T04:30:00.000Z", "2018-09-19T05:30:00.000Z", "2018-09-19T06:30:00.000Z"]
-                        },
-                        tooltip: {
-                          x: {
-                            format: 'dd/MM/yy HH:mm'
-                          },
-                        }
                       }).render();
                     });
                   </script>
-                  <!-- End Line Chart -->
+                  <!-- End Pie Chart -->
 
                 </div>
-
               </div>
-            </div><!-- End Reports -->
+            </div>
 
-            <!-- Recent Sales -->
-            <div class="col-12">
-              <div class="card recent-sales overflow-auto">
-
-                <div class="filter">
-                  <a class="icon" href="#" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></a>
-                  <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
-                    <li class="dropdown-header text-start">
-                      <h6>Filter</h6>
-                    </li>
-
-                    <li><a class="dropdown-item" href="#">Today</a></li>
-                    <li><a class="dropdown-item" href="#">This Month</a></li>
-                    <li><a class="dropdown-item" href="#">This Year</a></li>
-                  </ul>
-                </div>
-
+            <!-- Enrollment Status -->
+            <div class="col-lg-6">
+              <div class="card">
                 <div class="card-body">
-                  <h5 class="card-title">Recent Sales <span>| Today</span></h5>
+                  <h5 class="card-title">Enrollment Status</h5>
 
-                  <table class="table table-borderless datatable">
-                    <thead>
-                      <tr>
-                        <th scope="col">#</th>
-                        <th scope="col">Customer</th>
-                        <th scope="col">Product</th>
-                        <th scope="col">Price</th>
-                        <th scope="col">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <th scope="row"><a href="#">#2457</a></th>
-                        <td>Brandon Jacob</td>
-                        <td><a href="#" class="text-primary">At praesentium minu</a></td>
-                        <td>$64</td>
-                        <td><span class="badge bg-success">Approved</span></td>
-                      </tr>
-                      <tr>
-                        <th scope="row"><a href="#">#2147</a></th>
-                        <td>Bridie Kessler</td>
-                        <td><a href="#" class="text-primary">Blanditiis dolor omnis similique</a></td>
-                        <td>$47</td>
-                        <td><span class="badge bg-warning">Pending</span></td>
-                      </tr>
-                      <tr>
-                        <th scope="row"><a href="#">#2049</a></th>
-                        <td>Ashleigh Langosh</td>
-                        <td><a href="#" class="text-primary">At recusandae consectetur</a></td>
-                        <td>$147</td>
-                        <td><span class="badge bg-success">Approved</span></td>
-                      </tr>
-                      <tr>
-                        <th scope="row"><a href="#">#2644</a></th>
-                        <td>Angus Grady</td>
-                        <td><a href="#" class="text-primar">Ut voluptatem id earum et</a></td>
-                        <td>$67</td>
-                        <td><span class="badge bg-danger">Rejected</span></td>
-                      </tr>
-                      <tr>
-                        <th scope="row"><a href="#">#2644</a></th>
-                        <td>Raheem Lehner</td>
-                        <td><a href="#" class="text-primary">Sunt similique distinctio</a></td>
-                        <td>$165</td>
-                        <td><span class="badge bg-success">Approved</span></td>
-                      </tr>
-                    </tbody>
-                  </table>
+                  <!-- Pie Chart -->
+                  <div id="enrollmentPieChart"></div>
+
+                  <script>
+                    document.addEventListener("DOMContentLoaded", () => {
+                      const statusLabels = ["Enrolled", "Not Enrolled"];
+                      const statusCounts = [<?php echo $enrolled_count; ?>, <?php echo $not_enrolled_count; ?>];
+
+                      new ApexCharts(document.querySelector("#enrollmentPieChart"), {
+                        series: statusCounts,
+                        chart: {
+                          height: 350,
+                          type: 'pie',
+                          toolbar: {
+                            show: true
+                          }
+                        },
+                        labels: statusLabels,
+                        title: {
+                          text: "Students Enrollment Status",
+                          align: "center"
+                        },
+                      }).render();
+                    });
+                  </script>
+                  <!-- End Pie Chart -->
 
                 </div>
-
               </div>
-            </div><!-- End Recent Sales -->
+            </div>
 
           </div>
         </div><!-- End Left side columns -->

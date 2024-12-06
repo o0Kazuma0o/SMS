@@ -307,7 +307,7 @@ $semesters = $conn->query("SELECT * FROM sms3_semesters ORDER BY id DESC");
 
       <div class="card">
         <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;" class="card-body">
-        <h5 class="card-title">??</h5>
+        <h5 class="card-title">Manage Semester</h5>
         <table style="width: 100%; min-width: 800px;" class="table table-bordered">
           <thead>
             <tr>
