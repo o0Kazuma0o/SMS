@@ -1,7 +1,56 @@
 <?php
 require('../database.php');
 require_once 'session.php';
+require_once '../vendor/autoload.php';
 checkAccess('Admin'); // Ensure only users with the 'admin' role can access this page
+
+// Path to service account JSON file
+$KEY_FILE_LOCATION = __DIR__ . '../bcp-analytics-api-cd26adc23306.json';
+
+// GA4 Property ID
+$PROPERTY_ID = '478793835';
+
+try {
+  $client = new Google\Client();
+  $client->setAuthConfig($KEY_FILE_LOCATION);
+  $client->addScope(Google\Service\AnalyticsData::ANALYTICS_READONLY);
+  
+  $analytics = new Google\Service\AnalyticsData($client);
+
+  $requestBody = new Google\Service\AnalyticsData\RunReportRequest([
+      'dateRanges' => [
+          new Google\Service\AnalyticsData\DateRange([
+              'startDate' => 'today',
+              'endDate' => 'today',
+          ]),
+      ],
+      'dimensions' => [new Google\Service\AnalyticsData\Dimension(['name' => 'pagePath'])],
+      'metrics' => [new Google\Service\AnalyticsData\Metric(['name' => 'activeUsers'])],
+      'dimensionFilter' => new Google\Service\AnalyticsData\FilterExpression([
+          'filter' => new Google\Service\AnalyticsData\Filter([
+              'fieldName' => 'pagePath',
+              'stringFilter' => new Google\Service\AnalyticsData\StringFilter([
+                  'matchType' => 'EXACT',
+                  'value' => '/index.php'
+              ])
+          ])
+      ])
+  ]);
+
+  $response = $analytics->properties->runReport(
+      'properties/' . $PROPERTY_ID,
+      $requestBody
+  );
+
+  $total_views = 0;
+  foreach ($response->getRows() as $row) {
+      $total_views += $row->getMetricValues()[0]->getValue();
+  }
+} catch (Exception $e) {
+  $total_views = 'N/A';
+  error_log('GA API Error: ' . $e->getMessage());
+}
+
 
 // Fetch the total number of pending admissions
 $sql = "SELECT COUNT(*) as total_pending FROM sms3_pending_admission WHERE status = 'Pending'";
@@ -381,6 +430,30 @@ if ($result_enrollment_status) {
               </div>
 
             </div><!-- End Customers Card -->
+
+            <!-- Website Traffic Card -->
+            <div class="col-xxl-4 col-md-6">
+              <div class="card info-card sales-card">
+                <div class="card-body">
+                  <h5 class="card-title">Website Traffic <span>| 30 Days</span></h5>
+                  <div class="d-flex align-items-center">
+                    <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
+                      <i class="bi bi-graph-up"></i>
+                    </div>
+                    <div class="ps-3">
+                      <h6><?php
+                          if (is_numeric($total_views)) {
+                            echo number_format($total_views);
+                          } else {
+                            echo $total_views;
+                          }
+                          ?></h6>
+                      <span class="text-muted small pt-2 ps-1">Homepage Views</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
 
             <!-- Forecasting -->
             <div class="col-12">

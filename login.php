@@ -15,14 +15,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Validate username format
     if (!preg_match('/^[a-zA-Z0-9._]+$/', $username)) {
         $_SESSION['error_message'] = 'Invalid username format. Only letters, numbers, dots, and underscores are allowed.';
-        header('Location: index.php');
+        header('Location: login.php');
         exit;
     }
 
     // Ensure both fields are filled
     if (empty($username) || empty($password)) {
         $_SESSION['error_message'] = 'Please fill in both fields.';
-        header('Location: index.php');
+        header('Location: login.php');
         exit;
     }
 
@@ -100,12 +100,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 header("Location: student/Dashboard.php");
                 break;
             default:
-                header("Location: index.php");
+                header("Location: login.php");
         }
         exit;
     } else {
         $_SESSION['error_message'] = 'Invalid username or password.';
-        header('Location: index.php');
+        header('Location: login.php');
         exit;
     }
 }
@@ -283,7 +283,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     <div class="login-container">
         <h2>Log Into Your Account</h2>
-        <form id="loginForm" action="index.php" method="post">
+        <form id="loginForm" action="login.php" method="post">
             <label for="username" class="form-label">Username</label>
             <input type="text" class="form-control" id="username" name="username" required oninput="validateUsername(this)" pattern="[a-zA-Z0-9._]+">
 
