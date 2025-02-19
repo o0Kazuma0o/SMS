@@ -5,50 +5,47 @@ require_once '../vendor/autoload.php';
 checkAccess('Admin'); // Ensure only users with the 'admin' role can access this page
 
 // Path to service account JSON file
-$KEY_FILE_LOCATION = __DIR__ . '../bcp-analytics-api-cd26adc23306.json';
+$KEY_FILE_LOCATION = __DIR__ . '/bcp-analytics-api-cd26adc23306.json';
 
 // GA4 Property ID
-$PROPERTY_ID = '478793835';
+$PROPERTY_ID = 'G-478793835';
 
 try {
   $client = new Google\Client();
   $client->setAuthConfig($KEY_FILE_LOCATION);
   $client->addScope(Google\Service\AnalyticsData::ANALYTICS_READONLY);
-  
+
   $analytics = new Google\Service\AnalyticsData($client);
 
-  $requestBody = new Google\Service\AnalyticsData\RunReportRequest([
-      'dateRanges' => [
-          new Google\Service\AnalyticsData\DateRange([
-              'startDate' => 'today',
-              'endDate' => 'today',
-          ]),
-      ],
-      'dimensions' => [new Google\Service\AnalyticsData\Dimension(['name' => 'pagePath'])],
-      'metrics' => [new Google\Service\AnalyticsData\Metric(['name' => 'activeUsers'])],
-      'dimensionFilter' => new Google\Service\AnalyticsData\FilterExpression([
-          'filter' => new Google\Service\AnalyticsData\Filter([
-              'fieldName' => 'pagePath',
-              'stringFilter' => new Google\Service\AnalyticsData\StringFilter([
-                  'matchType' => 'EXACT',
-                  'value' => '/index.php'
-              ])
-          ])
+  // Real-time report request
+  $requestBody = new Google\Service\AnalyticsData\RunRealtimeReportRequest([
+    'dimensions' => [new Google\Service\AnalyticsData\Dimension(['name' => 'pagePath'])],
+    'metrics' => [new Google\Service\AnalyticsData\Metric(['name' => 'activeUsers'])],
+    'dimensionFilter' => new Google\Service\AnalyticsData\FilterExpression([
+      'filter' => new Google\Service\AnalyticsData\Filter([
+        'fieldName' => 'pagePath',
+        'stringFilter' => new Google\Service\AnalyticsData\StringFilter([
+          'matchType' => 'EXACT',
+          'value' => '/index.php'
+        ])
       ])
+    ])
   ]);
 
-  $response = $analytics->properties->runReport(
-      'properties/' . $PROPERTY_ID,
-      $requestBody
+  $response = $analytics->properties->runRealtimeReport(
+    'properties/' . $PROPERTY_ID,
+    $requestBody
   );
 
   $total_views = 0;
   foreach ($response->getRows() as $row) {
-      $total_views += $row->getMetricValues()[0]->getValue();
+    $total_views += $row->getMetricValues()[0]->getValue();
   }
 } catch (Exception $e) {
   $total_views = 'N/A';
   error_log('GA API Error: ' . $e->getMessage());
+  // Uncomment below for debugging
+  echo 'Error: ' . $e->getMessage();
 }
 
 
@@ -435,7 +432,7 @@ if ($result_enrollment_status) {
             <div class="col-xxl-4 col-md-6">
               <div class="card info-card sales-card">
                 <div class="card-body">
-                  <h5 class="card-title">Website Traffic <span>| 30 Days</span></h5>
+                  <h5 class="card-title">Website Traffic</h5>
                   <div class="d-flex align-items-center">
                     <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
                       <i class="bi bi-graph-up"></i>

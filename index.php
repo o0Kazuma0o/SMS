@@ -10,7 +10,7 @@
       dataLayer.push(arguments);
     }
     gtag('js', new Date());
-    gtag('config', 'G-925V70GR5K'); // Replace with your Measurement ID
+    gtag('config', 'G-925V70GR5K'); // Measurement ID
   </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Home | Bestlink College of the Philippines</title>
