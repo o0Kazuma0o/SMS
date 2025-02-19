@@ -1,5 +1,15 @@
 <?php
+session_start();
 require('database.php'); // Adjust the path as needed
+
+if (!isset($_SESSION['selected_branch'])) {
+  $_SESSION['error'] = "Please select a branch first";
+  header('Location: select_branch.php');
+  exit;
+}
+
+// Add branch to your database insert
+$selected_branch = $_SESSION['selected_branch'];
 
 // Fetch all departments from the database
 $departmentss = $conn->query("SELECT * FROM sms3_departments");
@@ -38,6 +48,16 @@ while ($department = $departments->fetch_assoc()) {
   <link href="assets/css/style.css" rel="stylesheet">
 
   <style>
+    body {
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    .row {
+      margin-left: 0;
+      margin-right: 0;
+    }
+
     .title {
       background-color: #1e3a8a;
       color: #6b7280;
@@ -45,6 +65,14 @@ while ($department = $departments->fetch_assoc()) {
       padding: 20px;
       margin-bottom: 2rem;
       text-align: center;
+      border-radius: 15px 15px 15px 15px;
+      /* Add border radius to the top corners */
+      overflow: hidden;
+      /* Ensure the border radius is visible */
+      position: relative;
+      /* Ensure it stays above other elements */
+      z-index: 1;
+      /* Bring it to the front */
     }
 
     .requirements {
@@ -96,6 +124,14 @@ while ($department = $departments->fetch_assoc()) {
     }
 
     /* Responsive Adjustments */
+    @media (max-width: 992px) {
+      .card.register {
+        max-width: 100%;
+        margin-left: 0;
+        margin-right: 0;
+      }
+    }
+
     @media (max-width: 768px) {
       .requirements-section {
         margin-top: 40px;
@@ -122,6 +158,10 @@ while ($department = $departments->fetch_assoc()) {
         font-size: 15px;
       }
     }
+
+    .form-control {
+      max-width: 100%;
+    }
   </style>
 
 
@@ -136,8 +176,8 @@ while ($department = $departments->fetch_assoc()) {
   <?php endif; ?>
 
   <main class="main">
-    <div style="position: absolute; top: 10px; left: 10px;">
-      <a href="index.php" style="text-decoration: none; background-color: #1e3a8a; color: white; padding: 10px 20px; border-radius: 5px; font-weight: bold;">
+    <div style="position: absolute; top: 10px; left: 10px; z-index: 2;">
+      <a href="select_branch.php" style="text-decoration: none; background-color: #1e3a8a; color: white; padding: 10px 20px; border-radius: 5px; font-weight: bold;">
         &larr; Back
       </a>
     </div>
@@ -148,12 +188,12 @@ while ($department = $departments->fetch_assoc()) {
       <h1>College Admission</h1>
     </div>
     <div class="row d-flex justify-content-center">
-      <div class="card register col-lg-9 mt-1">
+      <div class="card register col-lg-8 mt-1">
         <div class="card">
           <div class="card-body">
             <div class="accordion accordion-flush" id="admission">
 
-              <div class="accordion-item">
+              <div class="accordion-items">
                 <h2 class="accordion-header" id="headingOne">
                   <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne" disabled>
                     Basic Information
@@ -541,36 +581,38 @@ while ($department = $departments->fetch_assoc()) {
         </div>
       </div>
       <div class="card register col-lg-3 mt-1">
-        <div class="card requirements">
-          <div class="requirements-section">
-            <h3><strong>Requirements</strong></h3>
-            <p>Original Copy of the following documents shall be submitted</p>
+        <div class="card">
+          <div class="card requirements">
+            <div class="requirements-section">
+              <h3><strong>Requirements</strong></h3>
+              <p>Original Copy of the following documents shall be submitted</p>
 
-            <hr>
+              <hr>
 
-            <h5>College New/Freshmen</h5>
-            <ul>
-              <li>Form 138 (Report Card)</li>
-              <li>Form 137</li>
-              <li>Certificate of Good Moral</li>
-              <li>PSA Authenticated Birth Certificate</li>
-              <li>Passport Size ID Picture (White Background, Formal Attire) - 2pcs</li>
-              <li>Barangay Clearance</li>
-            </ul>
+              <h5>College New/Freshmen</h5>
+              <ul>
+                <li>Form 138 (Report Card)</li>
+                <li>Form 137</li>
+                <li>Certificate of Good Moral</li>
+                <li>PSA Authenticated Birth Certificate</li>
+                <li>Passport Size ID Picture (White Background, Formal Attire) - 2pcs</li>
+                <li>Barangay Clearance</li>
+              </ul>
 
-            <hr>
+              <hr>
 
-            <h5>College Transferee</h5>
-            <ul>
-              <li>Transcript of Records from Previous School</li>
-              <li>Honorable Dismissal</li>
-              <li>Certificate of Good Moral</li>
-              <li>PSA Authenticated Birth Certificate</li>
-              <li>Passport Size ID Picture (White Background, Formal Attire) - 2pcs</li>
-              <li>Barangay Clearance</li>
-            </ul>
+              <h5>College Transferee</h5>
+              <ul>
+                <li>Transcript of Records from Previous School</li>
+                <li>Honorable Dismissal</li>
+                <li>Certificate of Good Moral</li>
+                <li>PSA Authenticated Birth Certificate</li>
+                <li>Passport Size ID Picture (White Background, Formal Attire) - 2pcs</li>
+                <li>Barangay Clearance</li>
+              </ul>
+            </div>
+
           </div>
-
         </div>
       </div>
     </div>
@@ -583,6 +625,7 @@ while ($department = $departments->fetch_assoc()) {
     const guardianInfo = {};
     const educationInfo = {};
     const referralInfo = {};
+    const selectedBranch = <?= json_encode($selected_branch); ?>;
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // Simple email regex for validation
 
@@ -998,6 +1041,9 @@ while ($department = $departments->fetch_assoc()) {
 
       // Basic Information Section in Two Columns
       summaryHtml += `
+      <h4>Campus Branch</h4>
+      <p><strong>Selected Branch:</strong> ${selectedBranch}</p>
+      <hr>
       <h4>Basic Information</h4>
       <div class="row">
         <div class="col-md-6">
@@ -1179,7 +1225,8 @@ while ($department = $departments->fetch_assoc()) {
         addressInfo: addressInfo,
         guardianInfo: guardianInfo,
         educationInfo: educationInfo,
-        referralInfo: referralInfo
+        referralInfo: referralInfo,
+        selectedBranch: selectedBranch
       };
 
       // Function to show a custom popup notification

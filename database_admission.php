@@ -1,17 +1,26 @@
 <?php
+session_start();
 require 'database.php';
 
 // Retrieve the incoming JSON data
 $data = json_decode(file_get_contents('php://input'), true);
 
+$selectedBranch = $_SESSION['selected_branch'] ?? $data['selectedBranch'] ?? null;
+
+// Add validation for branch
+if (!$selectedBranch) {
+    echo json_encode(['success' => false, 'message' => 'Branch selection is required']);
+    exit;
+}
+
 // Prepare the SQL statement to insert the data
 $sql = "INSERT INTO sms3_pending_admission (
-    first_name, middle_name, last_name, department_id, admission_type, year_level, sex, civil_status, religion, 
+    first_name, middle_name, last_name, department_id, branch, admission_type, year_level, sex, civil_status, religion, 
     birthday, email, contact_number, facebook_name, working_student, address, father_name, mother_name, 
     guardian_name, guardian_contact, member4ps, primary_school, primary_year, secondary_school, 
     secondary_year, last_school, last_school_year, referral_source, status
 ) VALUES (
-    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending'
+    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending'
 )";
 
 try {
@@ -23,11 +32,12 @@ try {
 
     // Bind parameters to the statement
     $stmt->bind_param(
-        'sssssssssssssssssssssssssss',
+        'ssssssssssssssssssssssssssss',
         $data['basicInfo']['firstname'],
         $data['basicInfo']['middlename'],
         $data['basicInfo']['lastname'],
         $data['basicInfo']['program'],
+        $selectedBranch,
         $data['basicInfo']['admissiontype'],
         $data['basicInfo']['yrlvl'],
         $data['basicInfo']['sex'],
@@ -62,4 +72,3 @@ try {
 
 // Close the statement and connection
 $stmt->close();
-    
