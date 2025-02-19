@@ -458,7 +458,13 @@ if ($result_enrollment_status) {
                       <i class="bi bi-eye"></i>
                     </div>
                     <div class="ps-3">
-                      <h6><?= isset($totalViews) ? number_format($totalViews) : '0' ?></h6>
+                      <h6>
+                        <?php if (isset($totalViews) && is_numeric($totalViews)): ?>
+                          <?= number_format((float)$totalViews) ?>
+                        <?php else: ?>
+                          N/A
+                        <?php endif; ?>
+                      </h6>
                       <span class="text-muted small pt-2 ps-1">All-time Views</span>
                     </div>
                   </div>
