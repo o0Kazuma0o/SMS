@@ -3,7 +3,7 @@ require('../database.php');
 require_once 'session.php';
 require_once '../vendor/autoload.php';
 
-use Google\Analytics\Data\V1beta\BetaAnalyticsDataClient;
+use Google\Analytics\Data\V1beta\Client\BetaAnalyticsDataClient;
 use Google\Analytics\Data\V1beta\DateRange;
 use Google\Analytics\Data\V1beta\Metric;
 use Google\Analytics\Data\V1beta\RunRealtimeReportRequest;
@@ -20,6 +20,7 @@ try {
   // Real-time Users
   $client = new BetaAnalyticsDataClient([
     'credentials' => $credentialsPath,
+    'transport' => 'grpc'
   ]);
 
   $realtimeRequest = new RunRealtimeReportRequest([
@@ -31,11 +32,16 @@ try {
   $realtimeUsers = $realtimeResponse->getRows()[0]->getMetricValues()[0]->getValue();
 
   // Total Pageviews
-  $totalRequest = [
+  $totalRequest = new Google\Analytics\Data\V1beta\RunReportRequest([
     'property' => "properties/$ga4PropertyId",
-    'dateRanges' => [new DateRange(['start_date' => '2020-01-01', 'end_date' => 'today'])],
-    'metrics' => [new Metric(['name' => 'screenPageViews'])],
-  ];
+    'date_ranges' => [
+        new DateRange([
+            'start_date' => '2020-01-01',
+            'end_date' => 'today'
+        ])
+    ],
+    'metrics' => [new Metric(['name' => 'screenPageViews'])]
+  ]);
 
   $totalResponse = $client->runReport($totalRequest);
   $totalViews = $totalResponse->getRows()[0]->getMetricValues()[0]->getValue();
