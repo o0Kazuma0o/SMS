@@ -35,16 +35,16 @@ try {
   $totalRequest = new Google\Analytics\Data\V1beta\RunReportRequest([
     'property' => "properties/$ga4PropertyId",
     'date_ranges' => [
-        new DateRange([
-            'start_date' => '2020-01-01',
-            'end_date' => 'today'
-        ])
+      new DateRange([
+        'start_date' => '2020-01-01',
+        'end_date' => 'today'
+      ])
     ],
     'metrics' => [new Metric(['name' => 'screenPageViews'])]
   ]);
 
   $totalResponse = $client->runReport($totalRequest);
-  $totalViews = $totalResponse->getRows()[0]->getMetricValues()[0]->getValue();
+  $totalViews = (int)$totalResponse->getRows()[0]->getMetricValues()[0]->getValue();
 } catch (Exception $e) {
   $realtimeUsers = 'N/A';
   $totalViews = 'N/A';
@@ -458,7 +458,7 @@ if ($result_enrollment_status) {
                       <i class="bi bi-eye"></i>
                     </div>
                     <div class="ps-3">
-                      <h6><?= isset($totalViews) ? number_format($totalViews) : 'N/A' ?></h6>
+                      <h6><?= isset($totalViews) ? number_format($totalViews) : '0' ?></h6>
                       <span class="text-muted small pt-2 ps-1">All-time Views</span>
                     </div>
                   </div>
