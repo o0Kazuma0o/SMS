@@ -2,50 +2,47 @@
 require('../database.php');
 require_once 'session.php';
 require_once '../vendor/autoload.php';
+
+use Google\Analytics\Data\V1beta\BetaAnalyticsDataClient;
+use Google\Analytics\Data\V1beta\DateRange;
+use Google\Analytics\Data\V1beta\Metric;
+use Google\Analytics\Data\V1beta\RunRealtimeReportRequest;
+
 checkAccess('Admin'); // Ensure only users with the 'admin' role can access this page
 
-// Path to service account JSON file
-$KEY_FILE_LOCATION = __DIR__ . '/bcp-analytics-api-cd26adc23306.json';
-
 // GA4 Property ID
-$PROPERTY_ID = 'G-478793835';
+$ga4PropertyId = '478793835';
+
+// Path to service account JSON file
+$credentialsPath = __DIR__ . '../bcp-analytics-api-cd26adc23306.json';
 
 try {
-  $client = new Google\Client();
-  $client->setAuthConfig($KEY_FILE_LOCATION);
-  $client->addScope(Google\Service\AnalyticsData::ANALYTICS_READONLY);
-
-  $analytics = new Google\Service\AnalyticsData($client);
-
-  // Real-time report request
-  $requestBody = new Google\Service\AnalyticsData\RunRealtimeReportRequest([
-    'dimensions' => [new Google\Service\AnalyticsData\Dimension(['name' => 'pagePath'])],
-    'metrics' => [new Google\Service\AnalyticsData\Metric(['name' => 'activeUsers'])],
-    'dimensionFilter' => new Google\Service\AnalyticsData\FilterExpression([
-      'filter' => new Google\Service\AnalyticsData\Filter([
-        'fieldName' => 'pagePath',
-        'stringFilter' => new Google\Service\AnalyticsData\StringFilter([
-          'matchType' => 'EXACT',
-          'value' => '/index.php'
-        ])
-      ])
-    ])
+  // Real-time Users
+  $client = new BetaAnalyticsDataClient([
+    'credentials' => $credentialsPath,
   ]);
 
-  $response = $analytics->properties->runRealtimeReport(
-    'properties/' . $PROPERTY_ID,
-    $requestBody
-  );
+  $realtimeRequest = new RunRealtimeReportRequest([
+    'property' => "properties/$ga4PropertyId",
+    'metrics' => [new Metric(['name' => 'activeUsers'])],
+  ]);
 
-  $total_views = 0;
-  foreach ($response->getRows() as $row) {
-    $total_views += $row->getMetricValues()[0]->getValue();
-  }
+  $realtimeResponse = $client->runRealtimeReport($realtimeRequest);
+  $realtimeUsers = $realtimeResponse->getRows()[0]->getMetricValues()[0]->getValue();
+
+  // Total Pageviews
+  $totalRequest = [
+    'property' => "properties/$ga4PropertyId",
+    'dateRanges' => [new DateRange(['start_date' => '2020-01-01', 'end_date' => 'today'])],
+    'metrics' => [new Metric(['name' => 'screenPageViews'])],
+  ];
+
+  $totalResponse = $client->runReport($totalRequest);
+  $totalViews = $totalResponse->getRows()[0]->getMetricValues()[0]->getValue();
 } catch (Exception $e) {
-  $total_views = 'N/A';
-  error_log('GA API Error: ' . $e->getMessage());
-  // Uncomment below for debugging
-  echo 'Error: ' . $e->getMessage();
+  $realtimeUsers = 'N/A';
+  $totalViews = 'N/A';
+  error_log("GA API Error: " . $e->getMessage());
 }
 
 
@@ -428,24 +425,35 @@ if ($result_enrollment_status) {
 
             </div><!-- End Customers Card -->
 
-            <!-- Website Traffic Card -->
             <div class="col-xxl-4 col-md-6">
               <div class="card info-card sales-card">
                 <div class="card-body">
-                  <h5 class="card-title">Website Traffic</h5>
+                  <h5 class="card-title">Real-time Users</h5>
                   <div class="d-flex align-items-center">
                     <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
-                      <i class="bi bi-graph-up"></i>
+                      <i class="bi bi-people"></i>
                     </div>
                     <div class="ps-3">
-                      <h6><?php
-                          if (is_numeric($total_views)) {
-                            echo number_format($total_views);
-                          } else {
-                            echo $total_views;
-                          }
-                          ?></h6>
-                      <span class="text-muted small pt-2 ps-1">Homepage Views</span>
+                      <h6><?= $realtimeUsers ?? 'N/A' ?></h6>
+                      <span class="text-muted small pt-2 ps-1">Active Now</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Total Pageviews Card -->
+            <div class="col-xxl-4 col-md-6">
+              <div class="card info-card sales-card">
+                <div class="card-body">
+                  <h5 class="card-title">Total Pageviews</h5>
+                  <div class="d-flex align-items-center">
+                    <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
+                      <i class="bi bi-eye"></i>
+                    </div>
+                    <div class="ps-3">
+                      <h6><?= isset($totalViews) ? number_format($totalViews) : 'N/A' ?></h6>
+                      <span class="text-muted small pt-2 ps-1">All-time Views</span>
                     </div>
                   </div>
                 </div>
