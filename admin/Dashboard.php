@@ -1,6 +1,6 @@
 <?php
 require('../database.php');
-require_once '../vendor/autoload.php';
+require_once __DIR__ . '/../vendor/autoload.php'; // Adjust path based on your structure
 require_once 'session.php';
 
 checkAccess('Admin'); // Ensure only users with the 'admin' role can access this page
@@ -11,7 +11,7 @@ $totalVisitors = getTotalUsers($propertyId);
 
 function initializeAnalytics()
 {
-  $KEY_FILE_LOCATION = __DIR__ . '../bcp-analytics-api-1951ba8ee03d.json'; // Path to JSON key file
+  $KEY_FILE_LOCATION = __DIR__ . '/../bcp-analytics-api-1951ba8ee03d.json'; // Path to JSON key file
 
   $client = new Google\Client();
   $client->setApplicationName("Analytics Reporting");
