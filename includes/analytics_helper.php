@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '../vendor/autoload.php';
+require_once __DIR__ . '/vendor/autoload.php';
 
 function initializeAnalytics() {
     $KEY_FILE_LOCATION = __DIR__ . 'bcp-analytics-api-1951ba8ee03d.json'; // Path to your JSON key file
