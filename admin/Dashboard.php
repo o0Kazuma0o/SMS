@@ -1,56 +1,7 @@
 <?php
 require('../database.php');
 require_once 'session.php';
-require_once '../vendor/autoload.php';
-
-use Google\Analytics\Data\V1beta\Client\BetaAnalyticsDataClient;
-use Google\Analytics\Data\V1beta\DateRange;
-use Google\Analytics\Data\V1beta\Metric;
-use Google\Analytics\Data\V1beta\RunRealtimeReportRequest;
-
 checkAccess('Admin'); // Ensure only users with the 'admin' role can access this page
-
-// GA4 Property ID
-$ga4PropertyId = '478793835';
-
-// Path to service account JSON file
-$credentialsPath = __DIR__ . '../bcp-analytics-api-cd26adc23306.json';
-
-try {
-  // Real-time Users
-  $client = new BetaAnalyticsDataClient([
-    'credentials' => $credentialsPath,
-    'transport' => 'grpc'
-  ]);
-
-  $realtimeRequest = new RunRealtimeReportRequest([
-    'property' => "properties/$ga4PropertyId",
-    'metrics' => [new Metric(['name' => 'activeUsers'])],
-  ]);
-
-  $realtimeResponse = $client->runRealtimeReport($realtimeRequest);
-  $realtimeUsers = $realtimeResponse->getRows()[0]->getMetricValues()[0]->getValue();
-
-  // Total Pageviews
-  $totalRequest = new Google\Analytics\Data\V1beta\RunReportRequest([
-    'property' => "properties/$ga4PropertyId",
-    'date_ranges' => [
-      new DateRange([
-        'start_date' => '2020-01-01',
-        'end_date' => 'today'
-      ])
-    ],
-    'metrics' => [new Metric(['name' => 'screenPageViews'])]
-  ]);
-
-  $totalResponse = $client->runReport($totalRequest);
-  $totalViews = (int)$totalResponse->getRows()[0]->getMetricValues()[0]->getValue();
-} catch (Exception $e) {
-  $realtimeUsers = 'N/A';
-  $totalViews = 'N/A';
-  error_log("GA API Error: " . $e->getMessage());
-}
-
 
 // Fetch the total number of pending admissions
 $sql = "SELECT COUNT(*) as total_pending FROM sms3_pending_admission WHERE status = 'Pending'";
@@ -430,47 +381,6 @@ if ($result_enrollment_status) {
               </div>
 
             </div><!-- End Customers Card -->
-
-            <div class="col-xxl-4 col-md-6">
-              <div class="card info-card sales-card">
-                <div class="card-body">
-                  <h5 class="card-title">Real-time Users</h5>
-                  <div class="d-flex align-items-center">
-                    <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
-                      <i class="bi bi-people"></i>
-                    </div>
-                    <div class="ps-3">
-                      <h6><?= $realtimeUsers ?? 'N/A' ?></h6>
-                      <span class="text-muted small pt-2 ps-1">Active Now</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Total Pageviews Card -->
-            <div class="col-xxl-4 col-md-6">
-              <div class="card info-card sales-card">
-                <div class="card-body">
-                  <h5 class="card-title">Total Pageviews</h5>
-                  <div class="d-flex align-items-center">
-                    <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
-                      <i class="bi bi-eye"></i>
-                    </div>
-                    <div class="ps-3">
-                      <h6>
-                        <?php if (isset($totalViews) && is_numeric($totalViews)): ?>
-                          <?= number_format((float)$totalViews) ?>
-                        <?php else: ?>
-                          N/A
-                        <?php endif; ?>
-                      </h6>
-                      <span class="text-muted small pt-2 ps-1">All-time Views</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
 
             <!-- Forecasting -->
             <div class="col-12">
