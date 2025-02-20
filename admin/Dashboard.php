@@ -1,7 +1,13 @@
 <?php
 require('../database.php');
+require '../includes/analytics_helper.php';
 require_once 'session.php';
+
 checkAccess('Admin'); // Ensure only users with the 'admin' role can access this page
+
+$propertyId = '478793835'; // Replace with your GA4 Property ID
+$realtimeUsers = getRealtimeUsers($propertyId);
+$totalVisitors = getTotalUsers($propertyId);
 
 // Fetch the total number of pending admissions
 $sql = "SELECT COUNT(*) as total_pending FROM sms3_pending_admission WHERE status = 'Pending'";
