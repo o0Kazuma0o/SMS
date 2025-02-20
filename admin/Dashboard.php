@@ -32,8 +32,10 @@ function getRealtimeUsers($propertyId)
     ]);
 
     $response = $service->properties->runRealtimeReport("properties/$propertyId", $request);
+    error_log('Realtime Response: ' . print_r($response, true)); // Add this
     return $response->getTotals()[0]->getMetricValues()[0]->getValue();
   } catch (Exception $e) {
+    error_log('GA4 Error: ' . $e->getMessage());
     return 'N/A';
   }
 }
@@ -57,6 +59,7 @@ function getTotalUsers($propertyId)
     $response = $service->properties->runReport("properties/$propertyId", $request);
     return $response->getTotals()[0]->getMetricValues()[0]->getValue();
   } catch (Exception $e) {
+    error_log('GA4 Error: ' . $e->getMessage());
     return 'N/A';
   }
 }
