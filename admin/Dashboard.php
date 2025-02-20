@@ -9,53 +9,56 @@ $propertyId = '478793835'; // Replace with your GA4 Property ID
 $realtimeUsers = getRealtimeUsers($propertyId);
 $totalVisitors = getTotalUsers($propertyId);
 
-function initializeAnalytics() {
-    $KEY_FILE_LOCATION = __DIR__ . '../bcp-analytics-api-1951ba8ee03d.json'; // Path to JSON key file
-    
-    $client = new Google\Client();
-    $client->setApplicationName("Analytics Reporting");
-    $client->setAuthConfig($KEY_FILE_LOCATION);
-    $client->setScopes(['https://www.googleapis.com/auth/analytics.readonly']);
-    return $client;
+function initializeAnalytics()
+{
+  $KEY_FILE_LOCATION = __DIR__ . '../bcp-analytics-api-1951ba8ee03d.json'; // Path to JSON key file
+
+  $client = new Google\Client();
+  $client->setApplicationName("Analytics Reporting");
+  $client->setAuthConfig($KEY_FILE_LOCATION);
+  $client->setScopes(['https://www.googleapis.com/auth/analytics.readonly']);
+  return $client;
 }
 
-function getRealtimeUsers($propertyId) {
-    try {
-        $client = initializeAnalytics();
-        $service = new Google\Service\AnalyticsData($client);
-        
-        $request = new Google\Service\AnalyticsData\RunRealtimeReportRequest([
-            'dimensions' => [new Google\Service\AnalyticsData\Dimension(['name' => 'country'])],
-            'metrics' => [new Google\Service\AnalyticsData\Metric(['name' => 'activeUsers'])]
-        ]);
-        
-        $response = $service->properties->runRealtimeReport("properties/$propertyId", $request);
-        return $response->getTotals()[0]->getMetricValues()[0]->getValue();
-    } catch (Exception $e) {
-        return 'N/A';
-    }
+function getRealtimeUsers($propertyId)
+{
+  try {
+    $client = initializeAnalytics();
+    $service = new Google\Service\AnalyticsData($client);
+
+    $request = new Google\Service\AnalyticsData\RunRealtimeReportRequest([
+      'dimensions' => [new Google\Service\AnalyticsData\Dimension(['name' => 'country'])],
+      'metrics' => [new Google\Service\AnalyticsData\Metric(['name' => 'activeUsers'])]
+    ]);
+
+    $response = $service->properties->runRealtimeReport("properties/$propertyId", $request);
+    return $response->getTotals()[0]->getMetricValues()[0]->getValue();
+  } catch (Exception $e) {
+    return 'N/A';
+  }
 }
 
-function getTotalUsers($propertyId) {
-    try {
-        $client = initializeAnalytics();
-        $service = new Google\Service\AnalyticsData($client);
-        
-        $dateRange = new Google\Service\AnalyticsData\DateRange([
-            'start_date' => '2020-01-01', // Adjust as needed
-            'end_date' => 'today'
-        ]);
-        
-        $request = new Google\Service\AnalyticsData\RunReportRequest([
-            'dateRanges' => [$dateRange],
-            'metrics' => [new Google\Service\AnalyticsData\Metric(['name' => 'totalUsers'])]
-        ]);
-        
-        $response = $service->properties->runReport("properties/$propertyId", $request);
-        return $response->getTotals()[0]->getMetricValues()[0]->getValue();
-    } catch (Exception $e) {
-        return 'N/A';
-    }
+function getTotalUsers($propertyId)
+{
+  try {
+    $client = initializeAnalytics();
+    $service = new Google\Service\AnalyticsData($client);
+
+    $dateRange = new Google\Service\AnalyticsData\DateRange([
+      'start_date' => '2020-01-01', // Adjust as needed
+      'end_date' => 'today'
+    ]);
+
+    $request = new Google\Service\AnalyticsData\RunReportRequest([
+      'dateRanges' => [$dateRange],
+      'metrics' => [new Google\Service\AnalyticsData\Metric(['name' => 'totalUsers'])]
+    ]);
+
+    $response = $service->properties->runReport("properties/$propertyId", $request);
+    return $response->getTotals()[0]->getMetricValues()[0]->getValue();
+  } catch (Exception $e) {
+    return 'N/A';
+  }
 }
 
 // Fetch the total number of pending admissions
@@ -437,6 +440,34 @@ if ($result_enrollment_status) {
 
             </div><!-- End Customers Card -->
 
+            <!-- Website Traffic Card -->
+            <div class="col-xxl-4 col-md-6">
+              <div class="card info-card sales-card">
+                <div class="card-body">
+                  <h5 class="card-title">Website Traffic</h5>
+                  <div class="d-flex align-items-center">
+                    <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
+                      <i class="bi bi-graph-up"></i>
+                    </div>
+                    <div class="ps-3">
+                      <h6><?= number_format($totalVisitors) ?></h6>
+                      <span class="text-muted small pt-2 ps-1">Total Visitors</span>
+                    </div>
+                  </div>
+                  <hr>
+                  <div class="d-flex align-items-center mt-3">
+                    <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
+                      <i class="bi bi-people-fill"></i>
+                    </div>
+                    <div class="ps-3">
+                      <h6><?= $realtimeUsers ?></h6>
+                      <span class="text-muted small pt-2 ps-1">Active Users Now</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <!-- Forecasting -->
             <div class="col-12">
               <div class="card">
@@ -447,7 +478,6 @@ if ($result_enrollment_status) {
                     <li class="dropdown-header text-start">
                       <h6>Filter</h6>
                     </li>
-
                     <li><a class="dropdown-item" href="#">Today</a></li>
                     <li><a class="dropdown-item" href="#">This Month</a></li>
                     <li><a class="dropdown-item" href="#">This Year</a></li>
