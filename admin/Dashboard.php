@@ -32,10 +32,29 @@ function getRealtimeUsers($propertyId)
     ]);
 
     $response = $service->properties->runRealtimeReport("properties/$propertyId", $request);
-    error_log('Realtime Response: ' . print_r($response, true)); // Add this
-    return $response->getTotals()[0]->getMetricValues()[0]->getValue();
+
+    // Modified section with null checks
+    $totals = $response->getTotals();
+    if (empty($totals)) {
+      error_log('GA4 Realtime: No totals data found');
+      return 0; // Or return 'N/A' if you prefer
+    }
+
+    $firstTotal = $totals[0] ?? null;
+    if (!$firstTotal) {
+      error_log('GA4 Realtime: Empty totals array');
+      return 0;
+    }
+
+    $metricValues = $firstTotal->getMetricValues();
+    if (empty($metricValues)) {
+      error_log('GA4 Realtime: No metric values');
+      return 0;
+    }
+
+    return $metricValues[0]->getValue() ?? 0;
   } catch (Exception $e) {
-    error_log('GA4 Error: ' . $e->getMessage());
+    error_log('GA4 Realtime Error: ' . $e->getMessage());
     return 'N/A';
   }
 }
@@ -47,7 +66,7 @@ function getTotalUsers($propertyId)
     $service = new Google\Service\AnalyticsData($client);
 
     $dateRange = new Google\Service\AnalyticsData\DateRange([
-      'start_date' => '2020-01-01', // Adjust as needed
+      'start_date' => '2020-01-01',
       'end_date' => 'today'
     ]);
 
@@ -57,9 +76,29 @@ function getTotalUsers($propertyId)
     ]);
 
     $response = $service->properties->runReport("properties/$propertyId", $request);
-    return $response->getTotals()[0]->getMetricValues()[0]->getValue();
+
+    // Modified section with null checks
+    $totals = $response->getTotals();
+    if (empty($totals)) {
+      error_log('GA4 Total Users: No totals data found');
+      return 0;
+    }
+
+    $firstTotal = $totals[0] ?? null;
+    if (!$firstTotal) {
+      error_log('GA4 Total Users: Empty totals array');
+      return 0;
+    }
+
+    $metricValues = $firstTotal->getMetricValues();
+    if (empty($metricValues)) {
+      error_log('GA4 Total Users: No metric values');
+      return 0;
+    }
+
+    return $metricValues[0]->getValue() ?? 0;
   } catch (Exception $e) {
-    error_log('GA4 Error: ' . $e->getMessage());
+    error_log('GA4 Total Users Error: ' . $e->getMessage());
     return 'N/A';
   }
 }
