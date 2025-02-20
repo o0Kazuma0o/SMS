@@ -1,6 +1,3 @@
-<?php
-require_once '/includes/analytics_helper.php';
-?>
 <!DOCTYPE html>
 <html lang="en">
 

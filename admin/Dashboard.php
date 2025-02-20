@@ -1,6 +1,6 @@
 <?php
 require('../database.php');
-require '../includes/analytics_helper.php';
+require_once '../vendor/autoload.php';
 require_once 'session.php';
 
 checkAccess('Admin'); // Ensure only users with the 'admin' role can access this page
@@ -8,6 +8,55 @@ checkAccess('Admin'); // Ensure only users with the 'admin' role can access this
 $propertyId = '478793835'; // Replace with your GA4 Property ID
 $realtimeUsers = getRealtimeUsers($propertyId);
 $totalVisitors = getTotalUsers($propertyId);
+
+function initializeAnalytics() {
+    $KEY_FILE_LOCATION = __DIR__ . '../bcp-analytics-api-1951ba8ee03d.json'; // Path to JSON key file
+    
+    $client = new Google\Client();
+    $client->setApplicationName("Analytics Reporting");
+    $client->setAuthConfig($KEY_FILE_LOCATION);
+    $client->setScopes(['https://www.googleapis.com/auth/analytics.readonly']);
+    return $client;
+}
+
+function getRealtimeUsers($propertyId) {
+    try {
+        $client = initializeAnalytics();
+        $service = new Google\Service\AnalyticsData($client);
+        
+        $request = new Google\Service\AnalyticsData\RunRealtimeReportRequest([
+            'dimensions' => [new Google\Service\AnalyticsData\Dimension(['name' => 'country'])],
+            'metrics' => [new Google\Service\AnalyticsData\Metric(['name' => 'activeUsers'])]
+        ]);
+        
+        $response = $service->properties->runRealtimeReport("properties/$propertyId", $request);
+        return $response->getTotals()[0]->getMetricValues()[0]->getValue();
+    } catch (Exception $e) {
+        return 'N/A';
+    }
+}
+
+function getTotalUsers($propertyId) {
+    try {
+        $client = initializeAnalytics();
+        $service = new Google\Service\AnalyticsData($client);
+        
+        $dateRange = new Google\Service\AnalyticsData\DateRange([
+            'start_date' => '2020-01-01', // Adjust as needed
+            'end_date' => 'today'
+        ]);
+        
+        $request = new Google\Service\AnalyticsData\RunReportRequest([
+            'dateRanges' => [$dateRange],
+            'metrics' => [new Google\Service\AnalyticsData\Metric(['name' => 'totalUsers'])]
+        ]);
+        
+        $response = $service->properties->runReport("properties/$propertyId", $request);
+        return $response->getTotals()[0]->getMetricValues()[0]->getValue();
+    } catch (Exception $e) {
+        return 'N/A';
+    }
+}
 
 // Fetch the total number of pending admissions
 $sql = "SELECT COUNT(*) as total_pending FROM sms3_pending_admission WHERE status = 'Pending'";
