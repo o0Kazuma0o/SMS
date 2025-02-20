@@ -450,7 +450,8 @@ if ($result_enrollment_status) {
                       <i class="bi bi-graph-up"></i>
                     </div>
                     <div class="ps-3">
-                      <h6><?= number_format($totalVisitors) ?></h6>
+                      <!-- Check if $totalVisitors is numeric before formatting -->
+                      <h6><?= is_numeric($totalVisitors) ? number_format((float)$totalVisitors) : $totalVisitors ?></h6>
                       <span class="text-muted small pt-2 ps-1">Total Visitors</span>
                     </div>
                   </div>
@@ -460,7 +461,8 @@ if ($result_enrollment_status) {
                       <i class="bi bi-people-fill"></i>
                     </div>
                     <div class="ps-3">
-                      <h6><?= $realtimeUsers ?></h6>
+                      <!-- Ensure $realtimeUsers is handled similarly if needed -->
+                      <h6><?= is_numeric($realtimeUsers) ? number_format((float)$realtimeUsers) : $realtimeUsers ?></h6>
                       <span class="text-muted small pt-2 ps-1">Active Users Now</span>
                     </div>
                   </div>
