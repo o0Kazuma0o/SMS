@@ -32,27 +32,18 @@ function getRealtimeUsers($propertyId)
     ]);
 
     $response = $service->properties->runRealtimeReport("properties/$propertyId", $request);
+    error_log('Realtime RAW Response: ' . print_r($response->toSimpleObject(), true));
 
-    // Modified section with null checks
-    $totals = $response->getTotals();
-    if (empty($totals)) {
-      error_log('GA4 Realtime: No totals data found');
-      return 0; // Or return 'N/A' if you prefer
+    // Handle Realtime response
+    if (!empty($response->rows)) {
+      $firstRow = $response->rows[0];
+      if (!empty($firstRow->metricValues)) {
+        return $firstRow->metricValues[0]->value;
+      }
     }
 
-    $firstTotal = $totals[0] ?? null;
-    if (!$firstTotal) {
-      error_log('GA4 Realtime: Empty totals array');
-      return 0;
-    }
-
-    $metricValues = $firstTotal->getMetricValues();
-    if (empty($metricValues)) {
-      error_log('GA4 Realtime: No metric values');
-      return 0;
-    }
-
-    return $metricValues[0]->getValue() ?? 0;
+    error_log('GA4 Realtime: No active users found');
+    return 0;
   } catch (Exception $e) {
     error_log('GA4 Realtime Error: ' . $e->getMessage());
     return 'N/A';
@@ -61,46 +52,38 @@ function getRealtimeUsers($propertyId)
 
 function getTotalUsers($propertyId)
 {
-  try {
-    $client = initializeAnalytics();
-    $service = new Google\Service\AnalyticsData($client);
+    try {
+        $client = initializeAnalytics();
+        $service = new Google\Service\AnalyticsData($client);
 
-    $dateRange = new Google\Service\AnalyticsData\DateRange([
-      'start_date' => '2020-01-01',
-      'end_date' => 'today'
-    ]);
+        $dateRange = new Google\Service\AnalyticsData\DateRange([
+            'start_date' => '2020-01-01',
+            'end_date' => 'today'
+        ]);
 
-    $request = new Google\Service\AnalyticsData\RunReportRequest([
-      'dateRanges' => [$dateRange],
-      'metrics' => [new Google\Service\AnalyticsData\Metric(['name' => 'totalUsers'])]
-    ]);
+        $request = new Google\Service\AnalyticsData\RunReportRequest([
+            'dateRanges' => [$dateRange],
+            'metrics' => [new Google\Service\AnalyticsData\Metric(['name' => 'totalUsers'])]
+        ]);
 
-    $response = $service->properties->runReport("properties/$propertyId", $request);
+        $response = $service->properties->runReport("properties/$propertyId", $request);
+        error_log('Total Users RAW Response: ' . print_r($response->toSimpleObject(), true));
 
-    // Modified section with null checks
-    $totals = $response->getTotals();
-    if (empty($totals)) {
-      error_log('GA4 Total Users: No totals data found');
-      return 0;
+        if (!empty($response->rows)) {
+            $firstRow = $response->rows[0];
+            if (!empty($firstRow->metricValues)) {
+                $totalUsers = $firstRow->metricValues[0]->value;
+                error_log('GA4 Total Users: Found ' . $totalUsers . ' users');
+                return (int)$totalUsers;
+            }
+        }
+
+        error_log('GA4 Total Users: No users found');
+        return 0;
+    } catch (Exception $e) {
+        error_log('GA4 Total Users Error: ' . $e->getMessage());
+        return 'N/A';
     }
-
-    $firstTotal = $totals[0] ?? null;
-    if (!$firstTotal) {
-      error_log('GA4 Total Users: Empty totals array');
-      return 0;
-    }
-
-    $metricValues = $firstTotal->getMetricValues();
-    if (empty($metricValues)) {
-      error_log('GA4 Total Users: No metric values');
-      return 0;
-    }
-
-    return $metricValues[0]->getValue() ?? 0;
-  } catch (Exception $e) {
-    error_log('GA4 Total Users Error: ' . $e->getMessage());
-    return 'N/A';
-  }
 }
 
 // Fetch the total number of pending admissions
@@ -505,7 +488,7 @@ if ($result_enrollment_status) {
                     <div class="ps-3">
                       <!-- Ensure $realtimeUsers is handled similarly if needed -->
                       <h6><?= is_numeric($realtimeUsers) ? number_format((float)$realtimeUsers) : $realtimeUsers ?></h6>
-                      <span class="text-muted small pt-2 ps-1">Active Users Now</span>
+                      <span class="text-muted small pt-2 ps-1">Users Currently Viewing Website</span>
                     </div>
                   </div>
                 </div>
