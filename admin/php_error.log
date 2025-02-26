@@ -975,3 +975,88 @@
 )
 
 [26-Feb-2025 02:37:44 UTC] GA4 Total Users: Found 7 users
+[26-Feb-2025 02:55:14 UTC] GA4 Realtime Error: {"error":"invalid_grant","error_description":"Invalid JWT Signature."}
+[26-Feb-2025 02:55:14 UTC] GA4 Total Users Error: {"error":"invalid_grant","error_description":"Invalid JWT Signature."}
+[26-Feb-2025 02:55:14 UTC] GA4 Realtime Error: {"error":"invalid_grant","error_description":"Invalid JWT Signature."}
+[26-Feb-2025 02:55:14 UTC] GA4 Total Users Error: {"error":"invalid_grant","error_description":"Invalid JWT Signature."}
+[26-Feb-2025 02:55:58 UTC] GA4 Realtime Error: {"error":"invalid_grant","error_description":"Invalid JWT Signature."}
+[26-Feb-2025 02:55:58 UTC] GA4 Total Users Error: {"error":"invalid_grant","error_description":"Invalid JWT Signature."}
+[26-Feb-2025 02:56:05 UTC] GA4 Realtime Error: {"error":"invalid_grant","error_description":"Invalid JWT Signature."}
+[26-Feb-2025 02:56:06 UTC] GA4 Total Users Error: {"error":"invalid_grant","error_description":"Invalid JWT Signature."}
+[26-Feb-2025 02:56:49 UTC] GA4 Realtime Error: {"error":"invalid_grant","error_description":"Invalid JWT Signature."}
+[26-Feb-2025 02:56:49 UTC] GA4 Total Users Error: {"error":"invalid_grant","error_description":"Invalid JWT Signature."}
+[26-Feb-2025 02:57:20 UTC] GA4 Realtime Error: {"error":"invalid_grant","error_description":"Invalid JWT Signature."}
+[26-Feb-2025 02:57:20 UTC] GA4 Total Users Error: {"error":"invalid_grant","error_description":"Invalid JWT Signature."}
+[26-Feb-2025 02:57:44 UTC] GA4 Realtime Error: {"error":"invalid_grant","error_description":"Invalid JWT Signature."}
+[26-Feb-2025 02:57:44 UTC] GA4 Total Users Error: {"error":"invalid_grant","error_description":"Invalid JWT Signature."}
+[26-Feb-2025 02:58:28 UTC] GA4 Realtime Error: file "/home/admission.bcpsms3.com/public_html/admin/../bcp-analytics-api-1951ba8ee03d.json" does not exist
+[26-Feb-2025 02:58:28 UTC] GA4 Total Users Error: file "/home/admission.bcpsms3.com/public_html/admin/../bcp-analytics-api-1951ba8ee03d.json" does not exist
+[26-Feb-2025 02:59:20 UTC] GA4 Realtime Error: {"error":"invalid_grant","error_description":"Invalid JWT Signature."}
+[26-Feb-2025 02:59:21 UTC] GA4 Total Users Error: {"error":"invalid_grant","error_description":"Invalid JWT Signature."}
+[26-Feb-2025 03:04:21 UTC] GA4 Realtime Error: {"error":"invalid_grant","error_description":"Invalid JWT Signature."}
+[26-Feb-2025 03:04:21 UTC] GA4 Total Users Error: {"error":"invalid_grant","error_description":"Invalid JWT Signature."}
+[26-Feb-2025 03:15:04 UTC] Realtime RAW Response: stdClass Object
+(
+    [kind] => analyticsData#runRealtimeReport
+    [dimensionHeaders] => Array
+        (
+            [0] => stdClass Object
+                (
+                    [name] => country
+                )
+
+        )
+
+    [metricHeaders] => Array
+        (
+            [0] => stdClass Object
+                (
+                    [name] => activeUsers
+                    [type] => TYPE_INTEGER
+                )
+
+        )
+
+)
+
+[26-Feb-2025 03:15:04 UTC] GA4 Realtime: No active users found
+[26-Feb-2025 03:15:05 UTC] Total Users RAW Response: stdClass Object
+(
+    [kind] => analyticsData#runReport
+    [rowCount] => 1
+    [metricHeaders] => Array
+        (
+            [0] => stdClass Object
+                (
+                    [name] => totalUsers
+                    [type] => TYPE_INTEGER
+                )
+
+        )
+
+    [rows] => Array
+        (
+            [0] => stdClass Object
+                (
+                    [metricValues] => Array
+                        (
+                            [0] => stdClass Object
+                                (
+                                    [value] => 7
+                                )
+
+                        )
+
+                )
+
+        )
+
+    [metadata] => stdClass Object
+        (
+            [currencyCode] => PHP
+            [timeZone] => Asia/Manila
+        )
+
+)
+
+[26-Feb-2025 03:15:05 UTC] GA4 Total Users: Found 7 users

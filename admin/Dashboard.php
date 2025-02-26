@@ -11,7 +11,7 @@ $totalVisitors = getTotalUsers($propertyId);
 
 function initializeAnalytics()
 {
-  $KEY_FILE_LOCATION = __DIR__ . '/../bcp-analytics-api-1951ba8ee03d.json'; // Path to JSON key file
+  $KEY_FILE_LOCATION = __DIR__ . '/../bcp-analytics-api-13886752cb0a.json'; // Path to JSON key file
 
   $client = new Google\Client();
   $client->setApplicationName("Analytics Reporting");
