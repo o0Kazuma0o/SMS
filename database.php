@@ -1,7 +1,7 @@
 <?php
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT); // Enable exception for errors
 
-$environment = 'production';
+$environment = 'local';
 
 if ($environment === 'local') {
     $conn = new mysqli('localhost', 'root', '', 'bcp-sms_admission');
