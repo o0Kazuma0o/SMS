@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "bcp-analytics-api",
+  "private_key_id": "1951ba8ee03da6222fc72107649e76114d8c7740",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDCaX73d3dC4BLP\nSp+jnu5xg8FlJEucIUBn3m0CJVVjfmBIg48seQaUQe1TljVKRHK4KWXiM4Sl0saK\nkdvSXrdgflODQr1d/PO2sRd0M8XjExYdAwqh5QjZ0eTp1l7GLI7D81Ggjt95YA5z\nmFUqZzSJAu2aF8DKSMVbFL/a1l2Hz+1cJy9bkcBpoxFIlivrhu3jcnhpmxsvg4i9\nhqsCOpOSVIE6ljz4id9u3KREy63zv+QrtKg53zgLvspjX6y6yLj3sI6qI3dK+ysW\nrh+/Y4iAm3vpZw9Reb86petfoIRM1DYUHrzADww9N9O4SdImWBFoRdhKzRGK3xaQ\nZnm968ThAgMBAAECggEAMdnlYcVzgmV8zUTAXK9zSw5S+AFvlfB82GWTpDo4hBOy\n0sVRYEEEa93f4lAhCBM3K3wKEQ/O0sqSeJPgPzhkY0zhU0Y40rH7OHx+nCBufMS3\nJedSwaK+O0R0I3YBxWVFkn+BDd+09CWqbv+/zui58uwaSyoOGJDCcpGGhLH1N86p\nOzWzt5H5Rl7no3QoFkrb3IzTIfp6ZuvWPI3hr5kW8jLksTUbsFgznXlGxeJihNq2\n5YAdGQElTGBeDE91E36/762V8Xg6qAFKRqbVNVD5eCvIDVWith5YHeoyXjE3h9QN\n7F6W69z5AJSELDjYzf++fYnrhhRKPYh9rF0Xo7z5lQKBgQD7rSvlRKJT2gFFdRqD\nSyLeq8iPT17AKVUXFGT+6WJPly2r3I1htOM7aW0UWNl4qaPo6qYdx/p5gItsS/zW\nsRpoHaufv1XoeDwHzrNyqo/H3qAHqaQajvX4gRvFCIwKq0FqA2jTFkjAhBbl7w20\nMdjcb7i+BrNDWUycBTZPK1KwRwKBgQDFwHxpAnNo9fAYuDu6/cnkuYzCI1YMfTKV\nyemQOkFiUml3ezmizUHi9L3QMIpa1inBozTb/QSX08stwpqGK0Iiv5TCU+WMgRCp\n3t2wUuaw6NRoNnlNFndPxvSkrm9/97XWjgOZd4FlfWufbbn91G/nq+emYmNRV5Gb\nc0408wRdlwKBgAcqdReADscoa+TYYrreRs3kQj+iWOZLxvpzQDTp3Dy75zb/fp8L\nkXS9mbd8mCSRX/Nfyv8KFJ2lBVM+DqLmRAQ25A4WWpHV6o+mWQGozZM5SYEuWVfQ\nPjynIG1JwwMCwUgNdMyd09B3cld1qQQ6bxxHqhDvC+edAUtn8pXqe949AoGBAKna\nWkHL9BssW0ywOcW0JQyLf2Zk+Y0CoEdeRXo3P1/XT3Vr5yZ5zOTGuJ6wgrXhC76h\nk059Ncu/A95LL3SchVLZYUnEy/7yAMEXhyzjF/jOE1trpqba7CIezpUAqw6sUoh2\nNItFxWPJ5X3rvnxSUsgXtIIKMip038E4uezq604DAoGBAKuJP1QVZ+SissVd1agy\ni25Hxi2Ap/AfbaieOQgY6oQOC137lncLIKJoy9DRaEF+Ei3qpWWxDlPlkFWEqkww\n6irlXmgA+0oFi+VwrJZAwJXq1GKJblyW81B1EV2Qqux/7HzOv4K+tFHSSbLKlAXR\nPonpuWbH93pTctaPzasm7NOZ\n-----END PRIVATE KEY-----\n",
+  "client_email": "bcp-analytics@bcp-analytics-api.iam.gserviceaccount.com",
+  "client_id": "110771848107130517180",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/bcp-analytics%40bcp-analytics-api.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

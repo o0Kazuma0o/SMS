@@ -465,34 +465,48 @@ if ($result_enrollment_status) {
 
             </div><!-- End Customers Card -->
 
-            <!-- Website Traffic Card -->
             <div class="col-xxl-4 col-md-6">
-              <div class="card info-card sales-card">
-                <div class="card-body">
-                  <h5 class="card-title">Website Traffic</h5>
-                  <div class="d-flex align-items-center">
-                    <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
-                      <i class="bi bi-graph-up"></i>
+                <div class="card info-card sales-card">
+                    <div class="card-body">
+                        <h5 class="card-title">Realtime Users</h5>
+                        <div class="d-flex align-items-center">
+                            <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
+                                <i class="bi bi-people-fill"></i>
+                            </div>
+                            <div class="ps-3">
+                                <h6><?= is_numeric($realtimeUsers) ? number_format((float)$realtimeUsers) : $realtimeUsers ?></h6>
+                                <span class="text-muted small pt-2 ps-1">Users Viewing the Website</span>
+                            </div>
+                        </div>
                     </div>
-                    <div class="ps-3">
-                      <!-- Check if $totalVisitors is numeric before formatting -->
-                      <h6><?= is_numeric($totalVisitors) ? number_format((float)$totalVisitors) : $totalVisitors ?></h6>
-                      <span class="text-muted small pt-2 ps-1">Total Visitors</span>
-                    </div>
-                  </div>
-                  <hr>
-                  <div class="d-flex align-items-center mt-3">
-                    <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
-                      <i class="bi bi-people-fill"></i>
-                    </div>
-                    <div class="ps-3">
-                      <!-- Ensure $realtimeUsers is handled similarly if needed -->
-                      <h6><?= is_numeric($realtimeUsers) ? number_format((float)$realtimeUsers) : $realtimeUsers ?></h6>
-                      <span class="text-muted small pt-2 ps-1">Users Currently Viewing Website</span>
-                    </div>
-                  </div>
                 </div>
-              </div>
+            </div>
+            
+            <!-- Total Users Card -->
+            <div class="col-xxl-4 col-md-6">
+                <div class="card info-card customers-card">
+                    <div class="card-body">
+                        <div class="filter">
+                            <select class="form-select" id="timeRangeFilter">
+                                <option value="all_time">All Time</option>
+                                <option value="today">Today</option>
+                                <option value="this_week">This Week</option>
+                                <option value="this_month">This Month</option>
+                                <option value="this_year">This Year</option>
+                            </select>
+                        </div>
+                        <h5 class="card-title">Total Users</h5>
+                        <div class="d-flex align-items-center">
+                            <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
+                                <i class="bi bi-people"></i>
+                            </div>
+                            <div class="ps-3">
+                                <h6 id="totalUsersValue"><?= is_numeric($totalVisitors) ? number_format((float)$totalVisitors) : $totalVisitors ?></h6>
+                                <span class="text-muted small pt-2 ps-1">Total Users Visited The Website</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Forecasting -->

@@ -1,9 +1,9 @@
 <?php
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT); // Enable exception for errors
 
-$environment = 'production'; // Change to 'production' for the website
+$environment = 'production';
 
-if ($environment === 'production') {
+if ($environment === 'local') {
     $conn = new mysqli('localhost', 'root', '', 'bcp-sms_admission');
 } else {
     $conn = new mysqli('localhost', 'admi_caps', 're^AKBzarIgoqxka', 'admi_bcp_sms3_admission');

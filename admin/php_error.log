@@ -1,0 +1,977 @@
+[22-Feb-2025 02:53:12 UTC] GA4 Realtime Error: file "/home/admission.bcpsms3.com/public_html/admin/../bcp-analytics-api-1951ba8ee03d.json" does not exist
+[22-Feb-2025 02:53:12 UTC] GA4 Total Users Error: file "/home/admission.bcpsms3.com/public_html/admin/../bcp-analytics-api-1951ba8ee03d.json" does not exist
+[22-Feb-2025 02:53:45 UTC] Realtime RAW Response: stdClass Object
+(
+    [kind] => analyticsData#runRealtimeReport
+    [dimensionHeaders] => Array
+        (
+            [0] => stdClass Object
+                (
+                    [name] => country
+                )
+
+        )
+
+    [metricHeaders] => Array
+        (
+            [0] => stdClass Object
+                (
+                    [name] => activeUsers
+                    [type] => TYPE_INTEGER
+                )
+
+        )
+
+)
+
+[22-Feb-2025 02:53:45 UTC] GA4 Realtime: No active users found
+[22-Feb-2025 02:53:46 UTC] Total Users RAW Response: stdClass Object
+(
+    [kind] => analyticsData#runReport
+    [rowCount] => 1
+    [metricHeaders] => Array
+        (
+            [0] => stdClass Object
+                (
+                    [name] => totalUsers
+                    [type] => TYPE_INTEGER
+                )
+
+        )
+
+    [rows] => Array
+        (
+            [0] => stdClass Object
+                (
+                    [metricValues] => Array
+                        (
+                            [0] => stdClass Object
+                                (
+                                    [value] => 5
+                                )
+
+                        )
+
+                )
+
+        )
+
+    [metadata] => stdClass Object
+        (
+            [currencyCode] => PHP
+            [timeZone] => Asia/Manila
+        )
+
+)
+
+[22-Feb-2025 02:53:46 UTC] GA4 Total Users: Found 5 users
+[22-Feb-2025 03:03:15 UTC] Realtime RAW Response: stdClass Object
+(
+    [kind] => analyticsData#runRealtimeReport
+    [dimensionHeaders] => Array
+        (
+            [0] => stdClass Object
+                (
+                    [name] => country
+                )
+
+        )
+
+    [metricHeaders] => Array
+        (
+            [0] => stdClass Object
+                (
+                    [name] => activeUsers
+                    [type] => TYPE_INTEGER
+                )
+
+        )
+
+)
+
+[22-Feb-2025 03:03:15 UTC] GA4 Realtime: No active users found
+[22-Feb-2025 03:03:16 UTC] Total Users RAW Response: stdClass Object
+(
+    [kind] => analyticsData#runReport
+    [rowCount] => 1
+    [metricHeaders] => Array
+        (
+            [0] => stdClass Object
+                (
+                    [name] => totalUsers
+                    [type] => TYPE_INTEGER
+                )
+
+        )
+
+    [rows] => Array
+        (
+            [0] => stdClass Object
+                (
+                    [metricValues] => Array
+                        (
+                            [0] => stdClass Object
+                                (
+                                    [value] => 5
+                                )
+
+                        )
+
+                )
+
+        )
+
+    [metadata] => stdClass Object
+        (
+            [currencyCode] => PHP
+            [timeZone] => Asia/Manila
+        )
+
+)
+
+[22-Feb-2025 03:03:16 UTC] GA4 Total Users: Found 5 users
+[22-Feb-2025 03:03:48 UTC] Realtime RAW Response: stdClass Object
+(
+    [kind] => analyticsData#runRealtimeReport
+    [dimensionHeaders] => Array
+        (
+            [0] => stdClass Object
+                (
+                    [name] => country
+                )
+
+        )
+
+    [metricHeaders] => Array
+        (
+            [0] => stdClass Object
+                (
+                    [name] => activeUsers
+                    [type] => TYPE_INTEGER
+                )
+
+        )
+
+)
+
+[22-Feb-2025 03:03:48 UTC] GA4 Realtime: No active users found
+[22-Feb-2025 03:03:49 UTC] Total Users RAW Response: stdClass Object
+(
+    [kind] => analyticsData#runReport
+    [rowCount] => 1
+    [metricHeaders] => Array
+        (
+            [0] => stdClass Object
+                (
+                    [name] => totalUsers
+                    [type] => TYPE_INTEGER
+                )
+
+        )
+
+    [rows] => Array
+        (
+            [0] => stdClass Object
+                (
+                    [metricValues] => Array
+                        (
+                            [0] => stdClass Object
+                                (
+                                    [value] => 5
+                                )
+
+                        )
+
+                )
+
+        )
+
+    [metadata] => stdClass Object
+        (
+            [currencyCode] => PHP
+            [timeZone] => Asia/Manila
+        )
+
+)
+
+[22-Feb-2025 03:03:49 UTC] GA4 Total Users: Found 5 users
+[22-Feb-2025 03:03:54 UTC] Realtime RAW Response: stdClass Object
+(
+    [kind] => analyticsData#runRealtimeReport
+    [dimensionHeaders] => Array
+        (
+            [0] => stdClass Object
+                (
+                    [name] => country
+                )
+
+        )
+
+    [metricHeaders] => Array
+        (
+            [0] => stdClass Object
+                (
+                    [name] => activeUsers
+                    [type] => TYPE_INTEGER
+                )
+
+        )
+
+)
+
+[22-Feb-2025 03:03:54 UTC] GA4 Realtime: No active users found
+[22-Feb-2025 03:03:55 UTC] Total Users RAW Response: stdClass Object
+(
+    [kind] => analyticsData#runReport
+    [rowCount] => 1
+    [metricHeaders] => Array
+        (
+            [0] => stdClass Object
+                (
+                    [name] => totalUsers
+                    [type] => TYPE_INTEGER
+                )
+
+        )
+
+    [rows] => Array
+        (
+            [0] => stdClass Object
+                (
+                    [metricValues] => Array
+                        (
+                            [0] => stdClass Object
+                                (
+                                    [value] => 5
+                                )
+
+                        )
+
+                )
+
+        )
+
+    [metadata] => stdClass Object
+        (
+            [currencyCode] => PHP
+            [timeZone] => Asia/Manila
+        )
+
+)
+
+[22-Feb-2025 03:03:55 UTC] GA4 Total Users: Found 5 users
+[22-Feb-2025 03:05:43 UTC] Realtime RAW Response: stdClass Object
+(
+    [kind] => analyticsData#runRealtimeReport
+    [dimensionHeaders] => Array
+        (
+            [0] => stdClass Object
+                (
+                    [name] => country
+                )
+
+        )
+
+    [metricHeaders] => Array
+        (
+            [0] => stdClass Object
+                (
+                    [name] => activeUsers
+                    [type] => TYPE_INTEGER
+                )
+
+        )
+
+)
+
+[22-Feb-2025 03:05:43 UTC] GA4 Realtime: No active users found
+[22-Feb-2025 03:05:44 UTC] Total Users RAW Response: stdClass Object
+(
+    [kind] => analyticsData#runReport
+    [rowCount] => 1
+    [metricHeaders] => Array
+        (
+            [0] => stdClass Object
+                (
+                    [name] => totalUsers
+                    [type] => TYPE_INTEGER
+                )
+
+        )
+
+    [rows] => Array
+        (
+            [0] => stdClass Object
+                (
+                    [metricValues] => Array
+                        (
+                            [0] => stdClass Object
+                                (
+                                    [value] => 5
+                                )
+
+                        )
+
+                )
+
+        )
+
+    [metadata] => stdClass Object
+        (
+            [currencyCode] => PHP
+            [timeZone] => Asia/Manila
+        )
+
+)
+
+[22-Feb-2025 03:05:44 UTC] GA4 Total Users: Found 5 users
+[22-Feb-2025 03:05:55 UTC] Realtime RAW Response: stdClass Object
+(
+    [kind] => analyticsData#runRealtimeReport
+    [dimensionHeaders] => Array
+        (
+            [0] => stdClass Object
+                (
+                    [name] => country
+                )
+
+        )
+
+    [metricHeaders] => Array
+        (
+            [0] => stdClass Object
+                (
+                    [name] => activeUsers
+                    [type] => TYPE_INTEGER
+                )
+
+        )
+
+)
+
+[22-Feb-2025 03:05:55 UTC] GA4 Realtime: No active users found
+[22-Feb-2025 03:05:55 UTC] Total Users RAW Response: stdClass Object
+(
+    [kind] => analyticsData#runReport
+    [rowCount] => 1
+    [metricHeaders] => Array
+        (
+            [0] => stdClass Object
+                (
+                    [name] => totalUsers
+                    [type] => TYPE_INTEGER
+                )
+
+        )
+
+    [rows] => Array
+        (
+            [0] => stdClass Object
+                (
+                    [metricValues] => Array
+                        (
+                            [0] => stdClass Object
+                                (
+                                    [value] => 5
+                                )
+
+                        )
+
+                )
+
+        )
+
+    [metadata] => stdClass Object
+        (
+            [currencyCode] => PHP
+            [timeZone] => Asia/Manila
+        )
+
+)
+
+[22-Feb-2025 03:05:55 UTC] GA4 Total Users: Found 5 users
+[22-Feb-2025 03:08:57 UTC] Realtime RAW Response: stdClass Object
+(
+    [kind] => analyticsData#runRealtimeReport
+    [dimensionHeaders] => Array
+        (
+            [0] => stdClass Object
+                (
+                    [name] => country
+                )
+
+        )
+
+    [metricHeaders] => Array
+        (
+            [0] => stdClass Object
+                (
+                    [name] => activeUsers
+                    [type] => TYPE_INTEGER
+                )
+
+        )
+
+)
+
+[22-Feb-2025 03:08:57 UTC] GA4 Realtime: No active users found
+[22-Feb-2025 03:08:58 UTC] Total Users RAW Response: stdClass Object
+(
+    [kind] => analyticsData#runReport
+    [rowCount] => 1
+    [metricHeaders] => Array
+        (
+            [0] => stdClass Object
+                (
+                    [name] => totalUsers
+                    [type] => TYPE_INTEGER
+                )
+
+        )
+
+    [rows] => Array
+        (
+            [0] => stdClass Object
+                (
+                    [metricValues] => Array
+                        (
+                            [0] => stdClass Object
+                                (
+                                    [value] => 5
+                                )
+
+                        )
+
+                )
+
+        )
+
+    [metadata] => stdClass Object
+        (
+            [currencyCode] => PHP
+            [timeZone] => Asia/Manila
+        )
+
+)
+
+[22-Feb-2025 03:08:58 UTC] GA4 Total Users: Found 5 users
+[22-Feb-2025 03:11:42 UTC] Realtime RAW Response: stdClass Object
+(
+    [kind] => analyticsData#runRealtimeReport
+    [rowCount] => 1
+    [dimensionHeaders] => Array
+        (
+            [0] => stdClass Object
+                (
+                    [name] => country
+                )
+
+        )
+
+    [metricHeaders] => Array
+        (
+            [0] => stdClass Object
+                (
+                    [name] => activeUsers
+                    [type] => TYPE_INTEGER
+                )
+
+        )
+
+    [rows] => Array
+        (
+            [0] => stdClass Object
+                (
+                    [dimensionValues] => Array
+                        (
+                            [0] => stdClass Object
+                                (
+                                    [value] => Philippines
+                                )
+
+                        )
+
+                    [metricValues] => Array
+                        (
+                            [0] => stdClass Object
+                                (
+                                    [value] => 1
+                                )
+
+                        )
+
+                )
+
+        )
+
+)
+
+[22-Feb-2025 03:11:43 UTC] Total Users RAW Response: stdClass Object
+(
+    [kind] => analyticsData#runReport
+    [rowCount] => 1
+    [metricHeaders] => Array
+        (
+            [0] => stdClass Object
+                (
+                    [name] => totalUsers
+                    [type] => TYPE_INTEGER
+                )
+
+        )
+
+    [rows] => Array
+        (
+            [0] => stdClass Object
+                (
+                    [metricValues] => Array
+                        (
+                            [0] => stdClass Object
+                                (
+                                    [value] => 5
+                                )
+
+                        )
+
+                )
+
+        )
+
+    [metadata] => stdClass Object
+        (
+            [currencyCode] => PHP
+            [timeZone] => Asia/Manila
+        )
+
+)
+
+[22-Feb-2025 03:11:43 UTC] GA4 Total Users: Found 5 users
+[23-Feb-2025 10:54:17 UTC] Realtime RAW Response: stdClass Object
+(
+    [kind] => analyticsData#runRealtimeReport
+    [rowCount] => 1
+    [dimensionHeaders] => Array
+        (
+            [0] => stdClass Object
+                (
+                    [name] => country
+                )
+
+        )
+
+    [metricHeaders] => Array
+        (
+            [0] => stdClass Object
+                (
+                    [name] => activeUsers
+                    [type] => TYPE_INTEGER
+                )
+
+        )
+
+    [rows] => Array
+        (
+            [0] => stdClass Object
+                (
+                    [dimensionValues] => Array
+                        (
+                            [0] => stdClass Object
+                                (
+                                    [value] => Philippines
+                                )
+
+                        )
+
+                    [metricValues] => Array
+                        (
+                            [0] => stdClass Object
+                                (
+                                    [value] => 1
+                                )
+
+                        )
+
+                )
+
+        )
+
+)
+
+[23-Feb-2025 10:54:18 UTC] Total Users RAW Response: stdClass Object
+(
+    [kind] => analyticsData#runReport
+    [rowCount] => 1
+    [metricHeaders] => Array
+        (
+            [0] => stdClass Object
+                (
+                    [name] => totalUsers
+                    [type] => TYPE_INTEGER
+                )
+
+        )
+
+    [rows] => Array
+        (
+            [0] => stdClass Object
+                (
+                    [metricValues] => Array
+                        (
+                            [0] => stdClass Object
+                                (
+                                    [value] => 6
+                                )
+
+                        )
+
+                )
+
+        )
+
+    [metadata] => stdClass Object
+        (
+            [currencyCode] => PHP
+            [timeZone] => Asia/Manila
+        )
+
+)
+
+[23-Feb-2025 10:54:18 UTC] GA4 Total Users: Found 6 users
+[23-Feb-2025 10:54:19 UTC] Realtime RAW Response: stdClass Object
+(
+    [kind] => analyticsData#runRealtimeReport
+    [rowCount] => 1
+    [dimensionHeaders] => Array
+        (
+            [0] => stdClass Object
+                (
+                    [name] => country
+                )
+
+        )
+
+    [metricHeaders] => Array
+        (
+            [0] => stdClass Object
+                (
+                    [name] => activeUsers
+                    [type] => TYPE_INTEGER
+                )
+
+        )
+
+    [rows] => Array
+        (
+            [0] => stdClass Object
+                (
+                    [dimensionValues] => Array
+                        (
+                            [0] => stdClass Object
+                                (
+                                    [value] => Philippines
+                                )
+
+                        )
+
+                    [metricValues] => Array
+                        (
+                            [0] => stdClass Object
+                                (
+                                    [value] => 1
+                                )
+
+                        )
+
+                )
+
+        )
+
+)
+
+[23-Feb-2025 10:54:20 UTC] Total Users RAW Response: stdClass Object
+(
+    [kind] => analyticsData#runReport
+    [rowCount] => 1
+    [metricHeaders] => Array
+        (
+            [0] => stdClass Object
+                (
+                    [name] => totalUsers
+                    [type] => TYPE_INTEGER
+                )
+
+        )
+
+    [rows] => Array
+        (
+            [0] => stdClass Object
+                (
+                    [metricValues] => Array
+                        (
+                            [0] => stdClass Object
+                                (
+                                    [value] => 6
+                                )
+
+                        )
+
+                )
+
+        )
+
+    [metadata] => stdClass Object
+        (
+            [currencyCode] => PHP
+            [timeZone] => Asia/Manila
+        )
+
+)
+
+[23-Feb-2025 10:54:20 UTC] GA4 Total Users: Found 6 users
+[23-Feb-2025 10:54:30 UTC] Realtime RAW Response: stdClass Object
+(
+    [kind] => analyticsData#runRealtimeReport
+    [rowCount] => 1
+    [dimensionHeaders] => Array
+        (
+            [0] => stdClass Object
+                (
+                    [name] => country
+                )
+
+        )
+
+    [metricHeaders] => Array
+        (
+            [0] => stdClass Object
+                (
+                    [name] => activeUsers
+                    [type] => TYPE_INTEGER
+                )
+
+        )
+
+    [rows] => Array
+        (
+            [0] => stdClass Object
+                (
+                    [dimensionValues] => Array
+                        (
+                            [0] => stdClass Object
+                                (
+                                    [value] => Philippines
+                                )
+
+                        )
+
+                    [metricValues] => Array
+                        (
+                            [0] => stdClass Object
+                                (
+                                    [value] => 1
+                                )
+
+                        )
+
+                )
+
+        )
+
+)
+
+[23-Feb-2025 10:54:30 UTC] Total Users RAW Response: stdClass Object
+(
+    [kind] => analyticsData#runReport
+    [rowCount] => 1
+    [metricHeaders] => Array
+        (
+            [0] => stdClass Object
+                (
+                    [name] => totalUsers
+                    [type] => TYPE_INTEGER
+                )
+
+        )
+
+    [rows] => Array
+        (
+            [0] => stdClass Object
+                (
+                    [metricValues] => Array
+                        (
+                            [0] => stdClass Object
+                                (
+                                    [value] => 6
+                                )
+
+                        )
+
+                )
+
+        )
+
+    [metadata] => stdClass Object
+        (
+            [currencyCode] => PHP
+            [timeZone] => Asia/Manila
+        )
+
+)
+
+[23-Feb-2025 10:54:30 UTC] GA4 Total Users: Found 6 users
+[26-Feb-2025 01:52:29 UTC] Realtime RAW Response: stdClass Object
+(
+    [kind] => analyticsData#runRealtimeReport
+    [dimensionHeaders] => Array
+        (
+            [0] => stdClass Object
+                (
+                    [name] => country
+                )
+
+        )
+
+    [metricHeaders] => Array
+        (
+            [0] => stdClass Object
+                (
+                    [name] => activeUsers
+                    [type] => TYPE_INTEGER
+                )
+
+        )
+
+)
+
+[26-Feb-2025 01:52:29 UTC] GA4 Realtime: No active users found
+[26-Feb-2025 01:52:29 UTC] Total Users RAW Response: stdClass Object
+(
+    [kind] => analyticsData#runReport
+    [rowCount] => 1
+    [metricHeaders] => Array
+        (
+            [0] => stdClass Object
+                (
+                    [name] => totalUsers
+                    [type] => TYPE_INTEGER
+                )
+
+        )
+
+    [rows] => Array
+        (
+            [0] => stdClass Object
+                (
+                    [metricValues] => Array
+                        (
+                            [0] => stdClass Object
+                                (
+                                    [value] => 7
+                                )
+
+                        )
+
+                )
+
+        )
+
+    [metadata] => stdClass Object
+        (
+            [currencyCode] => PHP
+            [timeZone] => Asia/Manila
+        )
+
+)
+
+[26-Feb-2025 01:52:29 UTC] GA4 Total Users: Found 7 users
+[26-Feb-2025 02:37:43 UTC] Realtime RAW Response: stdClass Object
+(
+    [kind] => analyticsData#runRealtimeReport
+    [rowCount] => 1
+    [dimensionHeaders] => Array
+        (
+            [0] => stdClass Object
+                (
+                    [name] => country
+                )
+
+        )
+
+    [metricHeaders] => Array
+        (
+            [0] => stdClass Object
+                (
+                    [name] => activeUsers
+                    [type] => TYPE_INTEGER
+                )
+
+        )
+
+    [rows] => Array
+        (
+            [0] => stdClass Object
+                (
+                    [dimensionValues] => Array
+                        (
+                            [0] => stdClass Object
+                                (
+                                    [value] => Philippines
+                                )
+
+                        )
+
+                    [metricValues] => Array
+                        (
+                            [0] => stdClass Object
+                                (
+                                    [value] => 1
+                                )
+
+                        )
+
+                )
+
+        )
+
+)
+
+[26-Feb-2025 02:37:44 UTC] Total Users RAW Response: stdClass Object
+(
+    [kind] => analyticsData#runReport
+    [rowCount] => 1
+    [metricHeaders] => Array
+        (
+            [0] => stdClass Object
+                (
+                    [name] => totalUsers
+                    [type] => TYPE_INTEGER
+                )
+
+        )
+
+    [rows] => Array
+        (
+            [0] => stdClass Object
+                (
+                    [metricValues] => Array
+                        (
+                            [0] => stdClass Object
+                                (
+                                    [value] => 7
+                                )
+
+                        )
+
+                )
+
+        )
+
+    [metadata] => stdClass Object
+        (
+            [currencyCode] => PHP
+            [timeZone] => Asia/Manila
+        )
+
+)
+
+[26-Feb-2025 02:37:44 UTC] GA4 Total Users: Found 7 users
