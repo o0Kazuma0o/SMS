@@ -47,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_id'], $_POS
     $stmt->bind_param("i", $admissionId);
     echo json_encode($stmt->execute() ? ['success' => true, 'message' => 'Admission record deleted successfully.'] : ['success' => false, 'message' => 'Failed to delete admission record.']);
   } elseif ($status === 'Temporarily Enrolled') {
-    // Move record to sms3_students on approval
+    // Move record to sms3_temp_enroll on temporary enrollment
     $stmt = $conn->prepare("SELECT * FROM sms3_pending_admission WHERE id = ?");
     $stmt->bind_param('i', $admissionId);
     $stmt->execute();
@@ -56,31 +56,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_id'], $_POS
     $stmt->close();
 
     if ($admissionData) {
-      // Generate student number and hashed password
       $studentNumber = generateStudentNumber($conn);
 
-      // Insert data into sms3_students
+      // Insert data into sms3_temp_enroll
       $stmt = $conn->prepare("INSERT INTO sms3_temp_enroll (
               student_number, first_name, middle_name, last_name, department_id, branch, admission_type, 
               year_level, sex, civil_status, religion, birthday, email, contact_number, facebook_name, 
               address, father_name, mother_name, guardian_name, guardian_contact, primary_school, primary_year, 
               secondary_school, secondary_year, last_school, last_school_year, referral_source, working_student, member4ps,
               form138, good_moral, form137, birth_certificate, brgy_clearance,
-              honorable_dismissal, transcript_of_records, certificate_of_grades status
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+              honorable_dismissal, transcript_of_records, certificate_of_grades, status
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
-      $form138 = $admissionData['admission_type'] === 'Freshmen' ? '' : NULL;
-      $goodMoral = $admissionData['admission_type'] === 'Freshmen' ? '' : NULL;
-      $form137 = $admissionData['admission_type'] === 'Freshmen' ? NULL : '';
-      $birthCertificate = '';
-      $brgyClearance = '';
-      $honorableDismissal = $admissionData['admission_type'] === 'Transferee' ? '' : NULL;
-      $transcriptOfRecords = $admissionData['admission_type'] === 'Transferee' ? '' : NULL;
-      $certificateOfGrades = $admissionData['admission_type'] === 'Transferee' ? '' : NULL;
+      $form138 = $admissionData['admission_type'] === 'New Regular' ? (isset($_POST['form138']) ? 'Submitted' : 'To Be Followed') : NULL;
+      $goodMoral = $admissionData['admission_type'] === 'New Regular' ? (isset($_POST['good_moral']) ? 'Submitted' : 'To Be Followed') : NULL;
+      $form137 = $admissionData['admission_type'] === 'New Regular' ? (isset($_POST['form137']) ? 'Submitted' : 'To Be Followed') : NULL;
+      $birthCertificate = isset($_POST['birth_certificate']) ? 'Submitted' : 'To Be Followed';
+      $brgyClearance = isset($_POST['brgy_clearance']) ? 'Submitted' : 'To Be Followed';
+      $honorableDismissal = $admissionData['admission_type'] === 'Transferee' ? (isset($_POST['honorable_dismissal']) ? 'Submitted' : 'To Be Followed') : NULL;
+      $transcriptOfRecords = $admissionData['admission_type'] === 'Transferee' ? (isset($_POST['transcript_of_records']) ? 'Submitted' : 'To Be Followed') : NULL;
+      $certificateOfGrades = $admissionData['admission_type'] === 'Transferee' ? (isset($_POST['certificate_of_grades']) ? 'Submitted' : 'To Be Followed') : NULL;
       $status = 'Temporarily Enrolled';
 
       $stmt->bind_param(
-        "sssssssssssssssssssssssssssssssssssss",
+        "ssssssssssssssssssssssssssssssssssssss",
         $studentNumber,
         $admissionData['first_name'],
         $admissionData['middle_name'],
@@ -122,7 +121,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_id'], $_POS
       );
 
       if ($stmt->execute()) {
-        echo json_encode(['success' => true, 'message' => 'Student approved and moved to students table successfully!']);
+        $deleteStmt = $conn->prepare("UPDATE sms3_pending_admission SET status = 'Temporarily Enrolled' WHERE id = ?");
+        $deleteStmt->bind_param('i', $admissionId);
+        $deleteStmt->execute();
+        $deleteStmt->close();
+        echo json_encode(['success' => true, 'message' => 'Student moved to temporary enrollment successfully!']);
       } else {
         echo json_encode(['success' => false, 'message' => 'Failed to insert student record.']);
       }
@@ -142,7 +145,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_id'], $_POS
 $query = "SELECT a.*, d.department_code AS department 
           FROM sms3_pending_admission a
           LEFT JOIN sms3_departments d ON a.department_id = d.id
-          WHERE a.status = 'Pending'
           ORDER BY a.created_at DESC";
 
 $result = $conn->query($query);
@@ -411,13 +413,13 @@ if (!$result) {
                       </td>
                       <td><?= htmlspecialchars($row['created_at']) ?></td>
                       <td>
-                        <span class="badge bg-<?= $row['status'] == 'Pending' ? 'warning' : ($row['status'] == 'Approved' ? 'success' : 'danger') ?>">
+                        <span class="badge bg-<?= $row['status'] == 'Pending' ? 'warning' : ($row['status'] == 'Temporarily Enrolled' ? 'success' : 'danger') ?>">
                           <?= htmlspecialchars($row['status']) ?>
                         </span>
                       </td>
                       <td>
                         <!-- Approve and Reject buttons -->
-                        <?php if ($row['status'] !== 'Temporarily Approved' && $row['status'] !== 'Rejected'): ?>
+                        <?php if ($row['status'] !== 'Temporarily Enrolled' && $row['status'] !== 'Rejected'): ?>
                           <button class="btn btn-primary btn-sm" onclick="processAdmission(<?= $row['id'] ?>, '<?= $row['admission_type'] ?>')">Process Admission</button>
                           <button class="btn btn-danger btn-sm" onclick="updateAdmissionStatus(<?= $row['id'] ?>, 'Rejected')">Reject</button>
                         <?php else: ?>
@@ -443,6 +445,7 @@ if (!$result) {
 
   </main><!-- End #main -->
 
+  <!-- Modal for processing admission -->
   <div class="modal fade" id="processAdmissionModal" tabindex="-1" aria-labelledby="processAdmissionModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
       <div class="modal-content">
@@ -456,7 +459,7 @@ if (!$result) {
             <div id="requirements"></div>
             <div class="mb-3">
               <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-              <button class="btn btn-primary btn-sm" onclick="updateAdmissionStatus(<?= $row['id'] ?>, 'Temporarily Approved')">Assign Student Number</button>
+              <button type="submit" class="btn btn-primary">Temporarily Enroll</button>
             </div>
           </form>
         </div>
@@ -551,34 +554,59 @@ if (!$result) {
                 `;
       } else if (admissionType === 'Transferee') {
         requirementsHtml = `
-          <div class="mb-3">
-            <div class="form-check">
-              <input class="form-check-input" type="checkbox" id="honorable_dismissal" name="honorable_dismissal">
-              <label class="form-check-label" for="honorable_dismissal">Honorable Dismissal</label>
-            </div>
-            <div class="form-check">
-              <input class="form-check-input" type="checkbox" id="transcript_of_records" name="transcript_of_records">
-              <label class="form-check-label" for="transcript_of_records">Transcript of Records</label>
-            </div>
-            <div class="form-check">
-              <input class="form-check-input" type="checkbox" id="certificate_of_grades" name="certificate_of_grades">
-              <label class="form-check-label" for="certificate_of_grades">Certificate of Grades</label>
-            </div>
-            <div class="form-check">
-              <input class="form-check-input" type="checkbox" id="brgy_clearance" name="brgy_clearance">
-              <label class="form-check-label" for="brgy_clearance">Barangay Clearance</label>
-            </div>
-            <div class="form-check">
-              <input class="form-check-input" type="checkbox" id="birth_certificate" name="birth_certificate">
-              <label class="form-check-label" for="birth_certificate">Birth Certificate</label>
-            </div>
-          </div>
-        `;
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="honorable_dismissal" name="honorable_dismissal">
+                            <label class="form-check-label" for="honorable_dismissal">Honorable Dismissal</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="transcript_of_records" name="transcript_of_records">
+                            <label class="form-check-label" for="transcript_of_records">Transcript of Records</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="certificate_of_grades" name="certificate_of_grades">
+                            <label class="form-check-label" for="certificate_of_grades">Certificate of Grades</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="brgy_clearance" name="brgy_clearance">
+                            <label class="form-check-label" for="brgy_clearance">Barangay Clearance</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="birth_certificate" name="birth_certificate">
+                            <label class="form-check-label" for="birth_certificate">Birth Certificate</label>
+                        </div>
+                    </div>
+                `;
       }
 
       document.getElementById('requirements').innerHTML = requirementsHtml;
       new bootstrap.Modal(document.getElementById('processAdmissionModal')).show();
     }
+
+    document.getElementById('admissionForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const admissionId = document.getElementById('admissionId').value;
+      const formData = new FormData(this);
+      formData.append('status', 'Temporarily Enrolled');
+
+      fetch('admission.php', {
+          method: 'POST',
+          body: new URLSearchParams(formData)
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            alert('Student temporarily enrolled successfully.');
+            location.reload();
+          } else {
+            alert('Failed to enroll student: ' + data.message);
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('An error occurred while processing the admission.');
+        });
+    });
 
     // JavaScript function to update admission status
     function updateAdmissionStatus(admissionId, status) {
