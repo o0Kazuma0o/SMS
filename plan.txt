@@ -15,3 +15,7 @@ Requirements:
 Freshmen: Form 138, Good Moral, Form 137, Pic(Passport Size), Birth Certificate, BRGY. Clearance, NCAE
 Transferee: Honorable Dismissal, Transcript of Records, Certificate of Grades, Pic, BRGY. Clearance, Birth Certificate
 478793835
+
+UPDATE sms3_students
+SET branch = 'manila'
+WHERE id BETWEEN 10 AND 20;
