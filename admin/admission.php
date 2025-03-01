@@ -8,7 +8,7 @@ function generateStudentNumber($conn)
 {
   $yearPrefix = date('y'); // e.g., '24' for 2024
 
-  $result = $conn->query("SELECT student_number FROM sms3_students ORDER BY id DESC LIMIT 1");
+  $result = $conn->query("SELECT student_number FROM sms3_temp_enroll ORDER BY id DESC LIMIT 1");
   $lastStudentNumber = $result->fetch_assoc();
 
   if ($lastStudentNumber) {
@@ -41,12 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_id'], $_POS
   $admissionId = intval($_POST['admission_id']);
   $status = $_POST['status'];
 
-  if ($status === 'Rejected') {
-    // Delete admission record on rejection
-    $stmt = $conn->prepare("DELETE FROM sms3_pending_admission WHERE id = ?");
-    $stmt->bind_param("i", $admissionId);
-    echo json_encode($stmt->execute() ? ['success' => true, 'message' => 'Admission record deleted successfully.'] : ['success' => false, 'message' => 'Failed to delete admission record.']);
-  } elseif ($status === 'Temporarily Enrolled') {
+  if ($status === 'Temporarily Enrolled') {
     // Move record to sms3_temp_enroll on temporary enrollment
     $stmt = $conn->prepare("SELECT * FROM sms3_pending_admission WHERE id = ?");
     $stmt->bind_param('i', $admissionId);
@@ -121,10 +116,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_id'], $_POS
       );
 
       if ($stmt->execute()) {
-        $deleteStmt = $conn->prepare("UPDATE sms3_pending_admission SET status = 'Temporarily Enrolled' WHERE id = ?");
-        $deleteStmt->bind_param('i', $admissionId);
-        $deleteStmt->execute();
-        $deleteStmt->close();
+        $updateStmt = $conn->prepare("UPDATE sms3_pending_admission SET status = 'Temporarily Enrolled' WHERE id = ?");
+        $updateStmt->bind_param('i', $admissionId);
+        $updateStmt->execute();
+        $updateStmt->close();
         echo json_encode(['success' => true, 'message' => 'Student moved to temporary enrollment successfully!']);
       } else {
         echo json_encode(['success' => false, 'message' => 'Failed to insert student record.']);
@@ -133,10 +128,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_id'], $_POS
     } else {
       echo json_encode(['success' => false, 'message' => 'Admission record not found.']);
     }
-  } else {
-    $stmt = $conn->prepare("UPDATE sms3_pending_admission SET status = ? WHERE id = ?");
-    $stmt->bind_param("si", $status, $admissionId);
-    echo json_encode($stmt->execute() ? ['success' => true, 'message' => 'Admission status updated successfully.'] : ['success' => false, 'message' => 'Failed to update admission status.']);
   }
   exit;
 }
@@ -284,6 +275,13 @@ if (!$result) {
       </li>
 
       <li class="nav-item">
+        <a class="nav-link " href="admission_temp.php">
+          <i class="bi bi-grid"></i>
+          <span>Temporary Admission</span>
+        </a>
+      </li>
+
+      <li class="nav-item">
         <a class="nav-link " href="enrollment.php">
           <i class="bi bi-grid"></i>
           <span>Enrollment</span>
@@ -302,9 +300,9 @@ if (!$result) {
       <li class="nav-heading">TEST REGISTRAR</li>
 
       <li class="nav-item">
-        <a class="nav-link " href="manage_academic_year.php">
+        <a class="nav-link " href="manage_academic_semester.php">
           <i class="bi bi-grid"></i>
-          <span>Academic Year</span>
+          <span>Academic Structure</span>
         </a>
       </li>
       <li class="nav-item">
@@ -421,7 +419,6 @@ if (!$result) {
                         <!-- Approve and Reject buttons -->
                         <?php if ($row['status'] !== 'Temporarily Enrolled' && $row['status'] !== 'Rejected'): ?>
                           <button class="btn btn-primary btn-sm" onclick="processAdmission(<?= $row['id'] ?>, '<?= $row['admission_type'] ?>')">Process Admission</button>
-                          <button class="btn btn-danger btn-sm" onclick="updateAdmissionStatus(<?= $row['id'] ?>, 'Rejected')">Reject</button>
                         <?php else: ?>
                           <!-- No action if already approved or rejected -->
                           <span>No Action Available</span>
@@ -607,38 +604,6 @@ if (!$result) {
           alert('An error occurred while processing the admission.');
         });
     });
-
-    // JavaScript function to update admission status
-    function updateAdmissionStatus(admissionId, status) {
-      if (!confirm('Are you sure you want to update the status to ' + status + '?')) {
-        return;
-      }
-
-      // Send an AJAX request to update the status
-      fetch('admission.php', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
-          },
-          body: new URLSearchParams({
-            'admission_id': admissionId,
-            'status': status
-          })
-        })
-        .then(response => response.json())
-        .then(data => {
-          if (data.success) {
-            alert('Status updated successfully.');
-            location.reload();
-          } else {
-            alert('Failed to update status: ' + data.message);
-          }
-        })
-        .catch(error => {
-          console.error('Error:', error);
-          alert('An error occurred while updating the status.');
-        });
-    }
   </script>
 
 

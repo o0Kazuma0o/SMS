@@ -3,73 +3,45 @@ require('../database.php');
 require_once 'session.php';
 checkAccess('Admin'); // Ensure only users with the 'admin' role can access this page
 
-// Add academic year
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_academic_year'])) {
-  $academic_year = $_POST['academic_year'];
+// Add a new semester
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_semester'])) {
+  $semester_name = $_POST['semester_name'];
 
-  try {
-    // Insert academic year
-    $stmt = $conn->prepare("INSERT INTO sms3_academic_years (academic_year, is_current) VALUES (?, 0)");
-    $stmt->bind_param("s", $academic_year);
-    $stmt->execute();
-    $_SESSION['success_message'] = "Academic year added successfully!";
-    header('Location: manage_academic_year.php');
-    exit;
-  } catch (mysqli_sql_exception $e) {
-    $_SESSION['error_message'] = $e->getCode() == 1062
-      ? "Error: Duplicate academic year."
-      : "Error: " . $e->getMessage();
-    header('Location: manage_academic_year.php');
-    exit;
+  // Insert the new semester with 'Inactive' status
+  $stmt = $conn->prepare("INSERT INTO sms3_semesters (name, status) VALUES (?, 'Inactive')");
+  $stmt->bind_param("s", $semester_name);
+
+  if ($stmt->execute()) {
+    $_SESSION['success_message'] = "New semester added successfully!";
+  } else {
+    $_SESSION['error_message'] = "Failed to add semester.";
   }
-}
-
-// Set academic year as current
-if (isset($_GET['set_current_academic_year_id'])) {
-  $set_current_id = intval($_GET['set_current_academic_year_id']);
-
-  try {
-    // Reset all academic years
-    $conn->query("UPDATE sms3_academic_years SET is_current = 0");
-
-    // Set the selected academic year as current
-    $stmt = $conn->prepare("UPDATE sms3_academic_years SET is_current = 1 WHERE id = ?");
-    $stmt->bind_param("i", $set_current_id);
-    $stmt->execute();
-    $stmt->close();
-
-    $_SESSION['success_message'] = "Academic year set as current!";
-  } catch (mysqli_sql_exception $e) {
-    $_SESSION['error_message'] = "Error: " . $e->getMessage();
-  }
-
-  header('Location: manage_academic_year.php');
+  $stmt->close();
+  header("Location: manage_semester.php");
   exit;
 }
 
-// Delete academic year
-if (isset($_GET['delete_academic_year_id'])) {
-  $delete_id = intval($_GET['delete_academic_year_id']);
+// Set a semester as active
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['set_active'])) {
+  $semester_id = $_POST['semester_id'];
 
-  try {
-    $stmt = $conn->prepare("DELETE FROM sms3_academic_years WHERE id = ?");
-    $stmt->bind_param("i", $delete_id);
-    $stmt->execute();
-    $stmt->close();
+  // Set all semesters to 'Inactive' before setting the selected one to 'Active'
+  $conn->query("UPDATE sms3_semesters SET status = 'Inactive'");
+  $stmt = $conn->prepare("UPDATE sms3_semesters SET status = 'Active' WHERE id = ?");
+  $stmt->bind_param("i", $semester_id);
 
-    $_SESSION['success_message'] = "Academic year deleted successfully!";
-  } catch (mysqli_sql_exception $e) {
-    $_SESSION['error_message'] = $e->getCode() == 1451
-      ? "Error: This academic year is still linked to other data."
-      : "Error: " . $e->getMessage();
+  if ($stmt->execute()) {
+    $_SESSION['success_message'] = "Semester set to Active!";
+  } else {
+    $_SESSION['error_message'] = "Failed to activate semester.";
   }
-
-  header('Location: manage_academic_year.php');
+  $stmt->close();
+  header("Location: manage_semester.php");
   exit;
 }
 
-// Fetch all academic years
-$academic_years = $conn->query("SELECT * FROM sms3_academic_years ORDER BY id DESC");
+// Fetch all semesters for display
+$semesters = $conn->query("SELECT * FROM sms3_semesters ORDER BY id DESC");
 ?>
 
 <!DOCTYPE html>
@@ -79,7 +51,7 @@ $academic_years = $conn->query("SELECT * FROM sms3_academic_years ORDER BY id DE
   <meta charset="utf-8">
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
 
-  <title>Academic Year</title>
+  <title>Semester</title>
   <meta content="" name="description">
   <meta content="" name="keywords">
 
@@ -103,23 +75,6 @@ $academic_years = $conn->query("SELECT * FROM sms3_academic_years ORDER BY id DE
   <!-- Template Main CSS File -->
   <link href="../assets/css/style.css" rel="stylesheet">
 
-  <style>
-    .alert {
-      padding: 10px;
-      margin: 10px 0;
-      border-radius: 5px;
-    }
-
-    .alert-success {
-      background-color: #d4edda;
-      color: #155724;
-    }
-
-    .alert-danger {
-      background-color: #f8d7da;
-      color: #721c24;
-    }
-  </style>
 </head>
 
 <body>
@@ -219,6 +174,13 @@ $academic_years = $conn->query("SELECT * FROM sms3_academic_years ORDER BY id DE
       </li>
 
       <li class="nav-item">
+        <a class="nav-link " href="admission_temp.php">
+          <i class="bi bi-grid"></i>
+          <span>Temporary Admission</span>
+        </a>
+      </li>
+
+      <li class="nav-item">
         <a class="nav-link " href="enrollment.php">
           <i class="bi bi-grid"></i>
           <span>Enrollment</span>
@@ -237,9 +199,9 @@ $academic_years = $conn->query("SELECT * FROM sms3_academic_years ORDER BY id DE
       <li class="nav-heading">TEST REGISTRAR</li>
 
       <li class="nav-item">
-        <a class="nav-link " href="manage_academic_year.php">
+        <a class="nav-link " href="manage_academic_semester.php">
           <i class="bi bi-grid"></i>
-          <span>Academic Year</span>
+          <span>Academic Structure</span>
         </a>
       </li>
       <li class="nav-item">
@@ -296,7 +258,6 @@ $academic_years = $conn->query("SELECT * FROM sms3_academic_years ORDER BY id DE
       </li>
 
       <hr class="sidebar-divider">
-
     </ul>
 
   </aside><!-- End Sidebar-->
@@ -304,143 +265,68 @@ $academic_years = $conn->query("SELECT * FROM sms3_academic_years ORDER BY id DE
   <main id="main" class="main">
 
     <div class="pagetitle">
-      <h1>Academic Year</h1>
+      <h1>Semester</h1>
       <nav>
         <ol class="breadcrumb">
           <li class="breadcrumb-item"><a href="Dashboard.php">Home</a></li>
-          <li class="breadcrumb-item active">Academic Year</li>
+          <li class="breadcrumb-item active">Semester</li>
         </ol>
       </nav>
     </div><!-- End Page Title -->
 
-    <section class="section">
+    <section class="section dashboard">
       <div class="row">
-        <div class="col-lg-12">
-          <div class="card">
-            <div class="card-body">
-              <h5 class="card-title">Add New Academic Year</h5>
 
-              <form action="manage_academic_year.php" method="POST">
-                <div class="mb-3">
-                  <label for="academicYear" class="form-label">Academic Year</label>
-                  <input type="text" class="form-control" id="academicYear" name="academic_year" placeholder="2023-2024" required>
-                </div>
-                <button type="submit" name="add_academic_year" class="btn btn-primary">Add Academic Year</button>
-              </form>
-
-            </div>
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Add Semester</h5>
+            <form action="manage_semester.php" method="POST">
+              <div class="form-group">
+                <label for="semester_name">Semester Name:</label>
+                <input type="text" class="form-control" name="semester_name" id="semester_name" required placeholder="e.g., 1st Semester">
+              </div>
+              <button type="submit" name="add_semester" class="btn btn-primary mt-3">Add Semester</button>
+            </form>
           </div>
         </div>
 
-        <div class="col-lg-12">
-          <div class="card">
-            <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;" class="card-body">
-              <h5 class="card-title">Academic Year List</h5>
-
-              <table style="width: 100%; min-width: 800px;" class="table">
-                <thead>
+        <div class="card">
+          <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;" class="card-body">
+            <h5 class="card-title">Manage Semester</h5>
+            <table style="width: 100%; min-width: 800px;" class="table table-bordered">
+              <thead>
+                <tr>
+                  <th>Semester Name</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <?php while ($semester = $semesters->fetch_assoc()): ?>
                   <tr>
-                    <th>Academic Year</th>
-                    <th>Set as Current</th>
-                    <th>Actions</th>
+                    <td><?= htmlspecialchars($semester['name']); ?></td>
+                    <td><?= htmlspecialchars($semester['status']); ?></td>
+                    <td>
+                      <?php if ($semester['status'] !== 'Active'): ?>
+                        <form action="manage_semester.php" method="POST" style="display:inline;">
+                          <input type="hidden" name="semester_id" value="<?= $semester['id']; ?>">
+                          <button type="submit" name="set_active" class="btn btn-warning btn-sm">Set as Active</button>
+                        </form>
+                      <?php else: ?>
+                        <span class="badge bg-success">Active</Wspan>
+                        <?php endif; ?>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  <?php if ($academic_years->num_rows > 0): ?>
-                    <?php while ($row = $academic_years->fetch_assoc()): ?>
-                      <tr>
-                        <td><?= htmlspecialchars($row['academic_year']); ?></td>
-                        <td>
-                          <?= $row['is_current']
-                            ? '<span class="badge bg-success">Current</span>'
-                            : '<a href="manage_academic_year.php?set_current_academic_year_id=' . $row['id'] . '" class="btn btn-sm btn-primary">Set as Current</a>' ?>
-                        </td>
-                        <td>
-                          <a href="manage_academic_year.php?delete_academic_year_id=<?= $row['id']; ?>"
-                            class="btn btn-sm btn-danger"
-                            onclick="return confirm('Are you sure you want to delete this academic year?');">Delete</a>
-                        </td>
-                      </tr>
-                    <?php endwhile; ?>
-                  <?php else: ?>
-                    <tr>
-                      <td colspan="3" class="text-center">No academic years found.</td>
-                    </tr>
-                  <?php endif; ?>
-                </tbody>
-              </table>
-
-            </div>
+                <?php endwhile; ?>
+              </tbody>
+            </table>
           </div>
         </div>
+
       </div>
     </section>
 
   </main><!-- End #main -->
-
-  <script>
-    function setCurrentAcademicYear(id) {
-      if (confirm('Are you sure you want to set this academic year as current?')) {
-        fetch('set_academic_year.php', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              id
-            })
-          })
-          .then(response => response.json())
-          .then(data => {
-            if (data.success) {
-              alert('Academic year set as current successfully.');
-              location.reload();
-            } else {
-              alert('Failed to set the academic year.');
-            }
-          })
-          .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred while setting the academic year.');
-          });
-      }
-    }
-
-    function deleteAcademicYear(id) {
-      if (confirm('Are you sure you want to delete this academic year?')) {
-        fetch('manage_academic_year.php', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              delete_id: id
-            })
-          })
-          .then(response => {
-            if (!response.ok) {
-              // Handle non-200 responses
-              return response.text().then(text => {
-                throw new Error(`HTTP ${response.status}: ${text}`);
-              });
-            }
-            return response.json();
-          })
-          .then(data => {
-            if (data.success) {
-              alert(data.message);
-              location.reload(); // Reload the page to update the list
-            } else {
-              alert(data.message);
-            }
-          })
-          .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred while deleting the academic year.');
-          });
-      }
-    }
-  </script>
 
 
 

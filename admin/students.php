@@ -390,6 +390,13 @@ if (isset($_GET['delete_timetable_from_student'])) {
       </li>
 
       <li class="nav-item">
+        <a class="nav-link " href="admission_temp.php">
+          <i class="bi bi-grid"></i>
+          <span>Temporary Admission</span>
+        </a>
+      </li>
+
+      <li class="nav-item">
         <a class="nav-link " href="enrollment.php">
           <i class="bi bi-grid"></i>
           <span>Enrollment</span>
@@ -408,9 +415,9 @@ if (isset($_GET['delete_timetable_from_student'])) {
       <li class="nav-heading">TEST REGISTRAR</li>
 
       <li class="nav-item">
-        <a class="nav-link " href="manage_academic_year.php">
+        <a class="nav-link " href="manage_academic_semester.php">
           <i class="bi bi-grid"></i>
-          <span>Academic Year</span>
+          <span>Academic Structure</span>
         </a>
       </li>
       <li class="nav-item">

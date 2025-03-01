@@ -142,6 +142,13 @@ if ($result && $row = $result->fetch_assoc()) {
         </a>
       </li>
 
+      <li class="nav-item">
+        <a class="nav-link " href="admission_temp.php">
+          <i class="bi bi-grid"></i>
+          <span>Temporary Admission</span>
+        </a>
+      </li>
+
       <hr class="sidebar-divider">
 
     </ul>

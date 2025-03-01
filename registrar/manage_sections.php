@@ -382,9 +382,9 @@ $sections = $conn->query("
       <li class="nav-heading">TEST REGISTRAR</li>
 
       <li class="nav-item">
-        <a class="nav-link " href="manage_academic_year.php">
+        <a class="nav-link " href="manage_academic_semester.php">
           <i class="bi bi-grid"></i>
-          <span>Academic Year</span>
+          <span>Academic Structure</span>
         </a>
       </li>
       <li class="nav-item">
