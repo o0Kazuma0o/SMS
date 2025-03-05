@@ -3,6 +3,14 @@ require('../database.php');
 require_once 'session.php';
 checkAccess('Admin'); // Ensure only users with the 'admin' role can access this page
 
+if (!isset($_SESSION['active_tab'])) {
+  $_SESSION['active_tab'] = 'academicYear';
+}
+
+if (isset($_GET['tab'])) {
+  $_SESSION['active_tab'] = $_GET['tab'];
+}
+
 // Add academic year
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_academic_year'])) {
   $academic_year = $_POST['academic_year'];
@@ -13,13 +21,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_academic_year']))
     $stmt->bind_param("s", $academic_year);
     $stmt->execute();
     $_SESSION['success_message'] = "Academic year added successfully!";
-    header('Location: manage_academic_semester.php');
+    header("Location: manage_academic_semester.php?tab=academicYear");
     exit;
   } catch (mysqli_sql_exception $e) {
     $_SESSION['error_message'] = $e->getCode() == 1062
       ? "Error: Duplicate academic year."
       : "Error: " . $e->getMessage();
-    header('Location: manage_academic_semester.php');
+    header("Location: manage_academic_semester.php?tab=academicYear");
     exit;
   }
 }
@@ -43,7 +51,7 @@ if (isset($_GET['set_current_academic_year_id'])) {
     $_SESSION['error_message'] = "Error: " . $e->getMessage();
   }
 
-  header('Location: manage_academic_semester.php');
+  header("Location: manage_academic_semester.php?tab=academicYear");
   exit;
 }
 
@@ -64,7 +72,7 @@ if (isset($_GET['delete_academic_year_id'])) {
       : "Error: " . $e->getMessage();
   }
 
-  header('Location: manage_academic_semester.php');
+  header("Location: manage_academic_semester.php?tab=academicYear");
   exit;
 }
 
@@ -82,7 +90,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_semester'])) {
     $_SESSION['error_message'] = "Failed to add semester.";
   }
   $stmt->close();
-  header("Location: manage_academic_semester.php");
+  header("Location: manage_academic_semester.php?tab=semester");
   exit;
 }
 
@@ -101,10 +109,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['set_active'])) {
     $_SESSION['error_message'] = "Failed to activate semester.";
   }
   $stmt->close();
-  header("Location: manage_academic_semester.php");
+  header("Location: manage_academic_semester.php?tab=semester");
   exit;
 }
 
+// Delete semester
+if (isset($_GET['delete_semester_id'])) {
+  $delete_id = intval($_GET['delete_semester_id']);
+
+  try {
+    $stmt = $conn->prepare("DELETE FROM sms3_semesters WHERE id = ?");
+    $stmt->bind_param("i", $delete_id);
+    $stmt->execute();
+    $stmt->close();
+
+    $_SESSION['success_message'] = "Semester deleted successfully!";
+  } catch (mysqli_sql_exception $e) {
+    $_SESSION['error_message'] = $e->getCode() == 1451
+      ? "Error: This semester is still linked to other data."
+      : "Error: " . $e->getMessage();
+  }
+
+  header("Location: manage_academic_semester.php?tab=semester");
+  exit;
+}
 // Fetch all academic years and semesters
 $academic_years = $conn->query("SELECT * FROM sms3_academic_years ORDER BY id DESC");
 $semesters = $conn->query("SELECT * FROM sms3_semesters ORDER BY id DESC");
@@ -349,11 +377,11 @@ $semesters = $conn->query("SELECT * FROM sms3_semesters ORDER BY id DESC");
   <main id="main" class="main">
 
     <div class="pagetitle">
-      <h1>Academic Year & Semester</h1>
+      <h1>Academic Structure</h1>
       <nav>
         <ol class="breadcrumb">
           <li class="breadcrumb-item"><a href="Dashboard.php">Home</a></li>
-          <li class="breadcrumb-item active">Academic Year & Semester</li>
+          <li class="breadcrumb-item active">Academic Structure</li>
         </ol>
       </nav>
     </div><!-- End Page Title -->
@@ -363,17 +391,21 @@ $semesters = $conn->query("SELECT * FROM sms3_semesters ORDER BY id DESC");
         <div class="card-header">
           <ul class="nav nav-tabs card-header-tabs">
             <li class="nav-item">
-              <a class="nav-link active" href="#academicYear" data-bs-toggle="tab">Academic Year</a>
+              <a class="nav-link <?= $_SESSION['active_tab'] == 'academicYear' ? 'active' : '' ?>"
+                href="#academicYear"
+                data-bs-toggle="tab">Academic Year</a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="#semester" data-bs-toggle="tab">Semester</a>
+              <a class="nav-link <?= $_SESSION['active_tab'] == 'semester' ? 'active' : '' ?>"
+                href="#semester"
+                data-bs-toggle="tab">Semester</a>
             </li>
           </ul>
         </div>
         <div class="card-body">
           <div class="tab-content">
             <!-- Academic Year Tab -->
-            <div class="tab-pane active" id="academicYear">
+            <div class="tab-pane <?= $_SESSION['active_tab'] == 'academicYear' ? 'active' : '' ?>" id="academicYear">
               <div class="row">
                 <div class="col-md-4">
                   <h5 class="card-title">Add New Academic Year</h5>
@@ -391,7 +423,7 @@ $semesters = $conn->query("SELECT * FROM sms3_semesters ORDER BY id DESC");
                     <thead>
                       <tr>
                         <th>Academic Year</th>
-                        <th>Current</th>
+                        <th>Status</th>
                         <th>Actions</th>
                       </tr>
                     </thead>
@@ -401,8 +433,8 @@ $semesters = $conn->query("SELECT * FROM sms3_semesters ORDER BY id DESC");
                           <td><?= htmlspecialchars($academic_year['academic_year']); ?></td>
                           <td>
                             <?= $academic_year['is_current']
-                              ? '<span class="badge bg-success">Current</span>'
-                              : '<a href="manage_academic_semester.php?set_current_academic_year_id=' . $academic_year['id'] . '" class="btn btn-sm btn-primary">Set as Current</a>' ?>
+                              ? '<span class="badge bg-success">Active</span>'
+                              : '<a href="manage_academic_semester.php?set_current_academic_year_id=' . $academic_year['id'] . '" class="btn btn-sm btn-primary">Set as Active</a>' ?>
                           </td>
                           <td>
                             <a href="manage_academic_semester.php?delete_academic_year_id=<?= $academic_year['id']; ?>"
@@ -418,7 +450,7 @@ $semesters = $conn->query("SELECT * FROM sms3_semesters ORDER BY id DESC");
             </div>
 
             <!-- Semester Tab -->
-            <div class="tab-pane" id="semester">
+            <div class="tab-pane <?= $_SESSION['active_tab'] == 'semester' ? 'active' : '' ?>" id="semester">
               <div class="row">
                 <div class="col-md-4">
                   <h5 class="card-title">Add New Semester</h5>
@@ -444,16 +476,22 @@ $semesters = $conn->query("SELECT * FROM sms3_semesters ORDER BY id DESC");
                       <?php while ($semester = $semesters->fetch_assoc()): ?>
                         <tr>
                           <td><?= htmlspecialchars($semester['name']); ?></td>
-                          <td><?= htmlspecialchars($semester['status']); ?></td>
                           <td>
                             <?php if ($semester['status'] !== 'Active'): ?>
                               <form action="manage_academic_semester.php" method="POST" style="display:inline;">
                                 <input type="hidden" name="semester_id" value="<?= $semester['id']; ?>">
-                                <button type="submit" name="set_active" class="btn btn-sm btn-warning">Set as Active</button>
+                                <button type="submit" name="set_active" class="btn btn-sm btn-primary">Set as Active</button>
                               </form>
                             <?php else: ?>
                               <span class="badge bg-success">Active</span>
                             <?php endif; ?>
+                          </td>
+                          <td>
+                            <a href="manage_academic_semester.php?delete_semester_id=<?= $semester['id']; ?>"
+                              class="btn btn-sm btn-danger"
+                              onclick="return confirm('Are you sure you want to delete this semester?');">
+                              Delete
+                            </a>
                           </td>
                         </tr>
                       <?php endwhile; ?>
@@ -471,15 +509,23 @@ $semesters = $conn->query("SELECT * FROM sms3_semesters ORDER BY id DESC");
   </main><!-- End #main -->
 
   <script>
-    // Initialize Bootstrap Tabs
-    var tabEl = document.querySelector('a[href="#academicYear"]');
-    var tab = new bootstrap.Tab(tabEl);
-    tab.show();
+    // Initialize Bootstrap Tabs with session tracking
+    document.addEventListener('DOMContentLoaded', function() {
+      // Ensure the active tab is set from session
+      const activeTab = `#${$_SESSION['active_tab']}`;
+      const tabEl = document.querySelector(`[href="${activeTab}"]`);
+      if (tabEl) {
+        const tab = new bootstrap.Tab(tabEl);
+        tab.show();
+      }
 
-    // Delete confirmation
-    document.querySelectorAll('.btn-danger').forEach(button => {
-      button.addEventListener('click', function(e) {
-        return confirm('Are you sure you want to delete this item?');
+      // Update the active tab when navigating
+      document.querySelectorAll('.nav-link').forEach(link => {
+        link.addEventListener('click', function(e) {
+          e.preventDefault();
+          const tabId = this.getAttribute('href').substring(1);
+          window.location.href = `?tab=${tabId}`;
+        });
       });
     });
 

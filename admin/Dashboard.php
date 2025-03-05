@@ -291,13 +291,6 @@ if ($result_enrollment_status) {
       </li>
 
       <li class="nav-item">
-        <a class="nav-link " href="admission_temp.php">
-          <i class="bi bi-grid"></i>
-          <span>Temporary Admission</span>
-        </a>
-      </li>
-
-      <li class="nav-item">
         <a class="nav-link " href="enrollment.php">
           <i class="bi bi-grid"></i>
           <span>Enrollment</span>
