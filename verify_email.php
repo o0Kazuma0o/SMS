@@ -20,13 +20,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $mail->isSMTP();
         $mail->Host = 'smtp.gmail.com';
         $mail->SMTPAuth = true;
-        $mail->Username = 'your-email@gmail.com'; // Your Gmail address
-        $mail->Password = 'your-email-password'; // Your Gmail password
+        $mail->Username = 'noreply.bcpsms3@gmail.com'; // Your Gmail address
+        $mail->Password = 'admission.bcpsms3.com'; // Your Gmail password
         $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
         $mail->Port = 587;
 
         //Recipients
-        $mail->setFrom('your-email@gmail.com', 'Bestlink College');
+        $mail->setFrom('noreply.bcpsms3@gmail.com', 'Bestlink College');
         $mail->addAddress($email);
 
         // Content

@@ -291,7 +291,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <input type="password" id="password" name="password" required>
 
             <button type="submit">LOGIN</button>
-            <a href="select_branch.php" class="admission-button">ADMISSION</a>
+            <a href="verify_email.php" class="admission-button">ADMISSION</a>
         </form>
     </div>
 
