@@ -123,6 +123,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 
 <body>
+  <div style="position: absolute; top: 10px; left: 10px; z-index: 2;">
+    <a href="login.php" style="text-decoration: none; background-color: #1e3a8a; color: white; padding: 10px 20px; border-radius: 5px; font-weight: bold;">
+      &larr; Back
+    </a>
+  </div>
   <div>
     <div class="title text-center mb-10">
       <img src="assets/img/bcp.png" alt="School Logo" width="100">

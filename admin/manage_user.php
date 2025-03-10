@@ -296,12 +296,7 @@ $result = $conn->query($sql);
           <span>Academic Structure</span>
         </a>
       </li>
-      <li class="nav-item">
-        <a class="nav-link " href="manage_semester.php">
-          <i class="bi bi-grid"></i>
-          <span>Semester</span>
-        </a>
-      </li>
+ 
       <li class="nav-item">
         <a class="nav-link " href="manage_departments.php">
           <i class="bi bi-grid"></i>

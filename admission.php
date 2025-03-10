@@ -188,7 +188,7 @@ while ($department = $departments->fetch_assoc()) {
       <h1>College Admission</h1>
     </div>
     <div class="row d-flex justify-content-center">
-      <div class="card register col-lg-8 mt-1">
+      <div class="card register col-lg-9 mt-1">
         <div class="card">
           <div class="card-body">
             <div class="accordion accordion-flush" id="admission">
@@ -581,37 +581,39 @@ while ($department = $departments->fetch_assoc()) {
         </div>
       </div>
       <div class="card register col-lg-3 mt-1">
-        <div class="card">
-          <div class="card requirements">
-            <div class="requirements-section">
-              <h3><strong>Requirements</strong></h3>
-              <p>Original Copy of the following documents shall be submitted</p>
+        <div class="card requirements">
+          <div class="requirements-section">
+            <h3><strong>Requirements</strong></h3>
+            <p>Original Copy of the following documents shall be submitted</p>
 
-              <hr>
+            <hr>
 
-              <h5>College New/Freshmen</h5>
-              <ul>
-                <li>Form 138 (Report Card)</li>
-                <li>Form 137</li>
-                <li>Certificate of Good Moral</li>
-                <li>PSA Authenticated Birth Certificate</li>
-                <li>Passport Size ID Picture (White Background, Formal Attire) - 2pcs</li>
-                <li>Barangay Clearance</li>
-              </ul>
+            <h5>College New/Freshmen</h5>
+            <ul>
+              <li>Form 138 (Report Card)</li>
+              <li>Form 137</li>
+              <li>Certificate of Good Moral</li>
+              <li>PSA Authenticated Birth Certificate</li>
+              <li>Passport Size ID Picture (White Background, Formal Attire) - 2pcs</li>
+              <li>Barangay Clearance</li>
+            </ul>
 
-              <hr>
+            <hr>
 
-              <h5>College Transferee</h5>
-              <ul>
-                <li>Transcript of Records from Previous School</li>
-                <li>Honorable Dismissal</li>
-                <li>Certificate of Good Moral</li>
-                <li>PSA Authenticated Birth Certificate</li>
-                <li>Passport Size ID Picture (White Background, Formal Attire) - 2pcs</li>
-                <li>Barangay Clearance</li>
-              </ul>
-            </div>
+            <h5>College Transferee</h5>
+            <ul>
+              <li>Transcript of Records from Previous School</li>
+              <li>Honorable Dismissal</li>
+              <li>Certificate of Good Moral</li>
+              <li>PSA Authenticated Birth Certificate</li>
+              <li>Passport Size ID Picture (White Background, Formal Attire) - 2pcs</li>
+              <li>Barangay Clearance</li>
+            </ul>
 
+            <hr>
+
+            <p>Make sure that the following requirements are present</p>
+            <p>If not, please inform the staff if the requirements are to be followed on a later date</p>
           </div>
         </div>
       </div>

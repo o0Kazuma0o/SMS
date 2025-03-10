@@ -24,28 +24,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_section'])) {
   $semester = $_POST['semester_id'];
   $available = $_POST['available'];
   $department_id = $_POST['department_id'];
+  $branch = $_POST['branch'];
 
   try {
     // Check for duplicates
     $stmt = $conn->prepare("
           SELECT COUNT(*) 
           FROM sms3_sections 
-          WHERE section_number = ? AND department_id = ? AND semester_id = ?");
-    $stmt->bind_param("iii", $section_number, $department_id, $semester);
+          WHERE section_number = ? AND department_id = ? AND semester_id = ? AND branch = ?");
+    $stmt->bind_param("iiiis", $section_number, $department_id, $semester, $branch);
     $stmt->execute();
     $stmt->bind_result($duplicate_count);
     $stmt->fetch();
     $stmt->close();
 
     if ($duplicate_count > 0) {
-      throw new Exception("Duplicate section: A section with this number, department, and semester already exists.");
+      throw new Exception("Duplicate section: A section with this number, department, semester, and branch already exists.");
     }
 
     // Insert section
     $stmt = $conn->prepare("
-          INSERT INTO sms3_sections (section_number, year_level, capacity, semester_id, available, department_id) 
-          VALUES (?, ?, ?, ?, ?, ?)");
-    $stmt->bind_param("iiiiii", $section_number, $year_level, $capacity, $semester, $available, $department_id);
+          INSERT INTO sms3_sections (section_number, year_level, capacity, semester_id, available, department_id, branch) 
+          VALUES (?, ?, ?, ?, ?, ?, ?)");
+    $stmt->bind_param("iiiiiis", $section_number, $year_level, $capacity, $semester, $available, $department_id, $branch);
     $stmt->execute();
     $newSectionId = $stmt->insert_id;
     $stmt->close();
@@ -57,7 +58,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_section'])) {
       'capacity' => $capacity,
       'semester_id' => $semester,
       'available' => $available,
-      'department_id' => $department_id
+      'department_id' => $department_id,
+      'branch' => $branch
     ]);
 
     $_SESSION['success_message'] = "Section added successfully!";
@@ -79,21 +81,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_section'])) {
   $semester = $_POST['semester_id'];
   $available = $_POST['available'];
   $department_id = $_POST['department_id'];
+  $branch = $_POST['branch'];
 
   try {
     // Check for duplicates (excluding current section)
     $stmt = $conn->prepare("
           SELECT COUNT(*) 
           FROM sms3_sections 
-          WHERE section_number = ? AND department_id = ? AND semester_id = ? AND id != ?");
-    $stmt->bind_param("iiii", $section_number, $department_id, $semester, $section_id);
+          WHERE section_number = ? AND department_id = ? AND semester_id = ? AND branch = ? AND id != ?");
+    $stmt->bind_param("iiisi", $section_number, $department_id, $semester, $branch, $section_id);
     $stmt->execute();
     $stmt->bind_result($duplicate_count);
     $stmt->fetch();
     $stmt->close();
 
     if ($duplicate_count > 0) {
-      throw new Exception("Duplicate section: A section with this number, department, and semester already exists.");
+      throw new Exception("Duplicate section: A section with this number, department, semester, and branch already exists.");
     }
 
     // Fetch existing section details for logging
@@ -106,9 +109,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_section'])) {
     // Update the section
     $stmt = $conn->prepare("
           UPDATE sms3_sections 
-          SET section_number = ?, year_level = ?, capacity = ?, semester_id = ?, available = ?, department_id = ? 
+          SET section_number = ?, year_level = ?, capacity = ?, semester_id = ?, available = ?, department_id = ?, branch = ?
           WHERE id = ?");
-    $stmt->bind_param("iiiiiii", $section_number, $year_level, $capacity, $semester, $available, $department_id, $section_id);
+    $stmt->bind_param("iiiiiisi", $section_number, $year_level, $capacity, $semester, $available, $department_id, $branch, $section_id);
     $stmt->execute();
     $stmt->close();
 
@@ -122,7 +125,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_section'])) {
         'capacity' => $capacity,
         'semester_id' => $semester,
         'available' => $available,
-        'department_id' => $department_id
+        'department_id' => $department_id,
+        'branch' => $branch
       ]
     ]);
 
@@ -401,12 +405,7 @@ $sections = $conn->query("
           <span>Academic Structure</span>
         </a>
       </li>
-      <li class="nav-item">
-        <a class="nav-link " href="manage_semester.php">
-          <i class="bi bi-grid"></i>
-          <span>Semester</span>
-        </a>
-      </li>
+ 
       <li class="nav-item">
         <a class="nav-link " href="manage_departments.php">
           <i class="bi bi-grid"></i>
@@ -543,6 +542,13 @@ $sections = $conn->query("
                 <?php endwhile; ?>
               </select>
             </div>
+            <div class="form-group mt-2">
+              <label for="branch">Branch:</label>
+              <select class="form-control" name="branch" id="branch" required>
+                <option value="Main" <?= isset($edit_section) && $edit_section['branch'] == 'Main' ? 'selected' : ''; ?>>Main</option>
+                <option value="Bulacan" <?= isset($edit_section) && $edit_section['branch'] == 'Bulacan' ? 'selected' : ''; ?>>Bulacan</option>
+              </select>
+            </div>
             <?php if (isset($edit_section)): ?>
               <input type="hidden" name="section_id" value="<?= $edit_section['id']; ?>">
               <button type="submit" name="update_section" class="btn btn-warning mt-3">Update Section</button>
@@ -566,6 +572,7 @@ $sections = $conn->query("
                 <th>Semester</th>
                 <th>Available Slots</th>
                 <th>Department</th>
+                <th>Branch</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -578,6 +585,7 @@ $sections = $conn->query("
                   <td><?= $section['name']; ?></td>
                   <td><?= $section['available']; ?></td>
                   <td><?= $section['department_code']; ?></td>
+                  <td><?= $section['branch']; ?></td>
                   <td>
                     <a href="manage_sections.php?edit_section_id=<?= $section['id']; ?>"
                       class="btn btn-info btn-sm">Edit</a>

@@ -165,12 +165,7 @@ $result = $conn->query("SELECT al.*, u.username FROM sms3_audit_log al JOIN sms3
           <span>Academic Structure</span>
         </a>
       </li>
-      <li class="nav-item">
-        <a class="nav-link " href="manage_semester.php">
-          <i class="bi bi-grid"></i>
-          <span>Semester</span>
-        </a>
-      </li>
+ 
       <li class="nav-item">
         <a class="nav-link " href="manage_departments.php">
           <i class="bi bi-grid"></i>

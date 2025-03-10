@@ -249,12 +249,7 @@ $academic_years = $conn->query("SELECT * FROM sms3_academic_years ORDER BY id DE
           <span>Academic Structure</span>
         </a>
       </li>
-      <li class="nav-item">
-        <a class="nav-link " href="manage_semester.php">
-          <i class="bi bi-grid"></i>
-          <span>Semester</span>
-        </a>
-      </li>
+ 
       <li class="nav-item">
         <a class="nav-link " href="manage_departments.php">
           <i class="bi bi-grid"></i>

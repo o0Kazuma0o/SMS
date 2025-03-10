@@ -15,3 +15,14 @@ Requirements:
 Freshmen: Form 138, Good Moral, Form 137, Pic(Passport Size), Birth Certificate, BRGY. Clearance, NCAE
 Transferee: Honorable Dismissal, Transcript of Records, Certificate of Grades, Pic, BRGY. Clearance, Birth Certificate
 478793835
+
+email verification first
+change ui of admission Form
+filters on admission, room, section
+optimize adding timetable
+reciept verification - integration
+add profile tab and changing password
+AI
+
+optional:
+merge rooms, sections and subjects
