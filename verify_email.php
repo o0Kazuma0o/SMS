@@ -4,6 +4,29 @@ require 'vendor/autoload.php';
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
+use PHPMailer\PHPMailer\OAuth;
+use Google\Client;
+use Google\Service\Gmail;
+
+$client = new Client();
+$client->setAuthConfig('credentials.json');
+$client->addScope(Gmail::MAIL_GOOGLE_COM);
+$client->setRedirectUri('https://admission.bcpsms3.com/verify_email.php');
+$client->setAccessType('offline');
+$client->setPrompt('select_account consent');
+
+if (!isset($_SESSION['access_token']) && !isset($_GET['code'])) {
+    $authUrl = $client->createAuthUrl();
+    header('Location: ' . filter_var($authUrl, FILTER_SANITIZE_URL));
+    exit;
+} elseif (isset($_GET['code'])) {
+    $token = $client->fetchAccessTokenWithAuthCode($_GET['code']);
+    $_SESSION['access_token'] = $token;
+    header('Location: ' . filter_var('https://admission.bcpsms3.com/verify_email.php', FILTER_SANITIZE_URL));
+    exit;
+} else {
+    $client->setAccessToken($_SESSION['access_token']);
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = $_POST['email'];
@@ -13,15 +36,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $verification_code = rand(100000, 999999);
     $_SESSION['verification_code'] = $verification_code;
 
+    // Refresh the token if it's expired
+    if ($client->isAccessTokenExpired()) {
+        $client->fetchAccessTokenWithRefreshToken($client->getRefreshToken());
+        $_SESSION['access_token'] = $client->getAccessToken();
+    }
+
     // Send verification email
     $mail = new PHPMailer(true);
     try {
         //Server settings
-        //$mail->isSMTP();
+        $mail->isSMTP();
         $mail->Host = 'smtp.gmail.com';
         $mail->SMTPAuth = true;
-        $mail->Username = 'noreply.bcpsms3@gmail.com'; // Your Gmail address
-        $mail->Password = 'admission.bcpsms3.com'; // Your Gmail password
+        $mail->AuthType = 'XOAUTH2';
+        $mail->setOAuth(new OAuth([
+            'provider' => new Google([
+                'clientId' => $client->getClientId(),
+                'clientSecret' => $client->getClientSecret(),
+            ]),
+            'clientId' => $client->getClientId(),
+            'clientSecret' => $client->getClientSecret(),
+            'refreshToken' => $client->getRefreshToken(),
+            'userName' => 'noreply.bcpsms3@gmail.com',
+        ]));
         $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
         $mail->Port = 587;
 
