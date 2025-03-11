@@ -1,5 +1,4 @@
 <?php
-// select_branch.php
 session_start();
 
 unset($_SESSION['selected_branch']);

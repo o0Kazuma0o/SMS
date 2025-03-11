@@ -94,6 +94,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <img src="assets/img/bcp.png" alt="School Logo" width="100">
             <h2 class="mt-3">Enter Verification Code</h2>
             <p class="text">Please enter the verification code sent to your email</p>
+            <p class="text">If you did not receive the email, please check your spam folder.</p>
         </div>
 
         <div class="container mt-5">

@@ -8,6 +8,12 @@ if (!isset($_SESSION['selected_branch'])) {
   exit;
 }
 
+if (!isset($_SESSION['email'])) {
+  $_SESSION['error'] = "Please verify your email first";
+  header('Location: verify_email.php');
+  exit;
+}
+
 // Add branch to your database insert
 $selected_branch = $_SESSION['selected_branch'];
 
@@ -306,7 +312,7 @@ while ($department = $departments->fetch_assoc()) {
                         </div>
                         <div class="col-md-3">
                           <label for="email" class="form-label">Email Address</label>
-                          <input type="email" class="form-control" id="email" name="email" required>
+                          <input type="email" class="form-control" id="email" name="email" value="<?= htmlspecialchars($email); ?>" readonly>
                           <div class="text-danger" id="email-error"></div>
                         </div>
                         <div class="col-md-3">
