@@ -14,6 +14,8 @@ if (!isset($_SESSION['email'])) {
   exit;
 }
 
+$email = $_SESSION['email']; // Retrieve the email from the session
+
 // Add branch to your database insert
 $selected_branch = $_SESSION['selected_branch'];
 
