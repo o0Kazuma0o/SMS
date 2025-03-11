@@ -170,6 +170,16 @@ while ($department = $departments->fetch_assoc()) {
     .form-control {
       max-width: 100%;
     }
+
+    .modal-dialog-centered {
+      display: flex;
+      align-items: center;
+      min-height: calc(100% - 1rem);
+    }
+
+    .modal-content {
+      margin: auto;
+    }
   </style>
 
 
@@ -631,7 +641,7 @@ while ($department = $departments->fetch_assoc()) {
 
   <!-- Modal -->
   <div class="modal fade" id="redirectModal" tabindex="-1" aria-labelledby="redirectModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title" id="redirectModalLabel">Admission Process</h5>
@@ -639,7 +649,7 @@ while ($department = $departments->fetch_assoc()) {
         <div class="modal-body">
           <p>Your application has been submitted successfully!</p>
           <p>Please visit the campus to submit the required documents. The process of your admission will start once the documents are verified.</p>
-          <p>You will be redirected to the homepage in <span id="countdown">5</span> seconds.</p>
+          <p>You will be redirected to the homepage in <span id="countdown">10</span> seconds.</p>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-primary" id="redirectNow">Go to Homepage Now</button>
@@ -1249,7 +1259,7 @@ while ($department = $departments->fetch_assoc()) {
 
     function showRedirectModal() {
       const countdownElement = document.getElementById('countdown');
-      let countdown = 5;
+      let countdown = 10;
 
       // Show the modal
       const redirectModal = new bootstrap.Modal(document.getElementById('redirectModal'));
