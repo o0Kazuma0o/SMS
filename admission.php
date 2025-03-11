@@ -629,6 +629,25 @@ while ($department = $departments->fetch_assoc()) {
   </main>
   </><!-- End #main -->
 
+  <!-- Modal -->
+  <div class="modal fade" id="redirectModal" tabindex="-1" aria-labelledby="redirectModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="redirectModalLabel">Admission Process</h5>
+        </div>
+        <div class="modal-body">
+          <p>Your application has been submitted successfully!</p>
+          <p>Please visit the campus to submit the required documents. The process of your admission will start once the documents are verified.</p>
+          <p>You will be redirected to the homepage in <span id="countdown">5</span> seconds.</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" id="redirectNow">Go to Homepage Now</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
     const basicInfo = {};
     const addressInfo = {};
@@ -1228,6 +1247,32 @@ while ($department = $departments->fetch_assoc()) {
       }
     }
 
+    function showRedirectModal() {
+      const countdownElement = document.getElementById('countdown');
+      let countdown = 5;
+
+      // Show the modal
+      const redirectModal = new bootstrap.Modal(document.getElementById('redirectModal'));
+      redirectModal.show();
+
+      // Update the countdown every second
+      const countdownInterval = setInterval(() => {
+        countdown--;
+        countdownElement.textContent = countdown;
+
+        if (countdown <= 0) {
+          clearInterval(countdownInterval);
+          window.location.href = 'index.php';
+        }
+      }, 1000);
+
+      // Redirect immediately if the button is clicked
+      document.getElementById('redirectNow').addEventListener('click', () => {
+        clearInterval(countdownInterval);
+        window.location.href = 'index.php';
+      });
+    }
+
     function submitDataToDatabase() {
       // Collect all data from the form objects
       const data = {
@@ -1285,9 +1330,7 @@ while ($department = $departments->fetch_assoc()) {
           if (result.success) {
             showPopupMessage('Application submitted successfully!', 'success');
             // Redirect to index.php after a short delay (optional)
-            setTimeout(() => {
-              window.location.href = 'index.php';
-            }, 2000); // Redirects after 2 seconds
+            showRedirectModal();
           } else {
             showPopupMessage('Failed to submit the application. Please try again.', 'error');
           }

@@ -17,11 +17,11 @@ Transferee: Honorable Dismissal, Transcript of Records, Certificate of Grades, P
 478793835
 tmqk thdt vfsb rrkp
 
-email verification
+email verification - done
 change ui of admission Form
 filters on admission, room, section
 optimize adding timetable
-reciept verification - integration
+reciept verification -cancelled
 add profile tab and changing password
 AI
 
