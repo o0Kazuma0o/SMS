@@ -1,7 +1,7 @@
 <?php
 require('../database.php');
 require_once 'session.php';
-checkAccess('Admin'); // Ensure only users with the 'admin' role can access this page
+checkAccess('Staff'); // Ensure only users with the 'Staff' role can access this page
 
 // Function to generate and bcrypt hash password
 function generatePassword($lastName)
@@ -295,7 +295,7 @@ if (!$result) {
           <span>Academic Structure</span>
         </a>
       </li>
-
+ 
       <li class="nav-item">
         <a class="nav-link " href="manage_departments.php">
           <i class="bi bi-grid"></i>
@@ -366,29 +366,6 @@ if (!$result) {
         <div class="card">
           <div class="card-body">
             <h5 class="card-title">Basic Information</h5>
-            <!-- Added filter dropdowns -->
-            <div class="row mb-3">
-              <div class="col-md-4">
-                <label for="filterDepartment" class="form-label">Department</label>
-                <select class="form-select" id="filterDepartment">
-                  <option value="">All Departments</option>
-                  <?php
-                  $departments = $conn->query("SELECT * FROM sms3_departments");
-                  while ($department = $departments->fetch_assoc()): ?>
-                    <option value="<?= $department['department_code']; ?>"><?= $department['department_code']; ?></option>
-                  <?php endwhile; ?>
-                </select>
-              </div>
-              <div class="col-md-4">
-                <label for="filterAdmissionType" class="form-label">Admission Type</label>
-                <select class="form-select" id="filterAdmissionType">
-                  <option value="">All Admission Types</option>
-                  <option value="New Regular">New Regular</option>
-                  <option value="Transferee">Transferee</option>
-                  <option value="Returnee">Returnee</option>
-                </select>
-              </div>
-            </div>
             <table class="table datatable">
               <thead>
                 <tr>
@@ -488,30 +465,6 @@ if (!$result) {
   </div>
 
   <script>
-    // Added event listeners for the filter dropdowns
-    document.getElementById('filterDepartment').addEventListener('change', filterAdmissions);
-    document.getElementById('filterAdmissionType').addEventListener('change', filterAdmissions);
-
-    function filterAdmissions() {
-      const department = document.getElementById('filterDepartment').value;
-      const admissionType = document.getElementById('filterAdmissionType').value;
-      const rows = document.querySelectorAll('.datatable tbody tr');
-
-      rows.forEach(row => {
-        const rowDepartment = row.cells[2].textContent.trim();
-        const rowAdmissionType = row.cells[1].textContent.trim();
-
-        const departmentMatch = department === '' || rowDepartment === department;
-        const admissionTypeMatch = admissionType === '' || rowAdmissionType === admissionType;
-
-        if (departmentMatch && admissionTypeMatch) {
-          row.style.display = '';
-        } else {
-          row.style.display = 'none';
-        }
-      });
-    }
-
     function viewInformation(id) {
       // Fetch additional information using AJAX
       fetch('get_temp_admission_info.php?id=' + id)

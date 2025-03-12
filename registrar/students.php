@@ -474,7 +474,7 @@ if (isset($_GET['delete_timetable_from_student'])) {
                   <th>Year Level</th>
                   <th>Information</th>
                   <th>Requirements</th>
-                  <th>Subjects</th>
+                  <th>Schedule</th>
                   <th>Status</th>
                 </tr>
               </thead>

@@ -64,8 +64,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_id'], $_POS
           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
       $form138 = $admissionData['admission_type'] === 'New Regular' ? (isset($_POST['form138']) ? 'Submitted' : 'To Be Followed') : NULL;
-      $goodMoral = $admissionData['admission_type'] === 'New Regular' ? (isset($_POST['good_moral']) ? 'Submitted' : 'To Be Followed') : NULL;
       $form137 = $admissionData['admission_type'] === 'New Regular' ? (isset($_POST['form137']) ? 'Submitted' : 'To Be Followed') : NULL;
+      $goodMoral = isset($_POST['good_moral']) ? 'Submitted' : 'To Be Followed';
       $birthCertificate = isset($_POST['birth_certificate']) ? 'Submitted' : 'To Be Followed';
       $brgyClearance = isset($_POST['brgy_clearance']) ? 'Submitted' : 'To Be Followed';
       $honorableDismissal = $admissionData['admission_type'] === 'Transferee' ? (isset($_POST['honorable_dismissal']) ? 'Submitted' : 'To Be Followed') : NULL;
@@ -305,7 +305,7 @@ if (!$result) {
           <span>Academic Structure</span>
         </a>
       </li>
- 
+
       <li class="nav-item">
         <a class="nav-link " href="manage_departments.php">
           <i class="bi bi-grid"></i>
@@ -376,6 +376,29 @@ if (!$result) {
         <div class="card">
           <div class="card-body">
             <h5 class="card-title">Basic Information</h5>
+            <!-- Added filter dropdowns -->
+            <div class="row mb-3">
+              <div class="col-md-4">
+                <label for="filterDepartment" class="form-label">Department</label>
+                <select class="form-select" id="filterDepartment">
+                  <option value="">All Departments</option>
+                  <?php
+                  $departments = $conn->query("SELECT * FROM sms3_departments");
+                  while ($department = $departments->fetch_assoc()): ?>
+                    <option value="<?= $department['department_code']; ?>"><?= $department['department_code']; ?></option>
+                  <?php endwhile; ?>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label for="filterAdmissionType" class="form-label">Admission Type</label>
+                <select class="form-select" id="filterAdmissionType">
+                  <option value="">All Admission Types</option>
+                  <option value="New Regular">New Regular</option>
+                  <option value="Transferee">Transferee</option>
+                  <option value="Returnee">Returnee</option>
+                </select>
+              </div>
+            </div>
             <table class="table datatable">
               <thead>
                 <tr>
@@ -474,6 +497,30 @@ if (!$result) {
   </div>
 
   <script>
+    // Added event listeners for the filter dropdowns
+    document.getElementById('filterDepartment').addEventListener('change', filterAdmissions);
+    document.getElementById('filterAdmissionType').addEventListener('change', filterAdmissions);
+
+    function filterAdmissions() {
+      const department = document.getElementById('filterDepartment').value;
+      const admissionType = document.getElementById('filterAdmissionType').value;
+      const rows = document.querySelectorAll('.datatable tbody tr');
+
+      rows.forEach(row => {
+        const rowDepartment = row.cells[2].textContent.trim();
+        const rowAdmissionType = row.cells[1].textContent.trim();
+
+        const departmentMatch = department === '' || rowDepartment === department;
+        const admissionTypeMatch = admissionType === '' || rowAdmissionType === admissionType;
+
+        if (departmentMatch && admissionTypeMatch) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    }
+
     function viewInformation(id) {
       // Fetch additional information using AJAX
       fetch('get_admission_info.php?id=' + id)
@@ -558,6 +605,10 @@ if (!$result) {
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="certificate_of_grades" name="certificate_of_grades">
                             <label class="form-check-label" for="certificate_of_grades">Certificate of Grades</label>
+                        </div>
+                        s<div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="good_moral" name="good_moral">
+                            <label class="form-check-label" for="good_moral">Good Moral Certificate</label>
                         </div>
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="brgy_clearance" name="brgy_clearance">

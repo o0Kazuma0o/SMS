@@ -18,10 +18,10 @@ Transferee: Honorable Dismissal, Transcript of Records, Certificate of Grades, P
 tmqk thdt vfsb rrkp
 
 email verification - done
+filters on admission, room, section - almost done
+send account on gmail after process 
 change ui of admission Form
-filters on admission, room, section
 optimize adding timetable
-reciept verification -cancelled
 add profile tab and changing password
 AI
 

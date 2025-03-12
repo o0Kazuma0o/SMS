@@ -405,7 +405,7 @@ $sections = $conn->query("
           <span>Academic Structure</span>
         </a>
       </li>
- 
+
       <li class="nav-item">
         <a class="nav-link " href="manage_departments.php">
           <i class="bi bi-grid"></i>
@@ -563,7 +563,40 @@ $sections = $conn->query("
       <div class="card">
         <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;" class="card-body">
           <h5 class="card-title">Section List</h5>
-          <table style="width: 100%; min-width: 800px;" class="table table-bordered">
+
+          <div class="row mb-3">
+            <div class="col-md-4">
+              <label for="filterBranch" class="form-label">Branch</label>
+              <select class="form-select" id="filterBranch">
+                <option value="">All Branches</option>
+                <option value="Main">Main</option>
+                <option value="Bulacan">Bulacan</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label for="filterDepartment" class="form-label">Department</label>
+              <select class="form-select" id="filterDepartment">
+                <option value="">All Departments</option>
+                <?php
+                $departments = $conn->query("SELECT * FROM sms3_departments");
+                while ($department = $departments->fetch_assoc()): ?>
+                  <option value="<?= $department['department_code']; ?>"><?= $department['department_code']; ?></option>
+                <?php endwhile; ?>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label for="filterYearLevel" class="form-label">Year Level</label>
+              <select class="form-select" id="filterYearLevel">
+                <option value="">All Year Levels</option>
+                <option value="1">1st Year</option>
+                <option value="2">2nd Year</option>
+                <option value="3">3rd Year</option>
+                <option value="4">4th Year</option>
+              </select>
+            </div>
+          </div>
+
+          <table id="sectionTable" style="width: 100%; min-width: 800px;" class="table table-bordered">
             <thead>
               <tr>
                 <th>Section Number</th>
@@ -675,6 +708,33 @@ $sections = $conn->query("
         <?php unset($_SESSION['success_message']); ?>
       <?php endif; ?>
     };
+
+    document.getElementById('filterBranch').addEventListener('change', filterSections);
+    document.getElementById('filterDepartment').addEventListener('change', filterSections);
+    document.getElementById('filterYearLevel').addEventListener('change', filterSections);
+
+    function filterSections() {
+      const branch = document.getElementById('filterBranch').value;
+      const department = document.getElementById('filterDepartment').value;
+      const yearLevel = document.getElementById('filterYearLevel').value;
+      const rows = document.querySelectorAll('#sectionTable tbody tr');
+
+      rows.forEach(row => {
+        const rowBranch = row.cells[6].textContent.trim();
+        const rowDepartment = row.cells[5].textContent.trim();
+        const rowYearLevel = row.cells[1].textContent.trim();
+
+        const branchMatch = branch === '' || rowBranch === branch;
+        const departmentMatch = department === '' || rowDepartment === department;
+        const yearLevelMatch = yearLevel === '' || rowYearLevel === yearLevel;
+
+        if (branchMatch && departmentMatch && yearLevelMatch) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    }
   </script>
 
 

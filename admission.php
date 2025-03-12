@@ -264,6 +264,14 @@ while ($department = $departments->fetch_assoc()) {
                           <div class="text-danger" id="yrlvl-error"></div>
                         </div>
                       </div>
+                      <!-- New Row for Old Student Number -->
+                      <div class="row form-row" id="oldStudentNumberRow" style="display: none;">
+                        <div class="col-md-3">
+                          <label for="oldStudentNumber" class="form-label">Old Student Number</label>
+                          <input type="text" class="form-control" id="oldStudentNumber" name="oldStudentNumber">
+                          <div class="text-danger" id="oldStudentNumber-error"></div>
+                        </div>
+                      </div>
                       <!-- Row 2: Lastname, Firstname, Middlename, Suffix -->
                       <div class="row form-row">
                         <div class="col-md-3">
@@ -703,6 +711,7 @@ while ($department = $departments->fetch_assoc()) {
     function validateYearLevel() {
       const admissionType = document.getElementById('admissiontype').value;
       const yearLevel = document.getElementById('yrlvl');
+      const oldStudentNumberRow = document.getElementById('oldStudentNumberRow');
 
       if (admissionType === 'New Regular') {
         // Set Year Level to 1st Year and lock it visually
@@ -710,18 +719,35 @@ while ($department = $departments->fetch_assoc()) {
         yearLevel.setAttribute('data-locked', 'true'); // Custom attribute to indicate it's locked
         yearLevel.style.pointerEvents = 'none'; // Disable user interaction
         yearLevel.style.backgroundColor = '#e9ecef'; // Make it appear disabled
-      } else {
+        oldStudentNumberRow.style.display = 'none'; // Hide old student number row
+      } else if (admissionType === 'Returnee') {
+        // Show old student number row for returnees
+        oldStudentNumberRow.style.display = 'block';
         // Unlock Year Level and restore all options for other admission types
         yearLevel.removeAttribute('data-locked');
         yearLevel.style.pointerEvents = 'auto';
         yearLevel.style.backgroundColor = '';
         yearLevel.innerHTML = `
-          <option value="" disabled selected></option>
-          <option value="1st">1st Year</option>
-          <option value="2nd">2nd Year</option>
-          <option value="3rd">3rd Year</option>
-          <option value="4th">4th Year</option>
-        `;
+      <option value="" disabled selected></option>
+      <option value="1st">1st Year</option>
+      <option value="2nd">2nd Year</option>
+      <option value="3rd">3rd Year</option>
+      <option value="4th">4th Year</option>
+    `;
+      } else {
+        // Hide old student number row for other admission types
+        oldStudentNumberRow.style.display = 'none';
+        // Unlock Year Level and restore all options for other admission types
+        yearLevel.removeAttribute('data-locked');
+        yearLevel.style.pointerEvents = 'auto';
+        yearLevel.style.backgroundColor = '';
+        yearLevel.innerHTML = `
+      <option value="" disabled selected></option>
+      <option value="1st">1st Year</option>
+      <option value="2nd">2nd Year</option>
+      <option value="3rd">3rd Year</option>
+      <option value="4th">4th Year</option>
+    `;
       }
     }
 
@@ -1096,6 +1122,7 @@ while ($department = $departments->fetch_assoc()) {
         </div>
         <div class="col-md-6">
           <p><strong>Admission Type:</strong> ${basicInfo.admissiontype}</p>
+          ${basicInfo.admissiontype === 'Returnee' ? `<p><strong>Old Student Number:</strong> ${basicInfo.oldStudentNumber}</p>` : ''}
           <p><strong>Program:</strong> ${departmentName}</p>
           <p><strong>Year Level:</strong> ${basicInfo.yrlvl}</p>
           <p><strong>Working Student:</strong> ${basicInfo.workingstudent}</p>

@@ -397,7 +397,6 @@ $rooms = $conn->query("SELECT r.*, d.department_code FROM sms3_rooms r JOIN sms3
           <span>Academic Structure</span>
         </a>
       </li>
- 
       <li class="nav-item">
         <a class="nav-link " href="manage_departments.php">
           <i class="bi bi-grid"></i>
@@ -535,7 +534,31 @@ $rooms = $conn->query("SELECT r.*, d.department_code FROM sms3_rooms r JOIN sms3
         <div class="card">
           <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;" class="card-body">
             <h5 class="card-title">Room List</h5>
-            <table style="width: 100%; min-width: 800px;" class="table table-bordered">
+
+            <!-- Filter Dropdowns -->
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="filterBranch" class="form-label">Filter by Branch</label>
+                <select class="form-select" id="filterBranch">
+                  <option value="">All Branches</option>
+                  <option value="Main">Main</option>
+                  <option value="Bulacan">Bulacan</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label for="filterDepartment" class="form-label">Filter by Department</label>
+                <select class="form-select" id="filterDepartment">
+                  <option value="">All Departments</option>
+                  <?php
+                  $departments = $conn->query("SELECT * FROM sms3_departments");
+                  while ($department = $departments->fetch_assoc()): ?>
+                    <option value="<?= $department['department_code']; ?>"><?= $department['department_code']; ?></option>
+                  <?php endwhile; ?>
+                </select>
+              </div>
+            </div>
+
+            <table id="roomTable" style="width: 100%; min-width: 800px;" class="table table-bordered">
               <thead>
                 <tr>
                   <th>Room Name</th>
@@ -641,6 +664,30 @@ $rooms = $conn->query("SELECT r.*, d.department_code FROM sms3_rooms r JOIN sms3
         <?php unset($_SESSION['success_message']); ?>
       <?php endif; ?>
     };
+
+    // Filter rooms based on branch and department
+    document.getElementById('filterBranch').addEventListener('change', filterRooms);
+    document.getElementById('filterDepartment').addEventListener('change', filterRooms);
+
+    function filterRooms() {
+      const branch = document.getElementById('filterBranch').value;
+      const department = document.getElementById('filterDepartment').value;
+      const rows = document.querySelectorAll('#roomTable tbody tr');
+
+      rows.forEach(row => {
+        const rowBranch = row.cells[3].textContent.trim();
+        const rowDepartment = row.cells[2].textContent.trim();
+
+        const branchMatch = branch === '' || rowBranch === branch;
+        const departmentMatch = department === '' || rowDepartment === department;
+
+        if (branchMatch && departmentMatch) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    }
   </script>
 
 

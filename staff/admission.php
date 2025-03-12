@@ -1,14 +1,14 @@
 <?php
 require('../database.php');
 require_once 'session.php';
-checkAccess('Staff'); // Ensure only users with the 'admin' role can access this page
+checkAccess('Staff'); // Ensure only users with the 'staff' role can access this page
 
 // Function to generate student number
 function generateStudentNumber($conn)
 {
   $yearPrefix = date('y'); // e.g., '24' for 2024
 
-  $result = $conn->query("SELECT student_number FROM sms3_students ORDER BY id DESC LIMIT 1");
+  $result = $conn->query("SELECT student_number FROM sms3_temp_enroll ORDER BY id DESC LIMIT 1");
   $lastStudentNumber = $result->fetch_assoc();
 
   if ($lastStudentNumber) {
@@ -22,31 +22,27 @@ function generateStudentNumber($conn)
 }
 
 // Function to generate and bcrypt hash password
-function generatePassword($lastName)
+/* function generatePassword($lastName)
 {
   $passwordPlain = '#' . substr($lastName, 0, 2) . '8080';
   return password_hash($passwordPlain, PASSWORD_BCRYPT);
-}
+} */
 
 // Fetch current academic year
-function getCurrentAcademicYear($conn)
+/* function getCurrentAcademicYear($conn)
 {
   $result = $conn->query("SELECT * FROM sms3_academic_years WHERE is_current = 1 LIMIT 1");
   return ($result && $result->num_rows > 0) ? $result->fetch_assoc()['id'] : null;
-}
+} */
+
 
 // Handle status update requests
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_id'], $_POST['status'])) {
   $admissionId = intval($_POST['admission_id']);
   $status = $_POST['status'];
 
-  if ($status === 'Rejected') {
-    // Delete admission record on rejection
-    $stmt = $conn->prepare("DELETE FROM sms3_pending_admission WHERE id = ?");
-    $stmt->bind_param("i", $admissionId);
-    echo json_encode($stmt->execute() ? ['success' => true, 'message' => 'Admission record deleted successfully.'] : ['success' => false, 'message' => 'Failed to delete admission record.']);
-  } elseif ($status === 'Approved') {
-    // Move record to sms3_students on approval
+  if ($status === 'Temporarily Enrolled') {
+    // Move record to sms3_temp_enroll on temporary enrollment
     $stmt = $conn->prepare("SELECT * FROM sms3_pending_admission WHERE id = ?");
     $stmt->bind_param('i', $admissionId);
     $stmt->execute();
@@ -55,39 +51,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_id'], $_POS
     $stmt->close();
 
     if ($admissionData) {
-      $academicYearId = getCurrentAcademicYear($conn);
-      if (!$academicYearId) {
-        echo json_encode(['success' => false, 'message' => 'Error: No current academic year set.']);
-        exit;
-      }
-
-      // Generate student number and hashed password
       $studentNumber = generateStudentNumber($conn);
-      $password = generatePassword($admissionData['last_name']);
 
-      // Insert data into sms3_students
-      $stmt = $conn->prepare("INSERT INTO sms3_students (
-              student_number, first_name, middle_name, last_name, academic_year, username, password, role, department_id, admission_type, 
+      // Insert data into sms3_temp_enroll
+      $stmt = $conn->prepare("INSERT INTO sms3_temp_enroll (
+              student_number, first_name, middle_name, last_name, department_id, branch, admission_type, 
               year_level, sex, civil_status, religion, birthday, email, contact_number, facebook_name, 
               address, father_name, mother_name, guardian_name, guardian_contact, primary_school, primary_year, 
-              secondary_school, secondary_year, last_school, last_school_year, referral_source, working_student, member4ps, status
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+              secondary_school, secondary_year, last_school, last_school_year, referral_source, working_student, member4ps,
+              form138, good_moral, form137, birth_certificate, brgy_clearance,
+              honorable_dismissal, transcript_of_records, certificate_of_grades, status
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
-      $username = 's' . $studentNumber;
-      $role = 'Student';
-      $status = 'Not Enrolled';
+      $form138 = $admissionData['admission_type'] === 'New Regular' ? (isset($_POST['form138']) ? 'Submitted' : 'To Be Followed') : NULL;
+      $goodMoral = $admissionData['admission_type'] === 'New Regular' ? (isset($_POST['good_moral']) ? 'Submitted' : 'To Be Followed') : NULL;
+      $form137 = $admissionData['admission_type'] === 'New Regular' ? (isset($_POST['form137']) ? 'Submitted' : 'To Be Followed') : NULL;
+      $birthCertificate = isset($_POST['birth_certificate']) ? 'Submitted' : 'To Be Followed';
+      $brgyClearance = isset($_POST['brgy_clearance']) ? 'Submitted' : 'To Be Followed';
+      $honorableDismissal = $admissionData['admission_type'] === 'Transferee' ? (isset($_POST['honorable_dismissal']) ? 'Submitted' : 'To Be Followed') : NULL;
+      $transcriptOfRecords = $admissionData['admission_type'] === 'Transferee' ? (isset($_POST['transcript_of_records']) ? 'Submitted' : 'To Be Followed') : NULL;
+      $certificateOfGrades = $admissionData['admission_type'] === 'Transferee' ? (isset($_POST['certificate_of_grades']) ? 'Submitted' : 'To Be Followed') : NULL;
+      $status = 'Temporarily Enrolled';
 
       $stmt->bind_param(
-        "sssssssssssssssssssssssssssssssss",
+        "ssssssssssssssssssssssssssssssssssssss",
         $studentNumber,
         $admissionData['first_name'],
         $admissionData['middle_name'],
         $admissionData['last_name'],
-        $academicYearId,
-        $username,
-        $password,
-        $role,
         $admissionData['department_id'],
+        $admissionData['branch'],
         $admissionData['admission_type'],
         $admissionData['year_level'],
         $admissionData['sex'],
@@ -111,15 +104,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_id'], $_POS
         $admissionData['referral_source'],
         $admissionData['working_student'],
         $admissionData['member4ps'],
+        $form138,
+        $goodMoral,
+        $form137,
+        $birthCertificate,
+        $brgyClearance,
+        $honorableDismissal,
+        $transcriptOfRecords,
+        $certificateOfGrades,
         $status
       );
 
       if ($stmt->execute()) {
-        $deleteStmt = $conn->prepare("DELETE FROM sms3_pending_admission WHERE id = ?");
-        $deleteStmt->bind_param('i', $admissionId);
-        $deleteStmt->execute();
-        $deleteStmt->close();
-        echo json_encode(['success' => true, 'message' => 'Student approved and moved to students table successfully!']);
+        $updateStmt = $conn->prepare("UPDATE sms3_pending_admission SET status = 'Temporarily Enrolled' WHERE id = ?");
+        $updateStmt->bind_param('i', $admissionId);
+        $updateStmt->execute();
+        $updateStmt->close();
+        echo json_encode(['success' => true, 'message' => 'Student moved to temporary enrollment successfully!']);
       } else {
         echo json_encode(['success' => false, 'message' => 'Failed to insert student record.']);
       }
@@ -127,10 +128,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_id'], $_POS
     } else {
       echo json_encode(['success' => false, 'message' => 'Admission record not found.']);
     }
-  } else {
-    $stmt = $conn->prepare("UPDATE sms3_pending_admission SET status = ? WHERE id = ?");
-    $stmt->bind_param("si", $status, $admissionId);
-    echo json_encode($stmt->execute() ? ['success' => true, 'message' => 'Admission status updated successfully.'] : ['success' => false, 'message' => 'Failed to update admission status.']);
   }
   exit;
 }
@@ -139,7 +136,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_id'], $_POS
 $query = "SELECT a.*, d.department_code AS department 
           FROM sms3_pending_admission a
           LEFT JOIN sms3_departments d ON a.department_id = d.id
-          WHERE a.status = 'Pending'
           ORDER BY a.created_at DESC";
 
 $result = $conn->query($query);
@@ -269,7 +265,7 @@ if (!$result) {
 
       <hr class="sidebar-divider">
 
-      <li class="nav-heading">Admission</li>
+      <li class="nav-heading">Admission & Enrollment</li>
 
       <li class="nav-item">
         <a class="nav-link " href="admission.php">
@@ -285,8 +281,80 @@ if (!$result) {
         </a>
       </li>
 
+      <li class="nav-item">
+        <a class="nav-link " href="enrollment.php">
+          <i class="bi bi-grid"></i>
+          <span>Enrollment</span>
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link " href="students.php">
+          <i class="bi bi-grid"></i>
+          <span>Students</span>
+        </a>
+      </li><!-- End System Nav -->
+
       <hr class="sidebar-divider">
 
+      <li class="nav-heading">TEST REGISTRAR</li>
+
+      <li class="nav-item">
+        <a class="nav-link " href="manage_academic_semester.php">
+          <i class="bi bi-grid"></i>
+          <span>Academic Structure</span>
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link " href="manage_departments.php">
+          <i class="bi bi-grid"></i>
+          <span>Department</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link " href="manage_rooms.php">
+          <i class="bi bi-grid"></i>
+          <span>Rooms</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link " href="manage_sections.php">
+          <i class="bi bi-grid"></i>
+          <span>Sections</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link " href="manage_subjects.php">
+          <i class="bi bi-grid"></i>
+          <span>Subjects</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link " href="manage_timetable.php">
+          <i class="bi bi-grid"></i>
+          <span>Timetable</span>
+        </a>
+      </li>
+
+      <hr class="sidebar-divider">
+
+      <li class="nav-heading">MANAGE USER</li>
+
+      <li class="nav-item">
+        <a class="nav-link " href="audit_logs.php">
+          <i class="bi bi-grid"></i>
+          <span>Audit Logs</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link " href="manage_user.php">
+          <i class="bi bi-grid"></i>
+          <span>Users</span>
+        </a>
+      </li>
+
+      <hr class="sidebar-divider">
     </ul>
 
   </aside><!-- End Sidebar-->
@@ -297,84 +365,122 @@ if (!$result) {
       <h1>Admission</h1>
       <nav>
         <ol class="breadcrumb">
-          <li class="breadcrumb-item"><a href="Dashboard.php">Dashboard</a></li>
+          <li class="breadcrumb-item"><a href="Dashboard.php">Home</a></li>
           <li class="breadcrumb-item active">Admission</li>
         </ol>
       </nav>
     </div><!-- End Page Title -->
 
     <section class="section">
-      <div class="col-lg-12">
+      <div class="row">
         <div class="card">
           <div class="card-body">
             <h5 class="card-title">Basic Information</h5>
-            <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
-              <!-- Table with stripped rows -->
-              <table style="width: 100%; min-width: 800px;" class="table datatable">
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Admission Type</th>
-                    <th>Department</th>
-                    <th>Year Level</th>
-                    <th>Information</th>
-                    <th>Requirements</th>
-                    <th>Date Submitted</th>
-                    <th>Status</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <?php if ($result && $result->num_rows > 0): ?>
-                    <?php while ($row = $result->fetch_assoc()): ?>
-                      <tr>
-                        <td>
-                          <?= htmlspecialchars($row['first_name']) . ' ' .
-                            (!empty($row['middle_name']) ? htmlspecialchars($row['middle_name']) . ' ' : '') .
-                            htmlspecialchars($row['last_name']); ?>
-                        </td>
-                        <td><?= htmlspecialchars($row['admission_type']) ?></td>
-                        <td><?= htmlspecialchars($row['department']) ?></td>
-                        <td><?= htmlspecialchars($row['year_level']) ?></td>
-                        <td>
-                          <button class="btn btn-info btn-sm" onclick="viewInformation(<?= $row['id'] ?>)">View Information</button>
-                        </td>
-                        <td>
-                          <button class="btn btn-info btn-sm" onclick="viewRequirements(<?= $row['id'] ?>)">View Requirements</button>
-                        </td>
-                        <td><?= htmlspecialchars($row['created_at']) ?></td>
-                        <td>
-                          <span class="badge bg-<?= $row['status'] == 'Pending' ? 'warning' : ($row['status'] == 'Approved' ? 'success' : 'danger') ?>">
-                            <?= htmlspecialchars($row['status']) ?>
-                          </span>
-                        </td>
-                        <td>
-                          <!-- Approve and Reject buttons -->
-                          <?php if ($row['status'] !== 'Approved' && $row['status'] !== 'Rejected'): ?>
-                            <button class="btn btn-success btn-sm" onclick="updateAdmissionStatus(<?= $row['id'] ?>, 'Approved')">Approve</button>
-                            <button class="btn btn-danger btn-sm" onclick="updateAdmissionStatus(<?= $row['id'] ?>, 'Rejected')">Reject</button>
-                          <?php else: ?>
-                            <!-- No action if already approved or rejected -->
-                            <span>No Action Available</span>
-                          <?php endif; ?>
-                        </td>
-                      </tr>
-                    <?php endwhile; ?>
-                  <?php else: ?>
-                    <tr>
-                      <td colspan="9" class="text-center">No admissions found</td>
-                    </tr>
-                  <?php endif; ?>
-                </tbody>
-              </table>
+            <!-- Added filter dropdowns -->
+            <div class="row mb-3">
+              <div class="col-md-4">
+                <label for="filterDepartment" class="form-label">Department</label>
+                <select class="form-select" id="filterDepartment">
+                  <option value="">All Departments</option>
+                  <?php
+                  $departments = $conn->query("SELECT * FROM sms3_departments");
+                  while ($department = $departments->fetch_assoc()): ?>
+                    <option value="<?= $department['department_code']; ?>"><?= $department['department_code']; ?></option>
+                  <?php endwhile; ?>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label for="filterAdmissionType" class="form-label">Admission Type</label>
+                <select class="form-select" id="filterAdmissionType">
+                  <option value="">All Admission Types</option>
+                  <option value="New Regular">New Regular</option>
+                  <option value="Transferee">Transferee</option>
+                  <option value="Returnee">Returnee</option>
+                </select>
+              </div>
             </div>
-            <!-- End Table with stripped rows -->
+            <table class="table datatable">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Admission Type</th>
+                  <th>Department</th>
+                  <th>Year Level</th>
+                  <th>Information</th>
+                  <th>Date Submitted</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <?php if ($result && $result->num_rows > 0): ?>
+                  <?php while ($row = $result->fetch_assoc()): ?>
+                    <tr>
+                      <td>
+                        <?= htmlspecialchars($row['first_name']) . ' ' .
+                          (!empty($row['middle_name']) ? htmlspecialchars($row['middle_name']) . ' ' : '') .
+                          htmlspecialchars($row['last_name']); ?>
+                      </td>
+                      <td><?= htmlspecialchars($row['admission_type']) ?></td>
+                      <td><?= htmlspecialchars($row['department']) ?></td>
+                      <td><?= htmlspecialchars($row['year_level']) ?></td>
+                      <td>
+                        <button class="btn btn-info btn-sm" onclick="viewInformation(<?= $row['id'] ?>)">View Information</button>
+                      </td>
+                      <td><?= htmlspecialchars($row['created_at']) ?></td>
+                      <td>
+                        <span class="badge bg-<?= $row['status'] == 'Pending' ? 'warning' : ($row['status'] == 'Temporarily Enrolled' ? 'success' : 'danger') ?>">
+                          <?= htmlspecialchars($row['status']) ?>
+                        </span>
+                      </td>
+                      <td>
+                        <!-- Approve and Reject buttons -->
+                        <?php if ($row['status'] !== 'Temporarily Enrolled' && $row['status'] !== 'Rejected'): ?>
+                          <button class="btn btn-primary btn-sm" onclick="processAdmission(<?= $row['id'] ?>, '<?= $row['admission_type'] ?>')">Process Admission</button>
+                        <?php else: ?>
+                          <!-- No action if already approved or rejected -->
+                          <span>No Action Available</span>
+                        <?php endif; ?>
+                      </td>
+                    </tr>
+                  <?php endwhile; ?>
+                <?php else: ?>
+                  <tr>
+                    <td colspan="9" class="text-center">No admissions found</td>
+                  </tr>
+                <?php endif; ?>
+              </tbody>
+            </table>
           </div>
+          <!-- End Table with stripped rows -->
         </div>
+      </div>
       </div>
     </section>
 
   </main><!-- End #main -->
+
+  <!-- Modal for processing admission -->
+  <div class="modal fade" id="processAdmissionModal" tabindex="-1" aria-labelledby="processAdmissionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="processAdmissionModalLabel">Process Admission</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="admissionForm">
+            <input type="hidden" id="admissionId" name="admission_id">
+            <div id="requirements"></div>
+            <div class="mb-3">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="submit" class="btn btn-primary">Temporarily Enroll</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <div class="modal fade" id="informationModal" tabindex="-1" aria-labelledby="informationModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
@@ -391,6 +497,30 @@ if (!$result) {
   </div>
 
   <script>
+    // Added event listeners for the filter dropdowns
+    document.getElementById('filterDepartment').addEventListener('change', filterAdmissions);
+    document.getElementById('filterAdmissionType').addEventListener('change', filterAdmissions);
+
+    function filterAdmissions() {
+      const department = document.getElementById('filterDepartment').value;
+      const admissionType = document.getElementById('filterAdmissionType').value;
+      const rows = document.querySelectorAll('.datatable tbody tr');
+
+      rows.forEach(row => {
+        const rowDepartment = row.cells[2].textContent.trim();
+        const rowAdmissionType = row.cells[1].textContent.trim();
+
+        const departmentMatch = department === '' || rowDepartment === department;
+        const admissionTypeMatch = admissionType === '' || rowAdmissionType === admissionType;
+
+        if (departmentMatch && admissionTypeMatch) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    }
+
     function viewInformation(id) {
       // Fetch additional information using AJAX
       fetch('get_admission_info.php?id=' + id)
@@ -432,37 +562,90 @@ if (!$result) {
         });
     }
 
-    // JavaScript function to update admission status
-    function updateAdmissionStatus(admissionId, status) {
-      if (!confirm('Are you sure you want to update the status to ' + status + '?')) {
-        return;
+    function processAdmission(admissionId, admissionType) {
+      document.getElementById('admissionId').value = admissionId;
+
+      let requirementsHtml = '';
+      if (admissionType === 'New Regular') {
+        requirementsHtml = `
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="form138" name="form138">
+                            <label class="form-check-label" for="form138">Form 138</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="good_moral" name="good_moral">
+                            <label class="form-check-label" for="good_moral">Good Moral Certificate</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="form137" name="form137">
+                            <label class="form-check-label" for="form137">Form 137</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="birth_certificate" name="birth_certificate">
+                            <label class="form-check-label" for="birth_certificate">Birth Certificate</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="brgy_clearance" name="brgy_clearance">
+                            <label class="form-check-label" for="brgy_clearance">Barangay Clearance</label>
+                        </div>
+                    </div>
+                `;
+      } else if (admissionType === 'Transferee') {
+        requirementsHtml = `
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="honorable_dismissal" name="honorable_dismissal">
+                            <label class="form-check-label" for="honorable_dismissal">Honorable Dismissal</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="transcript_of_records" name="transcript_of_records">
+                            <label class="form-check-label" for="transcript_of_records">Transcript of Records</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="certificate_of_grades" name="certificate_of_grades">
+                            <label class="form-check-label" for="certificate_of_grades">Certificate of Grades</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="brgy_clearance" name="brgy_clearance">
+                            <label class="form-check-label" for="brgy_clearance">Barangay Clearance</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="birth_certificate" name="birth_certificate">
+                            <label class="form-check-label" for="birth_certificate">Birth Certificate</label>
+                        </div>
+                    </div>
+                `;
       }
 
-      // Send an AJAX request to update the status
+      document.getElementById('requirements').innerHTML = requirementsHtml;
+      new bootstrap.Modal(document.getElementById('processAdmissionModal')).show();
+    }
+
+    document.getElementById('admissionForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const admissionId = document.getElementById('admissionId').value;
+      const formData = new FormData(this);
+      formData.append('status', 'Temporarily Enrolled');
+
       fetch('admission.php', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
-          },
-          body: new URLSearchParams({
-            'admission_id': admissionId,
-            'status': status
-          })
+          body: new URLSearchParams(formData)
         })
         .then(response => response.json())
         .then(data => {
           if (data.success) {
-            alert('Status updated successfully.');
+            alert('Student temporarily enrolled successfully.');
             location.reload();
           } else {
-            alert('Failed to update status: ' + data.message);
+            alert('Failed to enroll student: ' + data.message);
           }
         })
         .catch(error => {
           console.error('Error:', error);
-          alert('An error occurred while updating the status.');
+          alert('An error occurred while processing the admission.');
         });
-    }
+    });
   </script>
 
 
