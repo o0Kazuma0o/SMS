@@ -2,7 +2,7 @@
 require('../database.php');
 require_once 'session.php';
 require_once 'audit_log_function.php';
-checkAccess('Registrar'); // Ensure only users with the 'admin' role can access this page
+checkAccess('Registrar'); // Ensure only users with the 'Registrar' role can access this page
 
 // Edit section
 $edit_section = null;
@@ -24,28 +24,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_section'])) {
   $semester = $_POST['semester_id'];
   $available = $_POST['available'];
   $department_id = $_POST['department_id'];
+  $branch = $_POST['branch'];
 
   try {
     // Check for duplicates
     $stmt = $conn->prepare("
           SELECT COUNT(*) 
           FROM sms3_sections 
-          WHERE section_number = ? AND department_id = ? AND semester_id = ?");
-    $stmt->bind_param("iii", $section_number, $department_id, $semester);
+          WHERE section_number = ? AND department_id = ? AND semester_id = ? AND branch = ?");
+    $stmt->bind_param("iiiis", $section_number, $department_id, $semester, $branch);
     $stmt->execute();
     $stmt->bind_result($duplicate_count);
     $stmt->fetch();
     $stmt->close();
 
     if ($duplicate_count > 0) {
-      throw new Exception("Duplicate section: A section with this number, department, and semester already exists.");
+      throw new Exception("Duplicate section: A section with this number, department, semester, and branch already exists.");
     }
 
     // Insert section
     $stmt = $conn->prepare("
-          INSERT INTO sms3_sections (section_number, year_level, capacity, semester_id, available, department_id) 
-          VALUES (?, ?, ?, ?, ?, ?)");
-    $stmt->bind_param("iiiiii", $section_number, $year_level, $capacity, $semester, $available, $department_id);
+          INSERT INTO sms3_sections (section_number, year_level, capacity, semester_id, available, department_id, branch) 
+          VALUES (?, ?, ?, ?, ?, ?, ?)");
+    $stmt->bind_param("iiiiiis", $section_number, $year_level, $capacity, $semester, $available, $department_id, $branch);
     $stmt->execute();
     $newSectionId = $stmt->insert_id;
     $stmt->close();
@@ -57,7 +58,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_section'])) {
       'capacity' => $capacity,
       'semester_id' => $semester,
       'available' => $available,
-      'department_id' => $department_id
+      'department_id' => $department_id,
+      'branch' => $branch
     ]);
 
     $_SESSION['success_message'] = "Section added successfully!";
@@ -79,21 +81,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_section'])) {
   $semester = $_POST['semester_id'];
   $available = $_POST['available'];
   $department_id = $_POST['department_id'];
+  $branch = $_POST['branch'];
 
   try {
     // Check for duplicates (excluding current section)
     $stmt = $conn->prepare("
           SELECT COUNT(*) 
           FROM sms3_sections 
-          WHERE section_number = ? AND department_id = ? AND semester_id = ? AND id != ?");
-    $stmt->bind_param("iiii", $section_number, $department_id, $semester, $section_id);
+          WHERE section_number = ? AND department_id = ? AND semester_id = ? AND branch = ? AND id != ?");
+    $stmt->bind_param("iiisi", $section_number, $department_id, $semester, $branch, $section_id);
     $stmt->execute();
     $stmt->bind_result($duplicate_count);
     $stmt->fetch();
     $stmt->close();
 
     if ($duplicate_count > 0) {
-      throw new Exception("Duplicate section: A section with this number, department, and semester already exists.");
+      throw new Exception("Duplicate section: A section with this number, department, semester, and branch already exists.");
     }
 
     // Fetch existing section details for logging
@@ -106,9 +109,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_section'])) {
     // Update the section
     $stmt = $conn->prepare("
           UPDATE sms3_sections 
-          SET section_number = ?, year_level = ?, capacity = ?, semester_id = ?, available = ?, department_id = ? 
+          SET section_number = ?, year_level = ?, capacity = ?, semester_id = ?, available = ?, department_id = ?, branch = ?
           WHERE id = ?");
-    $stmt->bind_param("iiiiiii", $section_number, $year_level, $capacity, $semester, $available, $department_id, $section_id);
+    $stmt->bind_param("iiiiiisi", $section_number, $year_level, $capacity, $semester, $available, $department_id, $branch, $section_id);
     $stmt->execute();
     $stmt->close();
 
@@ -122,7 +125,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_section'])) {
         'capacity' => $capacity,
         'semester_id' => $semester,
         'available' => $available,
-        'department_id' => $department_id
+        'department_id' => $department_id,
+        'branch' => $branch
       ]
     ]);
 
@@ -387,7 +391,7 @@ $sections = $conn->query("
           <span>Academic Structure</span>
         </a>
       </li>
- 
+
       <li class="nav-item">
         <a class="nav-link " href="manage_departments.php">
           <i class="bi bi-grid"></i>
@@ -509,6 +513,13 @@ $sections = $conn->query("
                 <?php endwhile; ?>
               </select>
             </div>
+            <div class="form-group mt-2">
+              <label for="branch">Branch:</label>
+              <select class="form-control" name="branch" id="branch" required>
+                <option value="Main" <?= isset($edit_section) && $edit_section['branch'] == 'Main' ? 'selected' : ''; ?>>Main</option>
+                <option value="Bulacan" <?= isset($edit_section) && $edit_section['branch'] == 'Bulacan' ? 'selected' : ''; ?>>Bulacan</option>
+              </select>
+            </div>
             <?php if (isset($edit_section)): ?>
               <input type="hidden" name="section_id" value="<?= $edit_section['id']; ?>">
               <button type="submit" name="update_section" class="btn btn-warning mt-3">Update Section</button>
@@ -523,7 +534,40 @@ $sections = $conn->query("
       <div class="card">
         <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;" class="card-body">
           <h5 class="card-title">Section List</h5>
-          <table style="width: 100%; min-width: 800px;" class="table table-bordered">
+
+          <div class="row mb-3">
+            <div class="col-md-4">
+              <label for="filterBranch" class="form-label">Branch</label>
+              <select class="form-select" id="filterBranch">
+                <option value="">All Branches</option>
+                <option value="Main">Main</option>
+                <option value="Bulacan">Bulacan</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label for="filterDepartment" class="form-label">Department</label>
+              <select class="form-select" id="filterDepartment">
+                <option value="">All Departments</option>
+                <?php
+                $departments = $conn->query("SELECT * FROM sms3_departments");
+                while ($department = $departments->fetch_assoc()): ?>
+                  <option value="<?= $department['department_code']; ?>"><?= $department['department_code']; ?></option>
+                <?php endwhile; ?>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label for="filterYearLevel" class="form-label">Year Level</label>
+              <select class="form-select" id="filterYearLevel">
+                <option value="">All Year Levels</option>
+                <option value="1">1st Year</option>
+                <option value="2">2nd Year</option>
+                <option value="3">3rd Year</option>
+                <option value="4">4th Year</option>
+              </select>
+            </div>
+          </div>
+
+          <table id="sectionTable" style="width: 100%; min-width: 800px;" class="table table-bordered">
             <thead>
               <tr>
                 <th>Section Number</th>
@@ -532,6 +576,7 @@ $sections = $conn->query("
                 <th>Semester</th>
                 <th>Available Slots</th>
                 <th>Department</th>
+                <th>Branch</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -544,6 +589,7 @@ $sections = $conn->query("
                   <td><?= $section['name']; ?></td>
                   <td><?= $section['available']; ?></td>
                   <td><?= $section['department_code']; ?></td>
+                  <td><?= $section['branch']; ?></td>
                   <td>
                     <a href="manage_sections.php?edit_section_id=<?= $section['id']; ?>"
                       class="btn btn-info btn-sm">Edit</a>
@@ -633,6 +679,33 @@ $sections = $conn->query("
         <?php unset($_SESSION['success_message']); ?>
       <?php endif; ?>
     };
+
+    document.getElementById('filterBranch').addEventListener('change', filterSections);
+    document.getElementById('filterDepartment').addEventListener('change', filterSections);
+    document.getElementById('filterYearLevel').addEventListener('change', filterSections);
+
+    function filterSections() {
+      const branch = document.getElementById('filterBranch').value;
+      const department = document.getElementById('filterDepartment').value;
+      const yearLevel = document.getElementById('filterYearLevel').value;
+      const rows = document.querySelectorAll('#sectionTable tbody tr');
+
+      rows.forEach(row => {
+        const rowBranch = row.cells[6].textContent.trim();
+        const rowDepartment = row.cells[5].textContent.trim();
+        const rowYearLevel = row.cells[1].textContent.trim();
+
+        const branchMatch = branch === '' || rowBranch === branch;
+        const departmentMatch = department === '' || rowDepartment === department;
+        const yearLevelMatch = yearLevel === '' || rowYearLevel === yearLevel;
+
+        if (branchMatch && departmentMatch && yearLevelMatch) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    }
   </script>
 
 

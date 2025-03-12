@@ -707,7 +707,7 @@ if (!$result) {
                             <input class="form-check-input" type="checkbox" id="certificate_of_grades" name="certificate_of_grades">
                             <label class="form-check-label" for="certificate_of_grades">Certificate of Grades</label>
                         </div>
-                        s<div class="form-check">
+                        <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="good_moral" name="good_moral">
                             <label class="form-check-label" for="good_moral">Good Moral Certificate</label>
                         </div>

@@ -361,7 +361,7 @@ $subjects = $conn->query("SELECT s.*, d.department_code FROM sms3_subjects s JOI
           <span>Academic Structure</span>
         </a>
       </li>
- 
+
       <li class="nav-item">
         <a class="nav-link " href="manage_departments.php">
           <i class="bi bi-grid"></i>
@@ -494,8 +494,34 @@ $subjects = $conn->query("SELECT s.*, d.department_code FROM sms3_subjects s JOI
       <div class="card">
         <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;" class="card-body">
           <h5 class="card-title">List of Subject</h5>
+
+          <!-- Filter Inputs -->
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="filterDepartment" class="form-label">Department</label>
+              <select id="filterDepartment" class="form-select">
+                <option value="">All Departments</option>
+                <?php
+                $departments = $conn->query("SELECT * FROM sms3_departments");
+                while ($department = $departments->fetch_assoc()): ?>
+                  <option value="<?= $department['department_code']; ?>"><?= $department['department_code']; ?></option>
+                <?php endwhile; ?>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label for="filterYearLevel" class="form-label">Year Level</label>
+              <select id="filterYearLevel" class="form-select">
+                <option value="">All Year Levels</option>
+                <option value="1">1st Year</option>
+                <option value="2">2nd Year</option>
+                <option value="3">3rd Year</option>
+                <option value="4">4th Year</option>
+              </select>
+            </div>
+          </div>
+
           <!-- List of Subjects -->
-          <table style="width: 100%; min-width: 800px;" class="table table-bordered">
+          <table id="subjectTable" style="width: 100%; min-width: 800px;" class="table table-bordered">
             <thead>
               <tr>
                 <th>Subject Code</th>
@@ -532,6 +558,30 @@ $subjects = $conn->query("SELECT s.*, d.department_code FROM sms3_subjects s JOI
   </main><!-- End #main -->
 
   <script>
+    // Added event listeners for the filter inputs
+    document.getElementById('filterDepartment').addEventListener('change', filterSubjects);
+    document.getElementById('filterYearLevel').addEventListener('change', filterSubjects);
+
+    function filterSubjects() {
+      const department = document.getElementById('filterDepartment').value;
+      const yearLevel = document.getElementById('filterYearLevel').value;
+      const rows = document.querySelectorAll('#subjectTable tbody tr');
+
+      rows.forEach(row => {
+        const rowDepartment = row.cells[2].textContent.trim();
+        const rowYearLevel = row.cells[3].textContent.trim().split(' ')[0];
+
+        const departmentMatch = department === '' || rowDepartment === department;
+        const yearLevelMatch = yearLevel === '' || rowYearLevel === yearLevel;
+
+        if (departmentMatch && yearLevelMatch) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    }
+
     function showConfirmationModal(message, onConfirm) {
       const modal = document.getElementById('confirmationModal');
       const confirmDeleteBtn = document.getElementById('confirmDelete');

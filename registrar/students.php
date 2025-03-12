@@ -1,7 +1,7 @@
 <?php
 require('../database.php');
 require_once 'session.php';
-checkAccess('Registrar'); // Ensure only users with the 'admin' role can access this page
+checkAccess('Registrar'); // Ensure only users with the 'Registrar' role can access this page
 
 $query = "
     SELECT 
@@ -291,7 +291,6 @@ if (isset($_GET['delete_timetable_from_student'])) {
       background-color: red;
     }
   </style>
-
 </head>
 
 <body>
@@ -381,7 +380,21 @@ if (isset($_GET['delete_timetable_from_student'])) {
 
       <hr class="sidebar-divider">
 
-      <li class="nav-heading">Enrollment</li><!-- End System Nav -->
+      <li class="nav-heading">Admission & Enrollment</li>
+
+      <li class="nav-item">
+        <a class="nav-link " href="admission.php">
+          <i class="bi bi-grid"></i>
+          <span>Admission</span>
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link " href="admission_temp.php">
+          <i class="bi bi-grid"></i>
+          <span>Temporary Admission</span>
+        </a>
+      </li>
 
       <li class="nav-item">
         <a class="nav-link " href="enrollment.php">
@@ -407,7 +420,7 @@ if (isset($_GET['delete_timetable_from_student'])) {
           <span>Academic Structure</span>
         </a>
       </li>
- 
+
       <li class="nav-item">
         <a class="nav-link " href="manage_departments.php">
           <i class="bi bi-grid"></i>
@@ -441,6 +454,21 @@ if (isset($_GET['delete_timetable_from_student'])) {
 
       <hr class="sidebar-divider">
 
+      <li class="nav-heading">MANAGE USER</li>
+      <li class="nav-item">
+        <a class="nav-link " href="audit_logs.php">
+          <i class="bi bi-grid"></i>
+          <span>Audit Logs</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link " href="manage_user.php">
+          <i class="bi bi-grid"></i>
+          <span>Users</span>
+        </a>
+      </li>
+
+      <hr class="sidebar-divider">
     </ul>
 
   </aside><!-- End Sidebar-->
@@ -462,13 +490,38 @@ if (isset($_GET['delete_timetable_from_student'])) {
         <div class="card">
           <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;" class="card-body">
             <h5 class="card-title">List of Student</h5>
+
+            <!-- Filter Inputs -->
+            <div class="row mb-3">
+              <div class="col-md-4">
+                <label for="filterDepartment" class="form-label">Department</label>
+                <select id="filterDepartment" class="form-select">
+                  <option value="">All Departments</option>
+                  <?php
+                  $departments = $conn->query("SELECT * FROM sms3_departments");
+                  while ($department = $departments->fetch_assoc()): ?>
+                    <option value="<?= $department['department_code']; ?>"><?= $department['department_code']; ?></option>
+                  <?php endwhile; ?>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label for="filterYearLevel" class="form-label">Year Level</label>
+                <select id="filterYearLevel" class="form-select">
+                  <option value="">All Year Levels</option>
+                  <option value="1">1st Year</option>
+                  <option value="2">2nd Year</option>
+                  <option value="3">3rd Year</option>
+                  <option value="4">4th Year</option>
+                </select>
+              </div>
+            </div>
+
             <!-- Table with stripped rows -->
             <table style="width: 100%; min-width: 800px;" class="table datatable">
               <thead>
                 <tr>
                   <th>Student Number</th>
                   <th>Name</th>
-                  <th>Date Approved</th>
                   <th>Academic Year</th>
                   <th>Program</th>
                   <th>Year Level</th>
@@ -488,7 +541,6 @@ if (isset($_GET['delete_timetable_from_student'])) {
                           (!empty($row['middle_name']) ? htmlspecialchars($row['middle_name']) . ' ' : '') .
                           htmlspecialchars($row['last_name']); ?>
                       </td>
-                      <td><?= htmlspecialchars(date('Y/m/d', strtotime($row['created_at']))); ?></td>
                       <td><?= htmlspecialchars($row['academic_year_label']); ?></td>
                       <td><?= htmlspecialchars($row['department']); ?></td>
                       <td><?= htmlspecialchars($row['year_level']); ?></td>
@@ -496,7 +548,7 @@ if (isset($_GET['delete_timetable_from_student'])) {
                         <button class="btn btn-info btn-sm" onclick="viewInformation(<?= $row['id'] ?>)">View Information</button>
                       </td>
                       <td>
-                        <button class="btn btn-info btn-sm" onclick="viewRequirements(<?= $row['id'] ?>)">View Requirements</button>
+                        <button class="btn btn-info btn-sm" onclick="viewRequirements(<?= $row['id'] ?>)">Requirements</button>
                       </td>
                       <td>
                         <button class="btn btn-info btn-sm" onclick="viewTimetableDetails(<?= $row['id']; ?>)">View Timetable</button>
@@ -612,8 +664,30 @@ if (isset($_GET['delete_timetable_from_student'])) {
     </div>
   </div>
 
-
   <script>
+    document.getElementById('filterDepartment').addEventListener('change', filterStudents);
+    document.getElementById('filterYearLevel').addEventListener('change', filterStudents);
+
+    function filterStudents() {
+      const department = document.getElementById('filterDepartment').value;
+      const yearLevel = document.getElementById('filterYearLevel').value;
+      const rows = document.querySelectorAll('.datatable tbody tr');
+
+      rows.forEach(row => {
+        const rowDepartment = row.cells[3].textContent.trim();
+        const rowYearLevel = row.cells[4].textContent.trim();
+
+        const departmentMatch = department === '' || rowDepartment === department;
+        const yearLevelMatch = yearLevel === '' || rowYearLevel === yearLevel;
+
+        if (departmentMatch && yearLevelMatch) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    }
+
     function viewInformation(id) {
       // Fetch additional information using AJAX
       fetch('get_student_info.php?id=' + id)
@@ -623,26 +697,80 @@ if (isset($_GET['delete_timetable_from_student'])) {
             // Populate the modal content
             const info = data.info;
             const content = `
-          <p><strong>Admission Type:</strong> ${info.admission_type || 'N/A'}</p>
-          <p><strong>Birthdate:</strong> ${info.birthday || 'N/A'}</p>
-          <p><strong>Sex:</strong> ${info.sex || 'N/A'}</p>
-          <p><strong>Email:</strong> ${info.email || 'N/A'}</p>
-          <p><strong>Contact Number:</strong> ${info.contact_number || 'N/A'}</p>
-          <p><strong>Facebook Name:</strong> ${info.facebook_name || 'N/A'}</p>
-          <p><strong>Working Student:</strong> ${info.working_student === 'Yes' ? 'Yes' : 'No'}</p>
-          <p><strong>Address:</strong> ${info.address || 'N/A'}</p>
-          <p><strong>Civil Status:</strong> ${info.civil_status || 'N/A'}</p>
-          <p><strong>Religion:</strong> ${info.religion || 'N/A'}</p>
-          <p><strong>Father's Name:</strong> ${info.father_name || 'N/A'}</p>
-          <p><strong>Mother's Name:</strong> ${info.mother_name || 'N/A'}</p>
-          <p><strong>Guardian's Name:</strong> ${info.guardian_name || 'N/A'}</p>
-          <p><strong>Guardian's Contact:</strong> ${info.guardian_contact || 'N/A'}</p>
-          <p><strong>Member 4Ps:</strong> ${info.member4ps === 'Yes' ? 'Yes' : 'No'}</p>
-          <p><strong>Primary School:</strong> ${info.primary_school || 'N/A'} (${info.primary_year || 'N/A'})</p>
-          <p><strong>Secondary School:</strong> ${info.secondary_school || 'N/A'} (${info.secondary_year || 'N/A'})</p>
-          <p><strong>Last School Attended:</strong> ${info.last_school || 'N/A'} (${info.last_school_year || 'N/A'})</p>
-          <p><strong>Referral Source:</strong> ${info.referral_source || 'N/A'}</p>
+          <h4>Campus Branch</h4>
+          <p><strong>Selected Branch:</strong> ${info.branch}</p>
+          <hr>
+          <h4>Basic Information</h4>
+          <div class="row">
+            <div class="col-md-6">
+              <p><strong>Full Name:</strong> ${info.first_name} ${info.middle_name} ${info.last_name}</p>
+              <p><strong>Sex:</strong> ${info.sex}</p>
+              <p><strong>Birthday:</strong> ${info.birthday}</p>
+              <p><strong>Contact Number:</strong> ${info.contact_number}</p>
+              <p><strong>Email:</strong> ${info.email}</p>
+              <p><strong>Address:</strong> ${info.address}</p>
+              <p><strong>Facebook Name:</strong> ${info.facebook_name}</p>
+            </div>
+            <div class="col-md-6">
+              <p><strong>Admission Type:</strong> ${info.admission_type}</p>
+              ${info.admission_type === 'Returnee' ? `<p><strong>Old Student Number:</strong> ${info.old_student_number}</p>` : ''}
+              <p><strong>Program:</strong> ${info.department_name}</p>
+              <p><strong>Year Level:</strong> ${info.year_level}</p>
+              <p><strong>Working Student:</strong> ${info.working_student === 'Yes' ? 'Yes' : 'No'}</p>
+              <p><strong>Civil Status:</strong> ${info.civil_status}</p>
+              <p><strong>Religion:</strong> ${info.religion}</p>
+            </div>
+          </div>
+          <hr>
+          <h4>Parent/Guardian Information</h4>
+          <div class="row">
+            <div class="col-md-6">
+              <p><strong>Father's Full Name:</strong> ${info.father_name}</p>
+              <p><strong>Mother's Full Name:</strong> ${info.mother_name}</p>
+            </div>
+            <div class="col-md-6">
+              <p><strong>Guardian's Full Name:</strong> ${info.guardian_name}</p>
+              <p><strong>Guardian's Occupation:</strong> ${info.occupation}</p>
+              <p><strong>Guardian's Contact Number:</strong> ${info.guardian_contact}</p>
+              <p><strong>Guardian's member of 4ps:</strong> ${info.member4ps === 'Yes' ? 'Yes' : 'No'}</p>
+            </div>
+          </div>
+          <hr>
+          <h4>Educational Background</h4>
+          <div class="row">
+            <div class="col-md-6">
+              <p><strong>Last School Attended:</strong> ${info.last_school}</p>
+              <p><strong>Last School Year Attended:</strong> ${info.last_school_year}</p>
+            </div>
+            <div class="col-md-6">
+              <p><strong>Primary School Attended:</strong> ${info.primary_school}</p>
+              <p><strong>Year Graduated:</strong> ${info.primary_year}</p>
+              <p><strong>Secondary School Attended:</strong> ${info.secondary_school}</p>
+              <p><strong>Year Graduated:</strong> ${info.secondary_year}</p>
+            </div>
+          </div>
+          <hr>
+          <h4>Requirements</h4>
+          <div class="row">
+            <div class="col-md-6">
+              <p><strong>Form 138:</strong> ${info.form138 || 'Not Applicable'}</p>
+              <p><strong>Good Moral Certificate:</strong> ${info.good_moral || 'Not Applicable'}</p>
+              <p><strong>Form 137:</strong> ${info.form137 || 'Not Applicable'}</p>
+              <p><strong>Birth Certificate:</strong> ${info.birth_certificate || 'Not Applicable'}</p>
+              <p><strong>Barangay Clearance:</strong> ${info.brgy_clearance || 'Not Applicable'}</p>
+            </div>
+            <div class="col-md-6">
+              <p><strong>Honorable Dismissal:</strong> ${info.honorable_dismissal || 'Not Applicable'}</p>
+              <p><strong>Transcript of Records:</strong> ${info.transcript_of_records || 'Not Applicable'}</p>
+              <p><strong>Certificate of Grades:</strong> ${info.certificate_of_grades || 'Not Applicable'}</p>
+            </div>
+          </div>
+          <hr>
+          <h4>Referral</h4>
+          <p><strong>How did you hear about our school?</strong> ${info.referral_source}</p>
+          <hr>
         `;
+
             document.getElementById('informationContent').innerHTML = content;
             // Show the modal
             new bootstrap.Modal(document.getElementById('informationModal')).show();

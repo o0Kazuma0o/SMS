@@ -514,7 +514,6 @@ if (isset($_GET['delete_row_id'])) {
           <span>Academic Structure</span>
         </a>
       </li>
- 
       <li class="nav-item">
         <a class="nav-link " href="manage_departments.php">
           <i class="bi bi-grid"></i>
@@ -582,8 +581,18 @@ if (isset($_GET['delete_row_id'])) {
             <!-- Add Timetable Form -->
             <form action="manage_timetable.php" method="POST" class="mb-4" onsubmit="return validateTimetableForm();">
 
+              <!-- Select Branch -->
+              <div class="form-group mt-3">
+                <label for="branch">Select Branch:</label>
+                <select class="form-control" name="branch" id="branch" required onchange="fetchRelatedData()">
+                  <option value="">Select Branch</option>
+                  <option value="Main">Main</option>
+                  <option value="Bulacan">Bulacan</option>
+                </select>
+              </div>
+
               <!-- Select Department -->
-              <div class="form-group">
+              <div class="form-group mt-3">
                 <label for="department_id">Select Department:</label>
                 <select class="form-control" name="department_id" id="department_id" required onchange="fetchRelatedData()">
                   <option value="">Select Department</option>
@@ -601,7 +610,7 @@ if (isset($_GET['delete_row_id'])) {
                 <label for="section_id">Select Section:</label>
                 <select class="form-control" name="section_id" id="section_id" required>
                   <option value="">Select Section</option>
-                  <!-- Sections will be populated dynamically based on the selected department -->
+                  <!-- Sections will be populated dynamically based on the selected department and branch -->
                 </select>
               </div>
 
@@ -624,11 +633,46 @@ if (isset($_GET['delete_row_id'])) {
         <div class="card">
           <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;" class="card-body">
             <h5 class="card-title">List of Timetables</h5>
-            <table style="width: 100%; min-width: 800px;" class="table table-bordered">
+            
+            <!-- Filter Dropdowns -->
+            <div class="row mb-3">
+              <div class="col-md-4">
+                <label for="filterBranch" class="form-label">Branch</label>
+                <select class="form-select" id="filterBranch">
+                  <option value="">All Branches</option>
+                  <option value="Main">Main</option>
+                  <option value="Bulacan">Bulacan</option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label for="filterDepartment" class="form-label">Department</label>
+                <select class="form-select" id="filterDepartment">
+                  <option value="">All Departments</option>
+                  <?php
+                  $departments = $conn->query("SELECT * FROM sms3_departments");
+                  while ($department = $departments->fetch_assoc()): ?>
+                    <option value="<?= $department['department_code']; ?>"><?= $department['department_code']; ?></option>
+                  <?php endwhile; ?>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label for="filterYearLevel" class="form-label">Year Level</label>
+                <select class="form-select" id="filterYearLevel">
+                  <option value="">All Year Levels</option>
+                  <option value="1">1st Year</option>
+                  <option value="2">2nd Year</option>
+                  <option value="3">3rd Year</option>
+                  <option value="4">4th Year</option>
+                </select>
+              </div>
+            </div>
+
+            <table id="timetableTable" style="width: 100%; min-width: 800px;" class="table table-bordered">
               <thead>
                 <tr>
                   <th>Department</th>
                   <th>Section</th>
+                  <th>Branch</th>
                   <th>Timetable</th>
                   <th>Actions</th>
                 </tr>
@@ -637,18 +681,18 @@ if (isset($_GET['delete_row_id'])) {
                 <?php
                 // Fetch grouped timetables from the database
                 $sql = "
-                  SELECT t.id, d.department_code, sec.section_number, 
-                      GROUP_CONCAT(DISTINCT s.subject_code SEPARATOR ', ') AS subjects,
-                      GROUP_CONCAT(DISTINCT t.day_of_week SEPARATOR ', ') AS days,
-                      GROUP_CONCAT(DISTINCT TIME_FORMAT(t.start_time, '%H:%i') SEPARATOR ', ') AS start_times,
-                      GROUP_CONCAT(DISTINCT TIME_FORMAT(t.end_time, '%H:%i') SEPARATOR ', ') AS end_times,
-                      GROUP_CONCAT(DISTINCT r.room_name SEPARATOR ', ') AS rooms
-                  FROM sms3_timetable t
-                  JOIN sms3_subjects s ON t.subject_id = s.id
-                  JOIN sms3_sections sec ON t.section_id = sec.id
-                  JOIN sms3_rooms r ON t.room_id = r.id
-                  JOIN sms3_departments d ON sec.department_id = d.id
-                  GROUP BY d.department_code, sec.section_number
+                SELECT t.id, d.department_code, sec.section_number, sec.branch,
+                    GROUP_CONCAT(DISTINCT s.subject_code SEPARATOR ', ') AS subjects,
+                    GROUP_CONCAT(DISTINCT t.day_of_week SEPARATOR ', ') AS days,
+                    GROUP_CONCAT(DISTINCT TIME_FORMAT(t.start_time, '%H:%i') SEPARATOR ', ') AS start_times,
+                    GROUP_CONCAT(DISTINCT TIME_FORMAT(t.end_time, '%H:%i') SEPARATOR ', ') AS end_times,
+                    GROUP_CONCAT(DISTINCT r.room_name SEPARATOR ', ') AS rooms
+                FROM sms3_timetable t
+                JOIN sms3_subjects s ON t.subject_id = s.id
+                JOIN sms3_sections sec ON t.section_id = sec.id
+                JOIN sms3_rooms r ON t.room_id = r.id
+                JOIN sms3_departments d ON sec.department_id = d.id
+                GROUP BY d.department_code, sec.section_number, sec.branch
               ";
                 $timetables = $conn->query($sql);
 
@@ -658,6 +702,7 @@ if (isset($_GET['delete_row_id'])) {
                   <tr>
                     <td><?= htmlspecialchars($timetable['department_code']); ?></td>
                     <td><?= htmlspecialchars($timetable['section_number']); ?></td>
+                    <td><?= htmlspecialchars($timetable['branch']); ?></td>
                     <td>
                       <button
                         class="btn btn-info btn-sm"
@@ -778,6 +823,48 @@ if (isset($_GET['delete_row_id'])) {
 
     <!-- JavaScript for AJAX -->
     <script>
+      document.getElementById('filterBranch').addEventListener('change', filterTimetables);
+      document.getElementById('filterDepartment').addEventListener('change', filterTimetables);
+      document.getElementById('filterYearLevel').addEventListener('change', filterTimetables);
+
+      function filterTimetables() {
+        const branch = document.getElementById('filterBranch').value;
+        const department = document.getElementById('filterDepartment').value;
+        const yearLevel = document.getElementById('filterYearLevel').value;
+        const rows = document.querySelectorAll('#timetableTable tbody tr');
+
+        rows.forEach(row => {
+          const rowBranch = row.cells[2].textContent.trim();
+          const rowDepartment = row.cells[0].textContent.trim();
+          const rowSection = row.cells[1].textContent.trim();
+          const rowYearLevel = getYearLevelFromSection(rowSection);
+
+          const branchMatch = branch === '' || rowBranch === branch;
+          const departmentMatch = department === '' || rowDepartment === department;
+          const yearLevelMatch = yearLevel === '' || rowYearLevel === yearLevel;
+
+          if (branchMatch && departmentMatch && yearLevelMatch) {
+            row.style.display = '';
+          } else {
+            row.style.display = 'none';
+          }
+        });
+      }
+
+      function getYearLevelFromSection(section) {
+        const sectionNumber = parseInt(section);
+        if (sectionNumber >= 1101 && sectionNumber <= 1120 || sectionNumber >= 1201 && sectionNumber <= 1220) {
+          return '1';
+        } else if (sectionNumber >= 2101 && sectionNumber <= 2120 || sectionNumber >= 2201 && sectionNumber <= 2220) {
+          return '2';
+        } else if (sectionNumber >= 3101 && sectionNumber <= 3120 || sectionNumber >= 3201 && sectionNumber <= 3220) {
+          return '3';
+        } else if (sectionNumber >= 4101 && sectionNumber <= 4120 || sectionNumber >= 4201 && sectionNumber <= 4220) {
+          return '4';
+        }
+        return '';
+      }
+
       // Fetch and display timetable details in a modal
       function viewTimetableDetails(sectionNumber, departmentCode) {
         fetch(`fetch_timetable_details.php?section_number=${sectionNumber}&department_code=${departmentCode}`)
@@ -905,22 +992,27 @@ if (isset($_GET['delete_row_id'])) {
       });
 
       function fetchRelatedData() {
+        var branch = document.getElementById('branch').value;
         var departmentId = document.getElementById('department_id').value;
 
-        // Clear the dropdowns if no department selected
-        if (departmentId === "") {
+        // Clear the dropdowns if no branch or department is selected
+        if (branch === "" || departmentId === "") {
           document.getElementById('section_id').innerHTML = '<option value="">Select Section</option>';
-          document.getElementById('subject-time-list').innerHTML = '<button type="button" class="btn btn-secondary" onclick="addSubjectTime()">Add Subject, Room, and Time</button>';
+          document.getElementById('subject-time-list').innerHTML = `
+      <button type="button" class="btn btn-secondary mt-2" onclick="addSubjectTime()">Add Room, Subject and Time</button>
+      <button type="button" class="btn btn-danger mt-2" id="clear-btn" onclick="clearLastSubjectTime()">Clear Last Entry</button>
+    `;
+          document.getElementById('room_id').innerHTML = '<option value="">Select Room</option>';
           return;
         }
 
         // Fetch sections
-        fetch('fetch_sections.php?department_id=' + departmentId)
+        fetch(`fetch_sections.php?branch=${branch}&department_id=${departmentId}`)
           .then(response => response.text())
           .then(data => document.getElementById('section_id').innerHTML = data);
 
         // Fetch subjects (populated dynamically when a new subject row is added)
-        fetch('fetch_subjects.php?department_id=' + departmentId)
+        fetch(`fetch_subjects.php?department_id=${departmentId}`)
           .then(response => response.text())
           .then(data => document.getElementById('subject_id').innerHTML = data);
       }
@@ -929,6 +1021,7 @@ if (isset($_GET['delete_row_id'])) {
       function addSubjectTime() {
         var subjectTimeList = document.getElementById('subject-time-list');
         var departmentId = document.getElementById('department_id').value;
+        var branch = document.getElementById('branch').value;
 
         if (!document.getElementById('section_id').value) {
           alert("Please select a department and section first.");
@@ -938,35 +1031,35 @@ if (isset($_GET['delete_row_id'])) {
         fetch('fetch_subjects.php?department_id=' + departmentId)
           .then(response => response.text())
           .then(subjectOptions => {
-            fetch('fetch_rooms.php?department_id=' + departmentId)
+            fetch('fetch_rooms.php?branch=' + branch + '&department_id=' + departmentId)
               .then(response => response.text())
               .then(roomOptions => {
                 var newEntry = `
-                    <div class="form-group mt-2 subject-time-entry">
-                        <label for="subject_id">Subject:</label>
-                        <select class="form-control" name="subjects[]" required>
-                          ${subjectOptions}
-                        </select>
-                        <label for="room_id" class="mt-2">Room:</label>
-                        <select class="form-control" name="rooms[]" required>
-                          ${roomOptions}
-                        </select>
-                        <label for="days[]" class="mt-2">Day:</label>
-                        <select class="form-control mt-2" name="days[]" required>
-                            <option value="Monday">Monday</option>
-                            <option value="Tuesday">Tuesday</option>
-                            <option value="Wednesday">Wednesday</option>
-                            <option value="Thursday">Thursday</option>
-                            <option value="Friday">Friday</option>
-                            <option value="Saturday">Saturday</option>
-                        </select>
-                        <label for="start_times[]" class="mt-2">Start Time:</label>
-                        <input type="time" class="form-control" name="start_times[]" required>
-                        <label for="end_times[]" class="mt-2">End Time:</label>
-                        <input type="time" class="form-control" name="end_times[]" required>
-                    </div>
-                    <br>
-                `;
+            <div class="form-group mt-2 subject-time-entry">
+              <label for="subject_id">Subject:</label>
+              <select class="form-control" name="subjects[]" required>
+                ${subjectOptions}
+              </select>
+              <label for="room_id" class="mt-2">Room:</label>
+              <select class="form-control" name="rooms[]" required>
+                ${roomOptions}
+              </select>
+              <label for="days[]" class="mt-2">Day:</label>
+              <select class="form-control mt-2" name="days[]" required>
+                <option value="Monday">Monday</option>
+                <option value="Tuesday">Tuesday</option>
+                <option value="Wednesday">Wednesday</option>
+                <option value="Thursday">Thursday</option>
+                <option value="Friday">Friday</option>
+                <option value="Saturday">Saturday</option>
+              </select>
+              <label for="start_times[]" class="mt-2">Start Time:</label>
+              <input type="time" class="form-control" name="start_times[]" required>
+              <label for="end_times[]" class="mt-2">End Time:</label>
+              <input type="time" class="form-control" name="end_times[]" required>
+            </div>
+            <br>
+          `;
                 subjectTimeList.insertAdjacentHTML('beforeend', newEntry);
               });
           })
@@ -1091,6 +1184,8 @@ if (isset($_GET['delete_row_id'])) {
     </script>
 
   </main><!-- End #main -->
+
+
 
   <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
 

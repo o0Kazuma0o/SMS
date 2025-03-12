@@ -2,7 +2,7 @@
 require('../database.php');
 require_once 'session.php';
 require_once 'audit_log_function.php';
-checkAccess('Registrar'); // Ensure only users with the 'admin' role can access this page
+checkAccess('Registrar'); // Ensure only users with the 'Registrar' role can access this page
 
 // Edit room
 $edit_room = null;
@@ -23,24 +23,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_room'])) {
   $room_name = $_POST['room_name'];
   $location = $_POST['location'];
   $department_id = $_POST['department_id'];
+  $branch = $_POST['branch'];
 
   try {
+    // Check for duplicates
+    $stmt = $conn->prepare("
+          SELECT COUNT(*) 
+          FROM sms3_rooms 
+          WHERE room_name = ? AND department_id = ? AND location = ? AND branch = ?");
+    $stmt->bind_param("ssss", $room_name, $department_id, $location, $branch);
+    $stmt->execute();
+    $stmt->bind_result($duplicate_count);
+    $stmt->fetch();
+    $stmt->close();
+
+    if ($duplicate_count > 0) {
+      throw new Exception("Duplicate room: A room with this name, department, location, and branch already exists.");
+    }
+
     // Insert room
-    $stmt = $conn->prepare("INSERT INTO sms3_rooms (room_name, location, department_id) VALUES (?, ?, ?)");
-    $stmt->bind_param("ssi", $room_name, $location, $department_id);
+    $stmt = $conn->prepare("INSERT INTO sms3_rooms (room_name, location, department_id, branch) VALUES (?, ?, ?, ?)");
+    $stmt->bind_param("ssss", $room_name, $location, $department_id, $branch);
     $stmt->execute();
     $newRoomId = $stmt->insert_id; // Get the ID of the new room
     $stmt->close();
 
     // Log the addition
-    logAudit($conn, $_SESSION['user_id'], 'ADD', 'sms3_rooms', $newRoomId, ['room_name' => $room_name]);
+    logAudit($conn, $_SESSION['user_id'], 'ADD', 'sms3_rooms', $newRoomId, [
+      'room_name' => $room_name,
+      'location' => $location,
+      'department_id' => $department_id,
+      'branch' => $branch
+    ]);
 
     $_SESSION['success_message'] = "Room added successfully!";
     header('Location: manage_rooms.php');
     exit;
   } catch (mysqli_sql_exception $e) {
     if ($e->getCode() == 1062) { // Duplicate entry error code
-      $_SESSION['error_message'] = "Error: Duplicate entry for department code or name.";
+      $_SESSION['error_message'] = "Error: Duplicate entry for room name, department, location, and branch.";
     } else {
       $_SESSION['error_message'] = "Error: " . $e->getMessage();
     }
@@ -55,8 +76,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_room'])) {
   $room_name = $_POST['room_name'];
   $location = $_POST['location'];
   $department_id = $_POST['department_id'];
+  $branch = $_POST['branch'];
 
   try {
+    // Check for duplicates (excluding current room)
+    $stmt = $conn->prepare("
+          SELECT COUNT(*) 
+          FROM sms3_rooms 
+          WHERE room_name = ? AND department_id = ? AND location = ? AND branch = ? AND id != ?");
+    $stmt->bind_param("ssssi", $room_name, $department_id, $location, $branch, $room_id);
+    $stmt->execute();
+    $stmt->bind_result($duplicate_count);
+    $stmt->fetch();
+    $stmt->close();
+
+    if ($duplicate_count > 0) {
+      throw new Exception("Duplicate room: A room with this name, department, location, and branch already exists.");
+    }
+
     // Fetch existing room details for logging
     $stmt = $conn->prepare("SELECT * FROM sms3_rooms WHERE id = ?");
     $stmt->bind_param("i", $room_id);
@@ -65,8 +102,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_room'])) {
     $stmt->close();
 
     // Update the room
-    $stmt = $conn->prepare("UPDATE sms3_rooms SET room_name = ?, location = ?, department_id = ? WHERE id = ?");
-    $stmt->bind_param("ssii", $room_name, $location, $department_id, $room_id);
+    $stmt = $conn->prepare("UPDATE sms3_rooms 
+                            SET room_name = ?, location = ?, department_id = ?, branch = ?
+                            WHERE id = ?");
+    $stmt->bind_param("ssssi", $room_name, $location, $department_id, $branch, $room_id);
     $stmt->execute();
     $stmt->close();
 
@@ -74,7 +113,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_room'])) {
     logAudit($conn, $_SESSION['user_id'], 'EDIT', 'sms3_rooms', $room_id, [
       'id' => $room_id,
       'old' => $oldRoom,
-      'new' => ['room_name' => $room_name, 'location' => $location, 'department_id' => $department_id]
+      'new' => [
+        'room_name' => $room_name,
+        'location' => $location,
+        'department_id' => $department_id,
+        'branch' => $branch
+      ]
     ]);
 
     $_SESSION['success_message'] = "Room updated successfully!";
@@ -82,7 +126,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_room'])) {
     exit;
   } catch (mysqli_sql_exception $e) {
     if ($e->getCode() == 1062) { // Duplicate entry error code
-      $_SESSION['error_message'] = "Error: Duplicate entry for department code or name.";
+      $_SESSION['error_message'] = "Error: Duplicate entry for room name, department, location, and branch.";
     } else {
       $_SESSION['error_message'] = "Error: " . $e->getMessage();
     }
@@ -339,7 +383,6 @@ $rooms = $conn->query("SELECT r.*, d.department_code FROM sms3_rooms r JOIN sms3
           <span>Academic Structure</span>
         </a>
       </li>
- 
       <li class="nav-item">
         <a class="nav-link " href="manage_departments.php">
           <i class="bi bi-grid"></i>
@@ -441,6 +484,13 @@ $rooms = $conn->query("SELECT r.*, d.department_code FROM sms3_rooms r JOIN sms3
                   <?php endwhile; ?>
                 </select>
               </div>
+              <div class="form-group mt-2">
+                <label for="branch">Branch:</label>
+                <select class="form-control" name="branch" id="branch" required>
+                  <option value="Main" <?= isset($edit_room) && $edit_room['branch'] == 'Main' ? 'selected' : ''; ?>>Main</option>
+                  <option value="Bulacan" <?= isset($edit_room) && $edit_room['branch'] == 'Bulacan' ? 'selected' : ''; ?>>Bulacan</option>
+                </select>
+              </div>
 
               <?php if (isset($edit_room)): ?>
                 <input type="hidden" name="room_id" value="<?= $edit_room['id']; ?>">
@@ -455,12 +505,37 @@ $rooms = $conn->query("SELECT r.*, d.department_code FROM sms3_rooms r JOIN sms3
         <div class="card">
           <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;" class="card-body">
             <h5 class="card-title">Room List</h5>
-            <table style="width: 100%; min-width: 800px;" class="table table-bordered">
+
+            <!-- Filter Dropdowns -->
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="filterBranch" class="form-label">Filter by Branch</label>
+                <select class="form-select" id="filterBranch">
+                  <option value="">All Branches</option>
+                  <option value="Main">Main</option>
+                  <option value="Bulacan">Bulacan</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label for="filterDepartment" class="form-label">Filter by Department</label>
+                <select class="form-select" id="filterDepartment">
+                  <option value="">All Departments</option>
+                  <?php
+                  $departments = $conn->query("SELECT * FROM sms3_departments");
+                  while ($department = $departments->fetch_assoc()): ?>
+                    <option value="<?= $department['department_code']; ?>"><?= $department['department_code']; ?></option>
+                  <?php endwhile; ?>
+                </select>
+              </div>
+            </div>
+
+            <table id="roomTable" style="width: 100%; min-width: 800px;" class="table table-bordered">
               <thead>
                 <tr>
                   <th>Room Name</th>
                   <th>Location</th>
                   <th>Department</th>
+                  <th>Branch</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -470,6 +545,7 @@ $rooms = $conn->query("SELECT r.*, d.department_code FROM sms3_rooms r JOIN sms3
                     <td><?= $room['room_name']; ?></td>
                     <td><?= $room['location']; ?></td>
                     <td><?= $room['department_code']; ?></td>
+                    <td><?= $room['branch']; ?></td>
                     <td>
                       <a href="manage_rooms.php?edit_room_id=<?= $room['id']; ?>"
                         class="btn btn-info btn-sm">Edit</a>
@@ -559,6 +635,30 @@ $rooms = $conn->query("SELECT r.*, d.department_code FROM sms3_rooms r JOIN sms3
         <?php unset($_SESSION['success_message']); ?>
       <?php endif; ?>
     };
+
+    // Filter rooms based on branch and department
+    document.getElementById('filterBranch').addEventListener('change', filterRooms);
+    document.getElementById('filterDepartment').addEventListener('change', filterRooms);
+
+    function filterRooms() {
+      const branch = document.getElementById('filterBranch').value;
+      const department = document.getElementById('filterDepartment').value;
+      const rows = document.querySelectorAll('#roomTable tbody tr');
+
+      rows.forEach(row => {
+        const rowBranch = row.cells[3].textContent.trim();
+        const rowDepartment = row.cells[2].textContent.trim();
+
+        const branchMatch = branch === '' || rowBranch === branch;
+        const departmentMatch = department === '' || rowDepartment === department;
+
+        if (branchMatch && departmentMatch) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    }
   </script>
 
 

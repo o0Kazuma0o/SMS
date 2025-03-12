@@ -481,7 +481,7 @@ if (isset($_GET['delete_timetable_from_enrollment'])) {
           <span>Academic Structure</span>
         </a>
       </li>
- 
+
       <li class="nav-item">
         <a class="nav-link " href="manage_departments.php">
           <i class="bi bi-grid"></i>
@@ -554,6 +554,30 @@ if (isset($_GET['delete_timetable_from_enrollment'])) {
         <div class="card">
           <div class="card-body">
             <h5 class="card-title">Pending Enrollment</h5>
+
+            <!-- Filter Inputs -->
+            <div class="row mb-3">
+              <div class="col-md-4">
+                <label for="filterDepartment" class="form-label">Department</label>
+                <select id="filterDepartment" class="form-select">
+                  <option value="">All Departments</option>
+                  <?php
+                  $departments = $conn->query("SELECT * FROM sms3_departments");
+                  while ($department = $departments->fetch_assoc()): ?>
+                    <option value="<?= $department['department_code']; ?>"><?= $department['department_code']; ?></option>
+                  <?php endwhile; ?>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label for="filterStartDate" class="form-label">Start Date</label>
+                <input type="date" id="filterStartDate" class="form-control">
+              </div>
+              <div class="col-md-4">
+                <label for="filterEndDate" class="form-label">End Date</label>
+                <input type="date" id="filterEndDate" class="form-control">
+              </div>
+            </div>
+
             <table class="table datatable">
               <thead>
                 <tr>
@@ -561,9 +585,9 @@ if (isset($_GET['delete_timetable_from_enrollment'])) {
                   <th>Student</th>
                   <th>Admission Type</th>
                   <th>Department</th>
-                  <th>Receipt</th>
                   <th>Subjects</th>
                   <th>Date Submitted</th>
+                  <th>Status</th>
                   <th>Action</th>
                 </tr>
               </thead>
@@ -576,12 +600,11 @@ if (isset($_GET['delete_timetable_from_enrollment'])) {
                       <td><?= htmlspecialchars($row['admission_type']); ?></td>
                       <td><?= htmlspecialchars($row['department_code']); ?></td>
                       <td>
-                        <button class="btn btn-info btn-sm" onclick="viewReceipt(<?= $row['student_number']; ?>)">View Requirements</button>
-                      </td>
-                      <td>
                         <button class="btn btn-info btn-sm" onclick="viewTimetableDetails(<?= $row['enrollment_id']; ?>)">View Timetable</button>
                       </td>
                       <td><?= htmlspecialchars($row['created_at']); ?></td>
+                      <td>
+                        <span class="badge bg-warning text-dark">Not Paid</span>
                       <td>
                         <button class="btn btn-success btn-sm" onclick="updateEnrollmentStatus(<?= $row['enrollment_id']; ?>, 'Approved')">Approve</button>
                         <button class="btn btn-danger btn-sm" onclick="updateEnrollmentStatus(<?= $row['enrollment_id']; ?>, 'Rejected')">Reject</button>
@@ -678,6 +701,33 @@ if (isset($_GET['delete_timetable_from_enrollment'])) {
   </main><!-- End #main -->
 
   <script>
+    // Added event listeners for the filter inputs
+    document.getElementById('filterDepartment').addEventListener('change', filterEnrollments);
+    document.getElementById('filterStartDate').addEventListener('change', filterEnrollments);
+    document.getElementById('filterEndDate').addEventListener('change', filterEnrollments);
+
+    function filterEnrollments() {
+      const department = document.getElementById('filterDepartment').value;
+      const startDate = document.getElementById('filterStartDate').value;
+      const endDate = document.getElementById('filterEndDate').value;
+      const rows = document.querySelectorAll('.datatable tbody tr');
+
+      rows.forEach(row => {
+        const rowDepartment = row.cells[3].textContent.trim();
+        const rowDate = row.cells[5].textContent.trim();
+
+        const departmentMatch = department === '' || rowDepartment === department;
+        const dateMatch = (!startDate || new Date(rowDate) >= new Date(startDate)) &&
+          (!endDate || new Date(rowDate) <= new Date(endDate));
+
+        if (departmentMatch && dateMatch) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    }
+
     function viewTimetableDetails(enrollmentId) {
       fetch(`enrollment.php?timetable_details=${enrollmentId}`)
         .then(response => {
