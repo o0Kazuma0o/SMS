@@ -1,23 +1,24 @@
 <?php
+// get_admission_info.php
 require('../database.php');
 require_once 'session.php';
 checkAccess('Admin'); // Ensure only users with the 'admin' role can access this page
 
-$id = $_GET['id'];
-$response = ['success' => false];
-
-if (!empty($id)) {
-    $stmt = $conn->prepare("SELECT * FROM sms3_temp_enroll WHERE id = ?");
-    $stmt->bind_param("i", $id);
+if (isset($_GET['id'])) {
+    $id = intval($_GET['id']);
+    $stmt = $conn->prepare("SELECT a.*, d.department_name AS department_name FROM sms3_temp_enroll a LEFT JOIN sms3_departments d ON a.department_id = d.id WHERE a.id = ?");
+    $stmt->bind_param('i', $id);
     $stmt->execute();
     $result = $stmt->get_result();
-
-    if ($result->num_rows > 0) {
-        $response['success'] = true;
-        $response['info'] = $result->fetch_assoc();
-    }
-
+    $info = $result->fetch_assoc();
     $stmt->close();
-}
 
-echo json_encode($response);
+    if ($info) {
+        echo json_encode(['success' => true, 'info' => $info]);
+    } else {
+        echo json_encode(['success' => false, 'message' => 'Admission record not found.']);
+    }
+} else {
+    echo json_encode(['success' => false, 'message' => 'Invalid request.']);
+}
+?>

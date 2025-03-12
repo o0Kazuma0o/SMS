@@ -480,14 +480,6 @@ while ($department = $departments->fetch_assoc()) {
                           <label for="gcontactnumber" class="form-label">Contact Number</label>
                           <input type="number" class="form-control" id="gcontactnumber" name="gcontactnumber" required pattern="[0-9]{10}" placeholder="11-digit phone number" oninput="validateContactNumber(this)">
                           <div class="text-danger" id="gcontactnumber-error"></div>
-                        </div>
-                      </div>
-                      <!-- Row 3: Guardian's Occupation -->
-                      <div class="row form-row">
-                        <div class="col-md-6">
-                          <label for="occupation" class="form-label">Occupation</label>
-                          <input type="text" class="form-control" id="occupation" name="occupation" required oninput="validateLettersOnly(this)">
-                          <div class="text-danger" id="occupation-error"></div>
                           <br>
                           <label class="form-check-label">
                             <input type="checkbox" class="form-check-input" name="member4ps" id="member4ps" onchange="updateCheckboxValue4ps(this)">
@@ -1143,7 +1135,6 @@ while ($department = $departments->fetch_assoc()) {
         </div>
         <div class="col-md-6">
           <p><strong>Guardian's Full Name:</strong> ${guardianFullName}</p>
-          <p><strong>Guardian's Occupation:</strong> ${guardianInfo.occupation}</p>
           <p><strong>Guardian's Contact Number:</strong> ${guardianInfo.gcontactnumber}</p>
           <p><strong>Guardian's member of 4ps:</strong> ${guardianInfo.member4ps}</p>
         </div>
