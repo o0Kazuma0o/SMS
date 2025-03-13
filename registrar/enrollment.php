@@ -1,7 +1,7 @@
 <?php
 require('../database.php');
 require_once 'session.php';
-checkAccess('Registrar');
+checkAccess('Admin');
 
 $currentSemester = getCurrentActiveSemester($conn);
 
@@ -99,28 +99,176 @@ $query = "
 
 $result = $conn->query($query);
 
-// Handle status updates (Approve/Reject)
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['enrollment_id'], $_POST['status'])) {
+// Handle receipt status updates (Paid/Rejected)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['enrollment_id'], $_POST['receipt_status'])) {
   $enrollmentId = intval($_POST['enrollment_id']);
-  $status = $_POST['status'];
+  $receiptStatus = $_POST['receipt_status'];
 
   try {
-    if ($status === 'Rejected') {
-      // Delete the enrollment record
-      $stmt = $conn->prepare("DELETE FROM sms3_pending_enrollment WHERE id = ?");
-      $stmt->bind_param("i", $enrollmentId);
-      $stmt->execute();
-      $stmt->close();
-
-      echo json_encode(['status' => 'success', 'message' => 'Enrollment rejected successfully.']);
-      exit; // Stop script execution after sending the JSON response
-    } elseif ($status === 'Approved') {
+    if ($receiptStatus === 'Rejected') {
       // Fetch pending enrollment details
       $stmt = $conn->prepare("
               SELECT student_id, timetable_1, timetable_2, timetable_3, timetable_4, timetable_5, timetable_6, timetable_7, timetable_8
               FROM sms3_pending_enrollment WHERE id = ?
           ");
       $stmt->bind_param("i", $enrollmentId);
+      $stmt->execute();
+      $result = $stmt->get_result();
+      $enrollmentData = $result->fetch_assoc();
+      $stmt->close();
+
+      if ($enrollmentData) {
+        // Insert data into sms3_enrollment_data with status Rejected
+        $stmt = $conn->prepare("INSERT INTO sms3_enrollment_data (
+                student_id, timetable_1, timetable_2, timetable_3, timetable_4, timetable_5, timetable_6, timetable_7, timetable_8, receipt_status, status
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $status = 'Rejected';
+        $stmt->bind_param(
+          "iiiiiiiiiss",
+          $enrollmentData['student_id'],
+          $enrollmentData['timetable_1'],
+          $enrollmentData['timetable_2'],
+          $enrollmentData['timetable_3'],
+          $enrollmentData['timetable_4'],
+          $enrollmentData['timetable_5'],
+          $enrollmentData['timetable_6'],
+          $enrollmentData['timetable_7'],
+          $enrollmentData['timetable_8'],
+          $receiptStatus,
+          $status
+        );
+        $stmt->execute();
+        $stmt->close();
+
+        // Delete the pending enrollment record
+        $stmt = $conn->prepare("DELETE FROM sms3_pending_enrollment WHERE id = ?");
+        $stmt->bind_param("i", $enrollmentId);
+        $stmt->execute();
+        $stmt->close();
+
+        echo json_encode(['status' => 'success', 'message' => 'Enrollment rejected successfully.']);
+        exit; // Stop script execution after sending the JSON response
+      } else {
+        echo json_encode(['status' => 'error', 'message' => 'Failed to fetch enrollment details.']);
+        exit; // Stop script execution
+      }
+    } elseif ($receiptStatus === 'Paid') {
+      // Fetch pending enrollment details
+      $stmt = $conn->prepare("
+              SELECT student_id, timetable_1, timetable_2, timetable_3, timetable_4, timetable_5, timetable_6, timetable_7, timetable_8
+              FROM sms3_pending_enrollment WHERE id = ?
+          ");
+      $stmt->bind_param("i", $enrollmentId);
+      $stmt->execute();
+      $result = $stmt->get_result();
+      $enrollmentData = $result->fetch_assoc();
+      $stmt->close();
+
+      if ($enrollmentData) {
+        // Check if the student is already enrolled
+        $stmt = $conn->prepare("SELECT status FROM sms3_students WHERE id = ?");
+        $stmt->bind_param("i", $enrollmentData['student_id']);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $studentData = $result->fetch_assoc();
+        $stmt->close();
+
+        if ($studentData && $studentData['status'] === 'Enrolled') {
+          // Update receipt_status to Paid in sms3_pending_enrollment
+          $stmt = $conn->prepare("UPDATE sms3_pending_enrollment SET receipt_status = 'Paid' WHERE id = ?");
+          $stmt->bind_param("i", $enrollmentId);
+          $stmt->execute();
+          $stmt->close();
+        }
+
+        // Update student record with timetable
+        $stmt = $conn->prepare("
+                  UPDATE sms3_students
+                  SET timetable_1 = ?, timetable_2 = ?, timetable_3 = ?, timetable_4 = ?, timetable_5 = ?, timetable_6 = ?, timetable_7 = ?, timetable_8 = ?, status = 'Enrolled', admission_type = 'Continuing'
+                  WHERE id = ?
+              ");
+        $stmt->bind_param(
+          "iiiiiiiii",
+          $enrollmentData['timetable_1'],
+          $enrollmentData['timetable_2'],
+          $enrollmentData['timetable_3'],
+          $enrollmentData['timetable_4'],
+          $enrollmentData['timetable_5'],
+          $enrollmentData['timetable_6'],
+          $enrollmentData['timetable_7'],
+          $enrollmentData['timetable_8'],
+          $enrollmentData['student_id']
+        );
+        $stmt->execute();
+        $stmt->close();
+
+        // Insert data into sms3_enrollment_data with status Approved
+        $stmt = $conn->prepare("INSERT INTO sms3_enrollment_data (
+                student_id, timetable_1, timetable_2, timetable_3, timetable_4, timetable_5, timetable_6, timetable_7, timetable_8, receipt_status, status
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $status = 'Approved';
+        $paidStatus = 'Paid';
+        $stmt->bind_param(
+          "iiiiiiiiiss",
+          $enrollmentData['student_id'],
+          $enrollmentData['timetable_1'],
+          $enrollmentData['timetable_2'],
+          $enrollmentData['timetable_3'],
+          $enrollmentData['timetable_4'],
+          $enrollmentData['timetable_5'],
+          $enrollmentData['timetable_6'],
+          $enrollmentData['timetable_7'],
+          $enrollmentData['timetable_8'],
+          $paidStatus,
+          $status
+        );
+        $stmt->execute();
+        $stmt->close();
+
+        // Delete the pending enrollment record
+        $stmt = $conn->prepare("DELETE FROM sms3_pending_enrollment WHERE id = ?");
+        $stmt->bind_param("i", $enrollmentId);
+        $stmt->execute();
+        $stmt->close();
+
+        echo json_encode(['status' => 'success', 'message' => 'Enrollment marked as paid successfully.']);
+        exit; // Stop script execution
+      } else {
+        echo json_encode(['status' => 'error', 'message' => 'Failed to fetch enrollment details.']);
+        exit; // Stop script execution
+      }
+    }
+  } catch (Exception $e) {
+    echo json_encode(['status' => 'error', 'message' => 'An unexpected error occurred.']);
+    exit; // Stop script execution
+  }
+}
+
+/*
+// Automatically update receipt_status to Paid if student is already enrolled
+if (isset($_GET['check_receipt_status'])) {
+  $query = "
+      SELECT pe.id AS enrollment_id, s.id AS student_id, s.status
+      FROM sms3_pending_enrollment pe
+      JOIN sms3_students s ON pe.student_id = s.id
+      WHERE s.status = 'Enrolled' AND pe.receipt_status != 'Paid'
+  ";
+  $result = $conn->query($query);
+
+  $updatedEnrollments = [];
+  if ($result && $result->num_rows > 0) {
+    while ($row = $result->fetch_assoc()) {
+      $stmt = $conn->prepare("UPDATE sms3_pending_enrollment SET receipt_status = 'Paid' WHERE id = ?");
+      $stmt->bind_param("i", $row['enrollment_id']);
+      $stmt->execute();
+      $stmt->close();
+
+      // Fetch pending enrollment details
+      $stmt = $conn->prepare("
+              SELECT student_id, timetable_1, timetable_2, timetable_3, timetable_4, timetable_5, timetable_6, timetable_7, timetable_8
+              FROM sms3_pending_enrollment WHERE id = ?
+          ");
+      $stmt->bind_param("i", $row['enrollment_id']);
       $stmt->execute();
       $result = $stmt->get_result();
       $enrollmentData = $result->fetch_assoc();
@@ -148,24 +296,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['enrollment_id'], $_PO
         $stmt->execute();
         $stmt->close();
 
-        // Delete the pending enrollment record
-        $stmt = $conn->prepare("DELETE FROM sms3_pending_enrollment WHERE id = ?");
-        $stmt->bind_param("i", $enrollmentId);
+        // Insert data into sms3_enrollment_data with status Approved
+        $stmt = $conn->prepare("INSERT INTO sms3_enrollment_data (
+                student_id, timetable_1, timetable_2, timetable_3, timetable_4, timetable_5, timetable_6, timetable_7, timetable_8, receipt_status, status
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $status = 'Approved';
+        $paidStatus = 'Paid';
+        $stmt->bind_param(
+          "iiiiiiiiiss",
+          $enrollmentData['student_id'],
+          $enrollmentData['timetable_1'],
+          $enrollmentData['timetable_2'],
+          $enrollmentData['timetable_3'],
+          $enrollmentData['timetable_4'],
+          $enrollmentData['timetable_5'],
+          $enrollmentData['timetable_6'],
+          $enrollmentData['timetable_7'],
+          $enrollmentData['timetable_8'],
+          $paidStatus,
+          $status
+        );
         $stmt->execute();
         $stmt->close();
 
-        echo json_encode(['status' => 'success', 'message' => 'Enrollment approved successfully.']);
-        exit; // Stop script execution
-      } else {
-        echo json_encode(['status' => 'error', 'message' => 'Failed to fetch enrollment details.']);
-        exit; // Stop script execution
+        // Delete the pending enrollment record
+        $stmt = $conn->prepare("DELETE FROM sms3_pending_enrollment WHERE id = ?");
+        $stmt->bind_param("i", $row['enrollment_id']);
+        $stmt->execute();
+        $stmt->close();
+
+        $updatedEnrollments[] = $row['enrollment_id'];
       }
     }
-  } catch (Exception $e) {
-    echo json_encode(['status' => 'error', 'message' => 'An unexpected error occurred.']);
-    exit; // Stop script execution
   }
-}
+
+  echo json_encode(['status' => 'success', 'updatedEnrollments' => $updatedEnrollments]);
+  exit;
+} */
 
 // Handle fetching a single timetable for editing
 if (isset($_GET['fetch_timetable_id'])) {
@@ -606,7 +773,7 @@ if (isset($_GET['delete_timetable_from_enrollment'])) {
                       <td>
                         <span class="badge bg-warning text-dark">Not Paid</span>
                       <td>
-                        <button class="btn btn-success btn-sm" onclick="updateEnrollmentStatus(<?= $row['enrollment_id']; ?>, 'Approved')">Approve</button>
+                        <button class="btn btn-success btn-sm" onclick="updateEnrollmentStatus(<?= $row['enrollment_id']; ?>, 'Paid')">Paid</button>
                         <button class="btn btn-danger btn-sm" onclick="updateEnrollmentStatus(<?= $row['enrollment_id']; ?>, 'Rejected')">Reject</button>
                       </td>
                     </tr>
@@ -765,12 +932,12 @@ if (isset($_GET['delete_timetable_from_enrollment'])) {
     }
 
 
-    function updateEnrollmentStatus(enrollmentId, status) {
-      if (!confirm(`Are you sure you want to ${status.toLowerCase()} this enrollment?`)) return;
+    function updateEnrollmentStatus(enrollmentId, receiptStatus) {
+      if (!confirm(`Are you sure you want to mark this enrollment as ${receiptStatus.toLowerCase()}?`)) return;
 
       const form = new FormData();
       form.append('enrollment_id', enrollmentId);
-      form.append('status', status);
+      form.append('receipt_status', receiptStatus);
 
       fetch('enrollment.php', {
           method: 'POST',
@@ -896,6 +1063,32 @@ if (isset($_GET['delete_timetable_from_enrollment'])) {
           showPopupMessage("An unexpected error occurred while deleting the timetable.", 'error');
         });
     }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      // Periodically check and update receipt status
+      setInterval(checkAndUpdateReceiptStatus, 5000); // Check every 5 seconds
+
+      function checkAndUpdateReceiptStatus() {
+        fetch('enrollment.php?check_receipt_status')
+          .then(response => response.json())
+          .then(data => {
+            if (data.status === 'success') {
+              // Update the table to reflect the changes
+              const rows = document.querySelectorAll('.datatable tbody tr');
+              rows.forEach(row => {
+                const enrollmentId = row.querySelector('button.btn-success').getAttribute('onclick').match(/\d+/)[0];
+                if (data.updatedEnrollments.includes(parseInt(enrollmentId))) {
+                  row.querySelector('.badge').classList.remove('bg-warning', 'text-dark');
+                  row.querySelector('.badge').classList.add('bg-success');
+                  row.querySelector('.badge').textContent = 'Paid';
+                  row.querySelector('button.btn-success').disabled = true;
+                }
+              });
+            }
+          })
+          .catch(error => console.error('Error checking receipt status:', error));
+      }
+    });
 
     function showPopupMessage(message, type = 'success') {
       const popup = document.createElement('div');

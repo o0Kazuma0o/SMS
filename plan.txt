@@ -20,17 +20,18 @@ changing course - done
 filter: ez af done
 
 move the prcoess to new database: thursday
-admission
-enrollment
+admission - done
+enrollment - done
 
 retain old student number for returnee: thursday if kaya
 
 friday
 view Requirements on student
-send account on gmail after process 
-change ui of admission Form
+send account on gmail after proces
 add profile tab and changing password
-AI
+change ui of admission Form
+
+AI - sana gumana agad
 
 optional:
 merge rooms, sections and subjects

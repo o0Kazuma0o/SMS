@@ -18,12 +18,11 @@ function getCurrentAcademicYear($conn)
 }
 
 // Handle status update requests
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_id'], $_POST['status'], $_POST['receipt_status'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_id'], $_POST['receipt_status'])) {
   $admissionId = intval($_POST['admission_id']);
-  $status = $_POST['status'];
   $receiptStatus = $_POST['receipt_status'];
 
-  if ($status === 'Enrolled' && $receiptStatus === 'Paid') {
+  if ($receiptStatus === 'Paid') {
     // Move record to sms3_students
     $stmt = $conn->prepare("SELECT * FROM sms3_temp_enroll WHERE id = ?");
     $stmt->bind_param('i', $admissionId);
@@ -135,13 +134,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_id'], $_POS
           $admissionData['email'],
           $admissionData['contact_number'],
           $admissionData['facebook_name'],
-          $admissionData['working_student'],
           $admissionData['address'],
           $admissionData['father_name'],
           $admissionData['mother_name'],
           $admissionData['guardian_name'],
           $admissionData['guardian_contact'],
-          $admissionData['member4ps'],
           $admissionData['primary_school'],
           $admissionData['primary_year'],
           $admissionData['secondary_school'],
@@ -149,6 +146,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_id'], $_POS
           $admissionData['last_school'],
           $admissionData['last_school_year'],
           $admissionData['referral_source'],
+          $admissionData['working_student'],
+          $admissionData['member4ps'],
           $admissionData['form138'],
           $admissionData['good_moral'],
           $admissionData['form137'],
@@ -174,9 +173,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_id'], $_POS
       echo json_encode(['success' => false, 'message' => 'Admission record not found.']);
     }
   } else {
-    $stmt = $conn->prepare("UPDATE sms3_temp_enroll SET status = ?, receipt_status = ? WHERE id = ?");
-    $stmt->bind_param("ssi", $status, $receiptStatus, $admissionId);
-    echo json_encode($stmt->execute() ? ['success' => true, 'message' => 'Admission status updated successfully.'] : ['success' => false, 'message' => 'Failed to update admission status.']);
+    $stmt = $conn->prepare("UPDATE sms3_temp_enroll SET receipt_status = ? WHERE id = ?");
+    $stmt->bind_param("si", $receiptStatus, $admissionId);
+    echo json_encode($stmt->execute() ? ['success' => true, 'message' => 'Receipt status updated successfully.'] : ['success' => false, 'message' => 'Failed to update receipt status.']);
   }
   exit;
 }
@@ -696,12 +695,12 @@ if (!$result) {
     });
 
     // JavaScript function to update admission status
-    function updateAdmissionStatus(admissionId, status) {
-      if (!confirm('Are you sure you want to update the status to ' + status + '?')) {
+    function updateAdmissionStatus(admissionId) {
+      if (!confirm('Enroll Student?')) {
         return;
       }
 
-      // Send an AJAX request to update the status and receipt_status
+      // Send an AJAX request to update the receipt_status
       fetch('admission_temp.php', {
           method: 'POST',
           headers: {
@@ -709,7 +708,6 @@ if (!$result) {
           },
           body: new URLSearchParams({
             'admission_id': admissionId,
-            'status': status,
             'receipt_status': 'Paid'
           })
         })
