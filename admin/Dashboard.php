@@ -52,38 +52,38 @@ function getRealtimeUsers($propertyId)
 
 function getTotalUsers($propertyId)
 {
-    try {
-        $client = initializeAnalytics();
-        $service = new Google\Service\AnalyticsData($client);
+  try {
+    $client = initializeAnalytics();
+    $service = new Google\Service\AnalyticsData($client);
 
-        $dateRange = new Google\Service\AnalyticsData\DateRange([
-            'start_date' => '2020-01-01',
-            'end_date' => 'today'
-        ]);
+    $dateRange = new Google\Service\AnalyticsData\DateRange([
+      'start_date' => '2020-01-01',
+      'end_date' => 'today'
+    ]);
 
-        $request = new Google\Service\AnalyticsData\RunReportRequest([
-            'dateRanges' => [$dateRange],
-            'metrics' => [new Google\Service\AnalyticsData\Metric(['name' => 'totalUsers'])]
-        ]);
+    $request = new Google\Service\AnalyticsData\RunReportRequest([
+      'dateRanges' => [$dateRange],
+      'metrics' => [new Google\Service\AnalyticsData\Metric(['name' => 'totalUsers'])]
+    ]);
 
-        $response = $service->properties->runReport("properties/$propertyId", $request);
-        error_log('Total Users RAW Response: ' . print_r($response->toSimpleObject(), true));
+    $response = $service->properties->runReport("properties/$propertyId", $request);
+    error_log('Total Users RAW Response: ' . print_r($response->toSimpleObject(), true));
 
-        if (!empty($response->rows)) {
-            $firstRow = $response->rows[0];
-            if (!empty($firstRow->metricValues)) {
-                $totalUsers = $firstRow->metricValues[0]->value;
-                error_log('GA4 Total Users: Found ' . $totalUsers . ' users');
-                return (int)$totalUsers;
-            }
-        }
-
-        error_log('GA4 Total Users: No users found');
-        return 0;
-    } catch (Exception $e) {
-        error_log('GA4 Total Users Error: ' . $e->getMessage());
-        return 'N/A';
+    if (!empty($response->rows)) {
+      $firstRow = $response->rows[0];
+      if (!empty($firstRow->metricValues)) {
+        $totalUsers = $firstRow->metricValues[0]->value;
+        error_log('GA4 Total Users: Found ' . $totalUsers . ' users');
+        return (int)$totalUsers;
+      }
     }
+
+    error_log('GA4 Total Users: No users found');
+    return 0;
+  } catch (Exception $e) {
+    error_log('GA4 Total Users Error: ' . $e->getMessage());
+    return 'N/A';
+  }
 }
 
 // Fetch the total number of pending admissions
@@ -314,7 +314,7 @@ if ($result_enrollment_status) {
           <span>Academic Structure</span>
         </a>
       </li>
- 
+
       <li class="nav-item">
         <a class="nav-link " href="manage_departments.php">
           <i class="bi bi-grid"></i>
@@ -468,47 +468,47 @@ if ($result_enrollment_status) {
             </div><!-- End Customers Card -->
 
             <div class="col-xxl-4 col-md-6">
-                <div class="card info-card sales-card">
-                    <div class="card-body">
-                        <h5 class="card-title">Realtime Users</h5>
-                        <div class="d-flex align-items-center">
-                            <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
-                                <i class="bi bi-people-fill"></i>
-                            </div>
-                            <div class="ps-3">
-                                <h6><?= is_numeric($realtimeUsers) ? number_format((float)$realtimeUsers) : $realtimeUsers ?></h6>
-                                <span class="text-muted small pt-2 ps-1">Users Viewing the Website</span>
-                            </div>
-                        </div>
+              <div class="card info-card sales-card">
+                <div class="card-body">
+                  <h5 class="card-title">Users</h5>
+                  <div class="d-flex align-items-center">
+                    <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
+                      <i class="bi bi-people-fill"></i>
                     </div>
+                    <div class="ps-3">
+                      <h6><?= is_numeric($realtimeUsers) ? number_format((float)$realtimeUsers) : $realtimeUsers ?></h6>
+                      <span class="text-muted small pt-2 ps-1">Visited the website 30 mins. ago</span>
+                    </div>
+                  </div>
                 </div>
+              </div>
             </div>
-            
+
             <!-- Total Users Card -->
             <div class="col-xxl-4 col-md-6">
-                <div class="card info-card customers-card">
-                    <div class="card-body">
-                        <div class="filter">
-                            <select class="form-select" id="timeRangeFilter">
-                                <option value="all_time">All Time</option>
-                                <option value="today">Today</option>
-                                <option value="this_week">This Week</option>
-                                <option value="this_month">This Month</option>
-                                <option value="this_year">This Year</option>
-                            </select>
-                        </div>
-                        <h5 class="card-title">Total Users</h5>
-                        <div class="d-flex align-items-center">
-                            <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
-                                <i class="bi bi-people"></i>
-                            </div>
-                            <div class="ps-3">
-                                <h6 id="totalUsersValue"><?= is_numeric($totalVisitors) ? number_format((float)$totalVisitors) : $totalVisitors ?></h6>
-                                <span class="text-muted small pt-2 ps-1">Total Users Visited The Website</span>
-                            </div>
-                        </div>
+              <div class="card info-card customers-card">
+                <div class="card-body">
+                  <!-- <div class="filter">
+                    <select class="form-select" id="timeRangeFilter">
+                      <option value="all_time">All Time</option>
+                      <option value="today">Today</option>
+                      <option value="this_week">This Week</option>
+                      <option value="this_month">This Month</option>
+                      <option value="this_year">This Year</option>
+                    </select>
+                  </div> -->
+                  <h5 class="card-title">Total Users</h5>
+                  <div class="d-flex align-items-center">
+                    <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
+                      <i class="bi bi-people"></i>
                     </div>
+                    <div class="ps-3">
+                      <h6 id="totalUsersValue"><?= is_numeric($totalVisitors) ? number_format((float)$totalVisitors) : $totalVisitors ?></h6>
+                      <span class="text-muted small pt-2 ps-1">Total Users Visited The Website</span>
+                    </div>
+                  </div>
                 </div>
+              </div>
             </div>
 
             <!-- Forecasting -->

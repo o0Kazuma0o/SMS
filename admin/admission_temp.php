@@ -17,7 +17,6 @@ function getCurrentAcademicYear($conn)
   return ($result && $result->num_rows > 0) ? $result->fetch_assoc()['id'] : null;
 }
 
-
 // Handle status update requests
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_id'], $_POST['status'], $_POST['receipt_status'])) {
   $admissionId = intval($_POST['admission_id']);
@@ -25,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_id'], $_POS
   $receiptStatus = $_POST['receipt_status'];
 
   if ($status === 'Enrolled' && $receiptStatus === 'Paid') {
-    // Move record to sms3_student
+    // Move record to sms3_students
     $stmt = $conn->prepare("SELECT * FROM sms3_temp_enroll WHERE id = ?");
     $stmt->bind_param('i', $admissionId);
     $stmt->execute();
@@ -103,15 +102,74 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_id'], $_POS
       );
 
       if ($stmt->execute()) {
+        // Update sms3_temp_enroll
         $updateStmt = $conn->prepare("UPDATE sms3_temp_enroll SET status = 'Enrolled', receipt_status = 'Paid' WHERE id = ?");
         $updateStmt->bind_param('i', $admissionId);
         $updateStmt->execute();
         $updateStmt->close();
-        echo json_encode(['success' => true, 'message' => 'Student moved to temporary enrollment successfully!']);
+
+        // Insert data into sms3_admissions_data
+        $stmt = $conn->prepare("INSERT INTO sms3_admissions_data (
+          student_number, first_name, middle_name, last_name, department_id, branch, admission_type, 
+          year_level, sex, civil_status, religion, birthday, email, contact_number, facebook_name, 
+          address, father_name, mother_name, guardian_name, guardian_contact, primary_school, primary_year, 
+          secondary_school, secondary_year, last_school, last_school_year, referral_source, working_student, member4ps,
+          form138, good_moral, form137, birth_certificate, brgy_clearance,
+          honorable_dismissal, transcript_of_records, certificate_of_grades, status, receipt_status
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+
+        $stmt->bind_param(
+          "sssssssssssssssssssssssssssssssssssssss",
+          $admissionData['student_number'],
+          $admissionData['first_name'],
+          $admissionData['middle_name'],
+          $admissionData['last_name'],
+          $admissionData['department_id'],
+          $admissionData['branch'],
+          $admissionData['admission_type'],
+          $admissionData['year_level'],
+          $admissionData['sex'],
+          $admissionData['civil_status'],
+          $admissionData['religion'],
+          $admissionData['birthday'],
+          $admissionData['email'],
+          $admissionData['contact_number'],
+          $admissionData['facebook_name'],
+          $admissionData['working_student'],
+          $admissionData['address'],
+          $admissionData['father_name'],
+          $admissionData['mother_name'],
+          $admissionData['guardian_name'],
+          $admissionData['guardian_contact'],
+          $admissionData['member4ps'],
+          $admissionData['primary_school'],
+          $admissionData['primary_year'],
+          $admissionData['secondary_school'],
+          $admissionData['secondary_year'],
+          $admissionData['last_school'],
+          $admissionData['last_school_year'],
+          $admissionData['referral_source'],
+          $admissionData['form138'],
+          $admissionData['good_moral'],
+          $admissionData['form137'],
+          $admissionData['birth_certificate'],
+          $admissionData['brgy_clearance'],
+          $admissionData['honorable_dismissal'],
+          $admissionData['transcript_of_records'],
+          $admissionData['certificate_of_grades'],
+          $status,
+          $receiptStatus
+        );
+
+        if ($stmt->execute()) {
+          echo json_encode(['success' => true, 'message' => 'Student moved to temporary enrollment and admissions data successfully!']);
+        } else {
+          echo json_encode(['success' => false, 'message' => 'Failed to insert admissions data record.']);
+        }
+        $stmt->close();
       } else {
         echo json_encode(['success' => false, 'message' => 'Failed to insert student record.']);
       }
-      $stmt->close();
     } else {
       echo json_encode(['success' => false, 'message' => 'Admission record not found.']);
     }
