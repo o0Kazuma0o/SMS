@@ -268,7 +268,7 @@ while ($department = $departments->fetch_assoc()) {
                       <div class="row form-row" id="oldStudentNumberRow" style="display: none;">
                         <div class="col-md-3">
                           <label for="oldStudentNumber" class="form-label">Old Student Number</label>
-                          <input type="text" class="form-control" id="oldStudentNumber" name="oldStudentNumber">
+                          <input type="text" class="form-control" id="oldStudentNumber" name="oldStudentNumber" pattern="[0-9]{10}" oninput="validateOldStudentNumber(this)">
                           <div class="text-danger" id="oldStudentNumber-error"></div>
                         </div>
                       </div>
@@ -1189,6 +1189,14 @@ while ($department = $departments->fetch_assoc()) {
 
       if (input.value.length > 11) {
         input.value = input.value.slice(0, 11);
+      }
+    }
+
+    function validateOldStudentNumber(input) {
+      input.value = input.value.replace(/\D/g, ''); // Allow only numbers
+
+      if (input.value.length > 8) {
+        input.value = input.value.slice(0, 8);
       }
     }
 

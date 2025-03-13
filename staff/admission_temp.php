@@ -399,6 +399,7 @@ if (!$result) {
                   <th>Information</th>
                   <th>Date Submitted</th>
                   <th>Status</th>
+                  <th>Receipt</th>
                   <th>Action</th>
                 </tr>
               </thead>
@@ -421,6 +422,11 @@ if (!$result) {
                       <td>
                         <span class="badge bg-<?= $row['status'] == 'Temporarily Enrolled' ? 'warning' : ($row['status'] == 'Enrolled' ? 'success' : 'danger') ?>">
                           <?= htmlspecialchars($row['status']) ?>
+                        </span>
+                      </td>
+                      <td>
+                        <span class="badge bg-<?= $row['receipt_status'] == 'Not Paid' ? 'warning' : ($row['receipt_status'] == 'Paid' ? 'success' : 'danger') ?>">
+                          <?= htmlspecialchars($row['receipt_status']) ?>
                         </span>
                       </td>
                       <td>
@@ -537,7 +543,6 @@ if (!$result) {
             </div>
             <div class="col-md-6">
               <p><strong>Admission Type:</strong> ${info.admission_type}</p>
-              ${info.admission_type === 'Returnee' ? `<p><strong>Old Student Number:</strong> ${info.old_student_number}</p>` : ''}
               <p><strong>Program:</strong> ${info.department_name}</p>
               <p><strong>Year Level:</strong> ${info.year_level}</p>
               <p><strong>Working Student:</strong> ${info.working_student === 'Yes' ? 'Yes' : 'No'}</p>
@@ -554,7 +559,6 @@ if (!$result) {
             </div>
             <div class="col-md-6">
               <p><strong>Guardian's Full Name:</strong> ${info.guardian_name}</p>
-              <p><strong>Guardian's Occupation:</strong> ${info.occupation}</p>
               <p><strong>Guardian's Contact Number:</strong> ${info.guardian_contact}</p>
               <p><strong>Guardian's member of 4ps:</strong> ${info.member4ps === 'Yes' ? 'Yes' : 'No'}</p>
             </div>

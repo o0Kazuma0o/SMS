@@ -19,11 +19,12 @@ function getCurrentAcademicYear($conn)
 
 
 // Handle status update requests
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_id'], $_POST['status'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_id'], $_POST['status'], $_POST['receipt_status'])) {
   $admissionId = intval($_POST['admission_id']);
   $status = $_POST['status'];
+  $receiptStatus = $_POST['receipt_status'];
 
-  if ($status === 'Temporarily Enrolled') {
+  if ($status === 'Enrolled' && $receiptStatus === 'Paid') {
     // Move record to sms3_student
     $stmt = $conn->prepare("SELECT * FROM sms3_temp_enroll WHERE id = ?");
     $stmt->bind_param('i', $admissionId);
@@ -41,8 +42,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_id'], $_POS
       // Generate hashed password
       $password = generatePassword($admissionData['last_name']);
 
-      // Insert data into sms3_student
-      $stmt = $conn->prepare("INSERT INTO sms3_student (
+      // Insert data into sms3_students
+      $stmt = $conn->prepare("INSERT INTO sms3_students (
               student_number, first_name, middle_name, last_name, academic_year, username, password, role, department_id, branch, admission_type, 
               year_level, sex, civil_status, religion, birthday, email, contact_number, facebook_name, 
               address, father_name, mother_name, guardian_name, guardian_contact, primary_school, primary_year, 
@@ -102,7 +103,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_id'], $_POS
       );
 
       if ($stmt->execute()) {
-        $updateStmt = $conn->prepare("UPDATE sms3_pending_admission SET status = 'Enrolled' WHERE id = ?");
+        $updateStmt = $conn->prepare("UPDATE sms3_temp_enroll SET status = 'Enrolled', receipt_status = 'Paid' WHERE id = ?");
         $updateStmt->bind_param('i', $admissionId);
         $updateStmt->execute();
         $updateStmt->close();
@@ -115,8 +116,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_id'], $_POS
       echo json_encode(['success' => false, 'message' => 'Admission record not found.']);
     }
   } else {
-    $stmt = $conn->prepare("UPDATE sms3_pending_admission SET status = ? WHERE id = ?");
-    $stmt->bind_param("si", $status, $admissionId);
+    $stmt = $conn->prepare("UPDATE sms3_temp_enroll SET status = ?, receipt_status = ? WHERE id = ?");
+    $stmt->bind_param("ssi", $status, $receiptStatus, $admissionId);
     echo json_encode($stmt->execute() ? ['success' => true, 'message' => 'Admission status updated successfully.'] : ['success' => false, 'message' => 'Failed to update admission status.']);
   }
   exit;
@@ -399,6 +400,7 @@ if (!$result) {
                   <th>Information</th>
                   <th>Date Submitted</th>
                   <th>Status</th>
+                  <th>Receipt</th>
                   <th>Action</th>
                 </tr>
               </thead>
@@ -424,10 +426,14 @@ if (!$result) {
                         </span>
                       </td>
                       <td>
+                        <span class="badge bg-<?= $row['receipt_status'] == 'Not Paid' ? 'warning' : ($row['receipt_status'] == 'Paid' ? 'success' : 'danger') ?>">
+                          <?= htmlspecialchars($row['receipt_status']) ?>
+                        </span>
+                      </td>
+                      <td>
                         <!-- Approve and Reject buttons -->
-                        <?php if ($row['status'] !== 'Temporarily Enrolled' && $row['status'] !== 'Rejected'): ?>
-                          <button class="btn btn-primary btn-sm" onclick="processAdmission(<?= $row['id'] ?>, '<?= $row['admission_type'] ?>')">Process Admission</button>
-                          <button class="btn btn-danger btn-sm" onclick="updateAdmissionStatus(<?= $row['id'] ?>, 'Rejected')">Reject</button>
+                        <?php if ($row['status'] == 'Temporarily Enrolled' && $row['receipt_status'] == 'Not Paid'): ?>
+                          <button class="btn btn-success btn-sm" onclick="updateAdmissionStatus(<?= $row['id'] ?>, 'Enrolled')">Enroll</button>
                         <?php else: ?>
                           <!-- No action if already approved or rejected -->
                           <span>No Action Available</span>
@@ -537,7 +543,6 @@ if (!$result) {
             </div>
             <div class="col-md-6">
               <p><strong>Admission Type:</strong> ${info.admission_type}</p>
-              ${info.admission_type === 'Returnee' ? `<p><strong>Old Student Number:</strong> ${info.old_student_number}</p>` : ''}
               <p><strong>Program:</strong> ${info.department_name}</p>
               <p><strong>Year Level:</strong> ${info.year_level}</p>
               <p><strong>Working Student:</strong> ${info.working_student === 'Yes' ? 'Yes' : 'No'}</p>
@@ -554,7 +559,6 @@ if (!$result) {
             </div>
             <div class="col-md-6">
               <p><strong>Guardian's Full Name:</strong> ${info.guardian_name}</p>
-              <p><strong>Guardian's Occupation:</strong> ${info.occupation}</p>
               <p><strong>Guardian's Contact Number:</strong> ${info.guardian_contact}</p>
               <p><strong>Guardian's member of 4ps:</strong> ${info.member4ps === 'Yes' ? 'Yes' : 'No'}</p>
             </div>
@@ -608,66 +612,6 @@ if (!$result) {
         });
     }
 
-    function processAdmission(admissionId, admissionType) {
-      document.getElementById('admissionId').value = admissionId;
-
-      let requirementsHtml = '';
-      if (admissionType === 'New Regular') {
-        requirementsHtml = `
-                    <div class="mb-3">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="form138" name="form138">
-                            <label class="form-check-label" for="form138">Form 138</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="good_moral" name="good_moral">
-                            <label class="form-check-label" for="good_moral">Good Moral Certificate</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="form137" name="form137">
-                            <label class="form-check-label" for="form137">Form 137</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="birth_certificate" name="birth_certificate">
-                            <label class="form-check-label" for="birth_certificate">Birth Certificate</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="brgy_clearance" name="brgy_clearance">
-                            <label class="form-check-label" for="brgy_clearance">Barangay Clearance</label>
-                        </div>
-                    </div>
-                `;
-      } else if (admissionType === 'Transferee') {
-        requirementsHtml = `
-                    <div class="mb-3">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="honorable_dismissal" name="honorable_dismissal">
-                            <label class="form-check-label" for="honorable_dismissal">Honorable Dismissal</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="transcript_of_records" name="transcript_of_records">
-                            <label class="form-check-label" for="transcript_of_records">Transcript of Records</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="certificate_of_grades" name="certificate_of_grades">
-                            <label class="form-check-label" for="certificate_of_grades">Certificate of Grades</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="brgy_clearance" name="brgy_clearance">
-                            <label class="form-check-label" for="brgy_clearance">Barangay Clearance</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="birth_certificate" name="birth_certificate">
-                            <label class="form-check-label" for="birth_certificate">Birth Certificate</label>
-                        </div>
-                    </div>
-                `;
-      }
-
-      document.getElementById('requirements').innerHTML = requirementsHtml;
-      new bootstrap.Modal(document.getElementById('processAdmissionModal')).show();
-    }
-
     document.getElementById('admissionForm').addEventListener('submit', function(e) {
       e.preventDefault();
       const admissionId = document.getElementById('admissionId').value;
@@ -699,15 +643,16 @@ if (!$result) {
         return;
       }
 
-      // Send an AJAX request to update the status
-      fetch('admission.php', {
+      // Send an AJAX request to update the status and receipt_status
+      fetch('admission_temp.php', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded'
           },
           body: new URLSearchParams({
             'admission_id': admissionId,
-            'status': status
+            'status': status,
+            'receipt_status': 'Paid'
           })
         })
         .then(response => response.json())

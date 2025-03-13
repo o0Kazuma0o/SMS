@@ -72,8 +72,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_id'], $_POS
               address, father_name, mother_name, guardian_name, guardian_contact, primary_school, primary_year, 
               secondary_school, secondary_year, last_school, last_school_year, referral_source, working_student, member4ps,
               form138, good_moral, form137, birth_certificate, brgy_clearance,
-              honorable_dismissal, transcript_of_records, certificate_of_grades, status
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+              honorable_dismissal, transcript_of_records, certificate_of_grades, status, receipt_status
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
       $form138 = $admissionData['admission_type'] === 'New Regular' ? (isset($_POST['form138']) ? 'Submitted' : 'To Be Followed') : NULL;
       $form137 = $admissionData['admission_type'] === 'New Regular' ? (isset($_POST['form137']) ? 'Submitted' : 'To Be Followed') : NULL;
@@ -84,9 +84,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_id'], $_POS
       $transcriptOfRecords = $admissionData['admission_type'] === 'Transferee' ? (isset($_POST['transcript_of_records']) ? 'Submitted' : 'To Be Followed') : NULL;
       $certificateOfGrades = $admissionData['admission_type'] === 'Transferee' ? (isset($_POST['certificate_of_grades']) ? 'Submitted' : 'To Be Followed') : NULL;
       $status = 'Temporarily Enrolled';
+      $receiptStatus = 'Not Paid';
 
       $stmt->bind_param(
-        "ssssssssssssssssssssssssssssssssssssss",
+        "sssssssssssssssssssssssssssssssssssssss",
         $studentNumber,
         $admissionData['first_name'],
         $admissionData['middle_name'],
@@ -124,7 +125,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_id'], $_POS
         $honorableDismissal,
         $transcriptOfRecords,
         $certificateOfGrades,
-        $status
+        $status,
+        $receiptStatus
       );
 
       if ($stmt->execute()) {
@@ -557,70 +559,72 @@ if (!$result) {
               departmentOptions = '<option value="">No departments available</option>';
             }
 
+            const isTemporarilyEnrolled = info.status === 'Temporarily Enrolled';
+            const programContent = isTemporarilyEnrolled ?
+              `<p><strong>Program:</strong> ${info.department_name}</p>` :
+              `<p><strong>Program:</strong></p>
+             <select class="form-select" id="editDepartment">
+               ${departmentOptions}
+             </select>`;
+
             const content = `
-              <h4>Campus Branch</h4>
-              <p><strong>Selected Branch:</strong> ${info.branch}</p>
-              <hr>
-              <h4>Basic Information</h4>
-              <div class="row">
-                <div class="col-md-6">
-                  <p><strong>Full Name:</strong> ${info.first_name} ${info.middle_name} ${info.last_name}</p>
-                  <p><strong>Sex:</strong> ${info.sex}</p>
-                  <p><strong>Birthday:</strong> ${info.birthday}</p>
-                  <p><strong>Contact Number:</strong> ${info.contact_number}</p>
-                  <p><strong>Email:</strong> ${info.email}</p>
-                  <p><strong>Address:</strong> ${info.address}</p>
-                  <p><strong>Facebook Name:</strong> ${info.facebook_name}</p>
-                </div>
-                <div class="col-md-6">
-                  <p><strong>Admission Type:</strong> ${info.admission_type}</p>
-                  ${info.admission_type === 'Returnee' ? `<p><strong>Old Student Number:</strong> ${info.old_student_number}</p>` : ''}
-                  <p><strong>Program:</strong></p>
-                  <select class="form-select" id="editDepartment">
-                    ${departmentOptions}
-                  </select>
-                  <p><strong>Year Level:</strong> ${info.year_level}</p>
-                  <p><strong>Working Student:</strong> ${info.working_student === 'Yes' ? 'Yes' : 'No'}</p>
-                  <p><strong>Civil Status:</strong> ${info.civil_status}</p>
-                  <p><strong>Religion:</strong> ${info.religion}</p>
-                </div>
-              </div>
-              <hr>
-              <h4>Parent/Guardian Information</h4>
-              <div class="row">
-                <div class="col-md-6">
-                  <p><strong>Father's Full Name:</strong> ${info.father_name}</p>
-                  <p><strong>Mother's Full Name:</strong> ${info.mother_name}</p>
-                </div>
-                <div class="col-md-6">
-                  <p><strong>Guardian's Full Name:</strong> ${info.guardian_name}</p>
-                  <p><strong>Guardian's Occupation:</strong> ${info.occupation}</p>
-                  <p><strong>Guardian's Contact Number:</strong> ${info.guardian_contact}</p>
-                  <p><strong>Guardian's member of 4ps:</strong> ${info.member4ps === 'Yes' ? 'Yes' : 'No'}</p>
-                </div>
-              </div>
-              <hr>
-              <h4>Educational Background</h4>
-              <div class="row">
-                <div class="col-md-6">
-                  <p><strong>Last School Attended:</strong> ${info.last_school}</p>
-                  <p><strong>Last School Year Attended:</strong> ${info.last_school_year}</p>
-                </div>
-                <div class="col-md-6">
-                  <p><strong>Primary School Attended:</strong> ${info.primary_school}</p>
-                  <p><strong>Year Graduated:</strong> ${info.primary_year}</p>
-                  <p><strong>Secondary School Attended:</strong> ${info.secondary_school}</p>
-                  <p><strong>Year Graduated:</strong> ${info.secondary_year}</p>
-                </div>
-              </div>
-              <hr>
-              <h4>Referral</h4>
-              <p><strong>How did you hear about our school?</strong> ${info.referral_source}</p>
-              <hr>
-              <div class="d-flex justify-content-end">
-                <button type="button" class="btn btn-primary" onclick="saveChanges(${info.id})">Save Changes</button>
-              </div>
-            `;
+          <h4>Campus Branch</h4>
+          <p><strong>Selected Branch:</strong> ${info.branch}</p>
+          <hr>
+          <h4>Basic Information</h4>
+          <div class="row">
+            <div class="col-md-6">
+              <p><strong>Full Name:</strong> ${info.first_name} ${info.middle_name} ${info.last_name}</p>
+              <p><strong>Sex:</strong> ${info.sex}</p>
+              <p><strong>Birthday:</strong> ${info.birthday}</p>
+              <p><strong>Contact Number:</strong> ${info.contact_number}</p>
+              <p><strong>Email:</strong> ${info.email}</p>
+              <p><strong>Address:</strong> ${info.address}</p>
+              <p><strong>Facebook Name:</strong> ${info.facebook_name}</p>
+            </div>
+            <div class="col-md-6">
+              <p><strong>Admission Type:</strong> ${info.admission_type}</p>
+              ${info.admission_type === 'Returnee' ? `<p><strong>Old Student Number:</strong> ${info.old_student_number}</p>` : ''}
+              ${programContent}
+              <p><strong>Year Level:</strong> ${info.year_level}</p>
+              <p><strong>Working Student:</strong> ${info.working_student === 'Yes' ? 'Yes' : 'No'}</p>
+              <p><strong>Civil Status:</strong> ${info.civil_status}</p>
+              <p><strong>Religion:</strong> ${info.religion}</p>
+            </div>
+          </div>
+          <hr>
+          <h4>Parent/Guardian Information</h4>
+          <div class="row">
+            <div class="col-md-6">
+              <p><strong>Father's Full Name:</strong> ${info.father_name}</p>
+              <p><strong>Mother's Full Name:</strong> ${info.mother_name}</p>
+            </div>
+            <div class="col-md-6">
+              <p><strong>Guardian's Full Name:</strong> ${info.guardian_name}</p>
+              <p><strong>Guardian's Contact Number:</strong> ${info.guardian_contact}</p>
+              <p><strong>Guardian's member of 4ps:</strong> ${info.member4ps === 'Yes' ? 'Yes' : 'No'}</p>
+            </div>
+          </div>
+          <hr>
+          <h4>Educational Background</h4>
+          <div class="row">
+            <div class="col-md-6">
+              <p><strong>Last School Attended:</strong> ${info.last_school}</p>
+              <p><strong>Last School Year Attended:</strong> ${info.last_school_year}</p>
+            </div>
+            <div class="col-md-6">
+              <p><strong>Primary School Attended:</strong> ${info.primary_school}</p>
+              <p><strong>Year Graduated:</strong> ${info.primary_year}</p>
+              <p><strong>Secondary School Attended:</strong> ${info.secondary_school}</p>
+              <p><strong>Year Graduated:</strong> ${info.secondary_year}</p>
+            </div>
+          </div>
+          <hr>
+          <h4>Referral</h4>
+          <p><strong>How did you hear about our school?</strong> ${info.referral_source}</p>
+          <hr>
+          ${isTemporarilyEnrolled ? '' : '<div class="d-flex justify-content-end"><button type="button" class="btn btn-primary" onclick="saveChanges(' + info.id + ')">Save Changes</button></div>'}
+        `;
 
             document.getElementById('informationContent').innerHTML = content;
             // Show the modal
