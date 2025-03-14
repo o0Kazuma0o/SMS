@@ -1,7 +1,8 @@
 <?php
 require('../database.php');
 require_once 'session.php';
-checkAccess('Staff'); // Ensure only users with the 'Staff' role can access this page
+require_once 'audit_log_function.php';
+checkAccess('Admin'); // Ensure only users with the 'admin' role can access this page
 
 $departmentsResult = $conn->query("SELECT id, department_name FROM sms3_departments");
 if (!$departmentsResult) {
@@ -33,21 +34,6 @@ function generateStudentNumber($conn)
   return $yearPrefix . str_pad($newNumber, 6, '0', STR_PAD_LEFT); // e.g., "24100001"
 }
 
-// Function to generate and bcrypt hash password
-/* function generatePassword($lastName)
-{
-  $passwordPlain = '#' . substr($lastName, 0, 2) . '8080';
-  return password_hash($passwordPlain, PASSWORD_BCRYPT);
-} */
-
-// Fetch current academic year
-/* function getCurrentAcademicYear($conn)
-{
-  $result = $conn->query("SELECT * FROM sms3_academic_years WHERE is_current = 1 LIMIT 1");
-  return ($result && $result->num_rows > 0) ? $result->fetch_assoc()['id'] : null;
-} */
-
-
 // Handle status update requests
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_id'], $_POST['status'])) {
   $admissionId = intval($_POST['admission_id']);
@@ -63,7 +49,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_id'], $_POS
     $stmt->close();
 
     if ($admissionData) {
-      $studentNumber = generateStudentNumber($conn);
+      // Use old student number if admission type is Returnee
+      $studentNumber = $admissionData['admission_type'] === 'Returnee' ? $admissionData['old_student_number'] : generateStudentNumber($conn);
 
       // Insert data into sms3_temp_enroll
       $stmt = $conn->prepare("INSERT INTO sms3_temp_enroll (
@@ -75,14 +62,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_id'], $_POS
               honorable_dismissal, transcript_of_records, certificate_of_grades, status, receipt_status
           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
-      $form138 = $admissionData['admission_type'] === 'New Regular' ? (isset($_POST['form138']) ? 'Submitted' : 'To Be Followed') : NULL;
-      $form137 = $admissionData['admission_type'] === 'New Regular' ? (isset($_POST['form137']) ? 'Submitted' : 'To Be Followed') : NULL;
+      $form138 = isset($_POST['form138']) ? 'Submitted' : 'To Be Followed';
+      $form137 = isset($_POST['form137']) ? 'Submitted' : 'To Be Followed';
       $goodMoral = isset($_POST['good_moral']) ? 'Submitted' : 'To Be Followed';
       $birthCertificate = isset($_POST['birth_certificate']) ? 'Submitted' : 'To Be Followed';
       $brgyClearance = isset($_POST['brgy_clearance']) ? 'Submitted' : 'To Be Followed';
-      $honorableDismissal = $admissionData['admission_type'] === 'Transferee' ? (isset($_POST['honorable_dismissal']) ? 'Submitted' : 'To Be Followed') : NULL;
-      $transcriptOfRecords = $admissionData['admission_type'] === 'Transferee' ? (isset($_POST['transcript_of_records']) ? 'Submitted' : 'To Be Followed') : NULL;
-      $certificateOfGrades = $admissionData['admission_type'] === 'Transferee' ? (isset($_POST['certificate_of_grades']) ? 'Submitted' : 'To Be Followed') : NULL;
+      $honorableDismissal = isset($_POST['honorable_dismissal']) ? 'Submitted' : 'To Be Followed';
+      $transcriptOfRecords = isset($_POST['transcript_of_records']) ? 'Submitted' : 'To Be Followed';
+      $certificateOfGrades = isset($_POST['certificate_of_grades']) ? 'Submitted' : 'To Be Followed';
       $status = 'Temporarily Enrolled';
       $receiptStatus = 'Not Paid';
 
@@ -450,7 +437,7 @@ if (!$result) {
                       <td>
                         <!-- Approve and Reject buttons -->
                         <?php if ($row['status'] !== 'Temporarily Enrolled' && $row['status'] !== 'Rejected'): ?>
-                          <button class="btn btn-primary btn-sm" onclick="processAdmission(<?= $row['id'] ?>, '<?= $row['admission_type'] ?>')">Process Admission</button>
+                          <button class="btn btn-primary btn-sm" onclick="processAdmission(<?= $row['id'] ?>, '<?= $row['admission_type'] ?>', '<?= $row['old_student_number'] ?>')">Process Admission</button>
                         <?php else: ?>
                           <!-- No action if already approved or rejected -->
                           <span>No Action Available</span>
@@ -667,64 +654,146 @@ if (!$result) {
         });
     }
 
-    function processAdmission(admissionId, admissionType) {
+    function processAdmission(admissionId, admissionType, oldStudentNumber = null) {
       document.getElementById('admissionId').value = admissionId;
 
       let requirementsHtml = '';
       if (admissionType === 'New Regular') {
         requirementsHtml = `
-                    <div class="mb-3">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="form138" name="form138">
-                            <label class="form-check-label" for="form138">Form 138</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="good_moral" name="good_moral">
-                            <label class="form-check-label" for="good_moral">Good Moral Certificate</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="form137" name="form137">
-                            <label class="form-check-label" for="form137">Form 137</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="birth_certificate" name="birth_certificate">
-                            <label class="form-check-label" for="birth_certificate">Birth Certificate</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="brgy_clearance" name="brgy_clearance">
-                            <label class="form-check-label" for="brgy_clearance">Barangay Clearance</label>
-                        </div>
-                    </div>
-                `;
+      <div class="mb-3">
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="form138" name="form138">
+          <label class="form-check-label" for="form138">Form 138</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="good_moral" name="good_moral">
+          <label class="form-check-label" for="good_moral">Good Moral Certificate</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="form137" name="form137">
+          <label class="form-check-label" for="form137">Form 137</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="birth_certificate" name="birth_certificate">
+          <label class="form-check-label" for="birth_certificate">Birth Certificate</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="brgy_clearance" name="brgy_clearance">
+          <label class="form-check-label" for="brgy_clearance">Barangay Clearance</label>
+        </div>
+      </div>
+    `;
       } else if (admissionType === 'Transferee') {
         requirementsHtml = `
-                    <div class="mb-3">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="honorable_dismissal" name="honorable_dismissal">
-                            <label class="form-check-label" for="honorable_dismissal">Honorable Dismissal</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="transcript_of_records" name="transcript_of_records">
-                            <label class="form-check-label" for="transcript_of_records">Transcript of Records</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="certificate_of_grades" name="certificate_of_grades">
-                            <label class="form-check-label" for="certificate_of_grades">Certificate of Grades</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="good_moral" name="good_moral">
-                            <label class="form-check-label" for="good_moral">Good Moral Certificate</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="brgy_clearance" name="brgy_clearance">
-                            <label class="form-check-label" for="brgy_clearance">Barangay Clearance</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="birth_certificate" name="birth_certificate">
-                            <label class="form-check-label" for="birth_certificate">Birth Certificate</label>
-                        </div>
-                    </div>
-                `;
+      <div class="mb-3">
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="honorable_dismissal" name="honorable_dismissal">
+          <label class="form-check-label" for="honorable_dismissal">Honorable Dismissal</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="transcript_of_records" name="transcript_of_records">
+          <label class="form-check-label" for="transcript_of_records">Transcript of Records</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="certificate_of_grades" name="certificate_of_grades">
+          <label class="form-check-label" for="certificate_of_grades">Certificate of Grades</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="good_moral" name="good_moral">
+          <label class="form-check-label" for="good_moral">Good Moral Certificate</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="brgy_clearance" name="brgy_clearance">
+          <label class="form-check-label" for="brgy_clearance">Barangay Clearance</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="birth_certificate" name="birth_certificate">
+          <label class="form-check-label" for="birth_certificate">Birth Certificate</label>
+        </div>
+      </div>
+    `;
+      } else if (admissionType === 'Returnee') {
+        // Fetch requirements for the returnee
+        fetch('get_returnee_requirements.php?student_number=' + oldStudentNumber)
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              const requirements = data.requirements;
+              requirementsHtml = '<div class="mb-3">';
+              if (requirements.form138) {
+                requirementsHtml += `
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="form138" name="form138" ${requirements.form138 === 'Submitted' ? 'checked' : ''}>
+                <label class="form-check-label" for="form138">Form 138</label>
+              </div>
+            `;
+              }
+              if (requirements.good_moral) {
+                requirementsHtml += `
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="good_moral" name="good_moral" ${requirements.good_moral === 'Submitted' ? 'checked' : ''}>
+                <label class="form-check-label" for="good_moral">Good Moral Certificate</label>
+              </div>
+            `;
+              }
+              if (requirements.form137) {
+                requirementsHtml += `
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="form137" name="form137" ${requirements.form137 === 'Submitted' ? 'checked' : ''}>
+                <label class="form-check-label" for="form137">Form 137</label>
+              </div>
+            `;
+              }
+              if (requirements.birth_certificate) {
+                requirementsHtml += `
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="birth_certificate" name="birth_certificate" ${requirements.birth_certificate === 'Submitted' ? 'checked' : ''}>
+                <label class="form-check-label" for="birth_certificate">Birth Certificate</label>
+              </div>
+            `;
+              }
+              if (requirements.brgy_clearance) {
+                requirementsHtml += `
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="brgy_clearance" name="brgy_clearance" ${requirements.brgy_clearance === 'Submitted' ? 'checked' : ''}>
+                <label class="form-check-label" for="brgy_clearance">Barangay Clearance</label>
+              </div>
+            `;
+              }
+              if (requirements.honorable_dismissal) {
+                requirementsHtml += `
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="honorable_dismissal" name="honorable_dismissal" ${requirements.honorable_dismissal === 'Submitted' ? 'checked' : ''}>
+                <label class="form-check-label" for="honorable_dismissal">Honorable Dismissal</label>
+              </div>
+            `;
+              }
+              if (requirements.transcript_of_records) {
+                requirementsHtml += `
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="transcript_of_records" name="transcript_of_records" ${requirements.transcript_of_records === 'Submitted' ? 'checked' : ''}>
+                <label class="form-check-label" for="transcript_of_records">Transcript of Records</label>
+              </div>
+            `;
+              }
+              if (requirements.certificate_of_grades) {
+                requirementsHtml += `
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="certificate_of_grades" name="certificate_of_grades" ${requirements.certificate_of_grades === 'Submitted' ? 'checked' : ''}>
+                <label class="form-check-label" for="certificate_of_grades">Certificate of Grades</label>
+              </div>
+            `;
+              }
+              requirementsHtml += '</div>';
+              document.getElementById('requirements').innerHTML = requirementsHtml;
+            } else {
+              alert('Failed to fetch requirements for the returnee.');
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while fetching the requirements.');
+          });
       }
 
       document.getElementById('requirements').innerHTML = requirementsHtml;

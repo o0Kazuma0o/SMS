@@ -23,11 +23,11 @@ move the prcoess to new database: thursday
 admission - done
 enrollment - done
 
-retain old student number for returnee: thursday if kaya
+retain old student number for returnee - done
 
 friday
-view Requirements on student
-send account on gmail after proces
+view Requirements on student - done
+send account on gmail after process 
 add profile tab and changing password
 change ui of admission Form
 

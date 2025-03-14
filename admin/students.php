@@ -554,7 +554,7 @@ if (isset($_GET['delete_timetable_from_student'])) {
                         <button class="btn btn-info btn-sm" onclick="viewTimetableDetails(<?= $row['id']; ?>)">View Timetable</button>
                       </td>
                       <td>
-                        <span class="badge bg-<?= $row['status'] == 'Not Enrolled' ? 'warning' : ($row['status'] == 'Approved' ? 'success' : 'danger') ?>">
+                        <span class="badge bg-<?= $row['status'] == 'Not Enrolled' ? 'warning' : ($row['status'] == 'Enrolled' ? 'success' : 'danger') ?>">
                           <?= htmlspecialchars($row['status']); ?>
                         </span>
                       </td>
@@ -639,6 +639,27 @@ if (isset($_GET['delete_timetable_from_student'])) {
                   </div>
 
                   <button type="submit" name="update_timetable" class="btn btn-primary">Save Changes</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Requirements Modal -->
+        <div class="modal fade" id="requirementsModal" tabindex="-1" aria-labelledby="requirementsModalLabel" aria-hidden="true">
+          <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="requirementsModalLabel">Requirements</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <form id="requirementsForm">
+                  <input type="hidden" id="studentId" name="student_id">
+                  <div id="requirementsContent">
+                    <!-- Requirements will be loaded here dynamically -->
+                  </div>
+                  <button type="submit" class="btn btn-primary">Save Changes</button>
                 </form>
               </div>
             </div>
@@ -781,6 +802,115 @@ if (isset($_GET['delete_timetable_from_student'])) {
           alert('An error occurred while fetching the information.');
         });
     }
+
+    function viewRequirements(studentId) {
+      fetch('get_student_requirements.php?student_id=' + studentId)
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            const requirements = data.requirements;
+            let requirementsHtml = '<div class="mb-3">';
+            if (requirements.form138 !== null) {
+              requirementsHtml += `
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="form138" name="form138" ${requirements.form138 === 'Submitted' ? 'checked' : ''}>
+              <label class="form-check-label" for="form138">Form 138</label>
+            </div>
+          `;
+            }
+            if (requirements.good_moral !== null) {
+              requirementsHtml += `
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="good_moral" name="good_moral" ${requirements.good_moral === 'Submitted' ? 'checked' : ''}>
+              <label class="form-check-label" for="good_moral">Good Moral Certificate</label>
+            </div>
+          `;
+            }
+            if (requirements.form137 !== null) {
+              requirementsHtml += `
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="form137" name="form137" ${requirements.form137 === 'Submitted' ? 'checked' : ''}>
+              <label class="form-check-label" for="form137">Form 137</label>
+            </div>
+          `;
+            }
+            if (requirements.birth_certificate !== null) {
+              requirementsHtml += `
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="birth_certificate" name="birth_certificate" ${requirements.birth_certificate === 'Submitted' ? 'checked' : ''}>
+              <label class="form-check-label" for="birth_certificate">Birth Certificate</label>
+            </div>
+          `;
+            }
+            if (requirements.brgy_clearance !== null) {
+              requirementsHtml += `
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="brgy_clearance" name="brgy_clearance" ${requirements.brgy_clearance === 'Submitted' ? 'checked' : ''}>
+              <label class="form-check-label" for="brgy_clearance">Barangay Clearance</label>
+            </div>
+          `;
+            }
+            if (requirements.honorable_dismissal !== null) {
+              requirementsHtml += `
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="honorable_dismissal" name="honorable_dismissal" ${requirements.honorable_dismissal === 'Submitted' ? 'checked' : ''}>
+              <label class="form-check-label" for="honorable_dismissal">Honorable Dismissal</label>
+            </div>
+          `;
+            }
+            if (requirements.transcript_of_records !== null) {
+              requirementsHtml += `
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="transcript_of_records" name="transcript_of_records" ${requirements.transcript_of_records === 'Submitted' ? 'checked' : ''}>
+              <label class="form-check-label" for="transcript_of_records">Transcript of Records</label>
+            </div>
+          `;
+            }
+            if (requirements.certificate_of_grades !== null) {
+              requirementsHtml += `
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="certificate_of_grades" name="certificate_of_grades" ${requirements.certificate_of_grades === 'Submitted' ? 'checked' : ''}>
+              <label class="form-check-label" for="certificate_of_grades">Certificate of Grades</label>
+            </div>
+          `;
+            }
+            requirementsHtml += '</div>';
+            document.getElementById('requirementsContent').innerHTML = requirementsHtml;
+            document.getElementById('studentId').value = studentId;
+            new bootstrap.Modal(document.getElementById('requirementsModal')).show();
+          } else {
+            alert('Failed to fetch requirements.');
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('An error occurred while fetching the requirements.');
+        });
+    }
+
+    document.getElementById('requirementsForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const studentId = document.getElementById('studentId').value;
+      const formData = new FormData(this);
+
+      fetch('update_student_requirements.php', {
+          method: 'POST',
+          body: new URLSearchParams(formData)
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            alert('Requirements updated successfully.');
+            location.reload();
+          } else {
+            alert('Failed to update requirements: ' + data.message);
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('An error occurred while updating the requirements.');
+        });
+    });
 
     function viewTimetableDetails(studentId) {
       fetch(`students.php?timetable_details=${studentId}`)

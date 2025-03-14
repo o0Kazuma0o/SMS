@@ -83,7 +83,7 @@ if (isset($_GET['fetch_subjects'])) {
 // Fetch pending enrollments
 $query = "
     SELECT pe.id AS enrollment_id, s.student_number, s.first_name, s.last_name, s.admission_type, 
-           d.department_code, pe.created_at,
+           d.department_code, pe.created_at, pe.receipt_status,
            GROUP_CONCAT(DISTINCT sec.section_number ORDER BY sec.id SEPARATOR ', ') AS sections,
            GROUP_CONCAT(DISTINCT sub.subject_code ORDER BY sub.id SEPARATOR ', ') AS subjects,
            GROUP_CONCAT(DISTINCT CONCAT(t.day_of_week, ' ', TIME_FORMAT(t.start_time, '%H:%i'), '-', TIME_FORMAT(t.end_time, '%H:%i')) ORDER BY t.start_time SEPARATOR ', ') AS schedules
@@ -244,7 +244,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['enrollment_id'], $_PO
   }
 }
 
-/*
 // Automatically update receipt_status to Paid if student is already enrolled
 if (isset($_GET['check_receipt_status'])) {
   $query = "
@@ -332,7 +331,7 @@ if (isset($_GET['check_receipt_status'])) {
 
   echo json_encode(['status' => 'success', 'updatedEnrollments' => $updatedEnrollments]);
   exit;
-} */
+}
 
 // Handle fetching a single timetable for editing
 if (isset($_GET['fetch_timetable_id'])) {
@@ -761,7 +760,7 @@ if (isset($_GET['delete_timetable_from_enrollment'])) {
               <tbody>
                 <?php if ($result && $result->num_rows > 0): ?>
                   <?php while ($row = $result->fetch_assoc()): ?>
-                    <tr>
+                    <tr data-enrollment-id="<?= $row['enrollment_id']; ?>">
                       <td><?= htmlspecialchars($row['student_number']); ?></td>
                       <td><?= htmlspecialchars($row['first_name'] . ' ' . $row['last_name']); ?></td>
                       <td><?= htmlspecialchars($row['admission_type']); ?></td>
@@ -771,7 +770,10 @@ if (isset($_GET['delete_timetable_from_enrollment'])) {
                       </td>
                       <td><?= htmlspecialchars($row['created_at']); ?></td>
                       <td>
-                        <span class="badge bg-warning text-dark">Not Paid</span>
+                        <span class="badge bg-<?= $row['receipt_status'] == 'Not Enrolled' ? 'warning' : ($row['receipt_status'] == 'Approved' ? 'success' : 'danger') ?>">
+                          <?= htmlspecialchars($row['receipt_status']); ?>
+                        </span>
+                      </td>
                       <td>
                         <button class="btn btn-success btn-sm" onclick="updateEnrollmentStatus(<?= $row['enrollment_id']; ?>, 'Paid')">Paid</button>
                         <button class="btn btn-danger btn-sm" onclick="updateEnrollmentStatus(<?= $row['enrollment_id']; ?>, 'Rejected')">Reject</button>
@@ -780,7 +782,7 @@ if (isset($_GET['delete_timetable_from_enrollment'])) {
                   <?php endwhile; ?>
                 <?php else: ?>
                   <tr>
-                    <td colspan="5" class="text-center">No pending enrollments found</td>
+                    <td colspan="8" class="text-center">No pending enrollments found</td>
                   </tr>
                 <?php endif; ?>
               </tbody>
@@ -1070,23 +1072,56 @@ if (isset($_GET['delete_timetable_from_enrollment'])) {
 
       function checkAndUpdateReceiptStatus() {
         fetch('enrollment.php?check_receipt_status')
-          .then(response => response.json())
+          .then(response => {
+            if (!response.ok) {
+              throw new Error('Network response was not ok');
+            }
+            return response.json();
+          })
           .then(data => {
-            if (data.status === 'success') {
-              // Update the table to reflect the changes
-              const rows = document.querySelectorAll('.datatable tbody tr');
-              rows.forEach(row => {
-                const enrollmentId = row.querySelector('button.btn-success').getAttribute('onclick').match(/\d+/)[0];
-                if (data.updatedEnrollments.includes(parseInt(enrollmentId))) {
-                  row.querySelector('.badge').classList.remove('bg-warning', 'text-dark');
-                  row.querySelector('.badge').classList.add('bg-success');
-                  row.querySelector('.badge').textContent = 'Paid';
-                  row.querySelector('button.btn-success').disabled = true;
+            if (data.status === 'success' && data.updatedEnrollments.length > 0) {
+              // Update each affected row in the table
+              data.updatedEnrollments.forEach(enrollmentId => {
+                const row = document.querySelector(`.datatable tbody tr[data-enrollment-id="${enrollmentId}"]`);
+                if (row) {
+                  // Update the status badge
+                  const statusBadge = row.querySelector('.badge');
+                  if (statusBadge) {
+                    statusBadge.classList.remove('bg-warning', 'text-dark');
+                    statusBadge.classList.add('bg-success');
+                    statusBadge.textContent = 'Paid';
+                  }
+
+                  // Disable the Paid button if it exists
+                  const paidButton = row.querySelector('button.btn-success');
+                  if (paidButton) {
+                    paidButton.disabled = true;
+                  }
                 }
               });
+
+              // Show a success notification
+              showToast('success', 'Receipt status updated successfully');
             }
           })
-          .catch(error => console.error('Error checking receipt status:', error));
+          .catch(error => {
+            console.error('Error updating receipt status:', error);
+            showToast('error', 'Failed to update receipt status');
+          });
+      }
+
+      // Helper function to display toast notifications
+      function showToast(type, message) {
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type} fade show`;
+        toast.role = 'alert';
+        toast.textContent = message;
+
+        document.body.appendChild(toast);
+
+        setTimeout(() => {
+          toast.remove();
+        }, 3000);
       }
     });
 
