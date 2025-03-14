@@ -275,21 +275,7 @@ $semesters = $conn->query("SELECT * FROM sms3_semesters ORDER BY id DESC");
 
       <hr class="sidebar-divider">
 
-      <li class="nav-heading">Admission & Enrollment</li>
-
-      <li class="nav-item">
-        <a class="nav-link " href="admission.php">
-          <i class="bi bi-grid"></i>
-          <span>Admission</span>
-        </a>
-      </li>
-
-      <li class="nav-item">
-        <a class="nav-link " href="admission_temp.php">
-          <i class="bi bi-grid"></i>
-          <span>Temporary Admission</span>
-        </a>
-      </li>
+      <li class="nav-heading">Enrollment</li>
 
       <li class="nav-item">
         <a class="nav-link " href="enrollment.php">
@@ -315,7 +301,7 @@ $semesters = $conn->query("SELECT * FROM sms3_semesters ORDER BY id DESC");
           <span>Academic Structure</span>
         </a>
       </li>
- 
+
       <li class="nav-item">
         <a class="nav-link " href="manage_departments.php">
           <i class="bi bi-grid"></i>
@@ -349,22 +335,6 @@ $semesters = $conn->query("SELECT * FROM sms3_semesters ORDER BY id DESC");
 
       <hr class="sidebar-divider">
 
-      <li class="nav-heading">MANAGE USER</li>
-      <li class="nav-item">
-        <a class="nav-link " href="audit_logs.php">
-          <i class="bi bi-grid"></i>
-          <span>Audit Logs</span>
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link " href="manage_user.php">
-          <i class="bi bi-grid"></i>
-          <span>Users</span>
-        </a>
-      </li>
-
-      <hr class="sidebar-divider">
-
     </ul>
 
   </aside><!-- End Sidebar-->
@@ -384,7 +354,7 @@ $semesters = $conn->query("SELECT * FROM sms3_semesters ORDER BY id DESC");
     <section class="section">
       <div class="card">
         <div class="card-header">
-          <ul class="nav nav-tabs card-header-tabs">
+          <ul class="nav nav-tabs nav-tabs-bordered">
             <li class="nav-item">
               <a class="nav-link <?= $_SESSION['active_tab'] == 'academicYear' ? 'active' : '' ?>"
                 href="#academicYear"
@@ -400,7 +370,7 @@ $semesters = $conn->query("SELECT * FROM sms3_semesters ORDER BY id DESC");
         <div class="card-body">
           <div class="tab-content">
             <!-- Academic Year Tab -->
-            <div class="tab-pane <?= $_SESSION['active_tab'] == 'academicYear' ? 'active' : '' ?>" id="academicYear">
+            <div class="tab-pane fade <?= $_SESSION['active_tab'] == 'academicYear' ? 'active' : '' ?>" id="academicYear">
               <div class="row">
                 <div class="col-md-4">
                   <h5 class="card-title">Add New Academic Year</h5>
@@ -445,7 +415,7 @@ $semesters = $conn->query("SELECT * FROM sms3_semesters ORDER BY id DESC");
             </div>
 
             <!-- Semester Tab -->
-            <div class="tab-pane <?= $_SESSION['active_tab'] == 'semester' ? 'active' : '' ?>" id="semester">
+            <div class="tab-pane fade <?= $_SESSION['active_tab'] == 'semester' ? 'active' : '' ?>" id="semester">
               <div class="row">
                 <div class="col-md-4">
                   <h5 class="card-title">Add New Semester</h5>

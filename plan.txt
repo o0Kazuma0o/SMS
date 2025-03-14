@@ -27,8 +27,8 @@ retain old student number for returnee - done
 
 friday
 view Requirements on student - done
-send account on gmail after process 
-add profile tab and changing password
+send account on gmail after process - done
+add profile tab and changing password - done
 change ui of admission Form
 
 AI - sana gumana agad

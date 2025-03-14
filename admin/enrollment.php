@@ -153,6 +153,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['enrollment_id'], $_PO
         exit; // Stop script execution
       }
     } elseif ($receiptStatus === 'Paid') {
+      // Update receipt_status to Paid in sms3_pending_enrollment
+      $stmt = $conn->prepare("UPDATE sms3_pending_enrollment SET receipt_status = 'Paid' WHERE id = ?");
+      $stmt->bind_param("i", $enrollmentId);
+      $stmt->execute();
+      $stmt->close();
+
       // Fetch pending enrollment details
       $stmt = $conn->prepare("
               SELECT student_id, timetable_1, timetable_2, timetable_3, timetable_4, timetable_5, timetable_6, timetable_7, timetable_8
@@ -165,23 +171,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['enrollment_id'], $_PO
       $stmt->close();
 
       if ($enrollmentData) {
-        // Check if the student is already enrolled
-        $stmt = $conn->prepare("SELECT status FROM sms3_students WHERE id = ?");
-        $stmt->bind_param("i", $enrollmentData['student_id']);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $studentData = $result->fetch_assoc();
-        $stmt->close();
-
-        if ($studentData && $studentData['status'] === 'Enrolled') {
-          // Update receipt_status to Paid in sms3_pending_enrollment
-          $stmt = $conn->prepare("UPDATE sms3_pending_enrollment SET receipt_status = 'Paid' WHERE id = ?");
-          $stmt->bind_param("i", $enrollmentId);
-          $stmt->execute();
-          $stmt->close();
-        }
-
-        // Update student record with timetable
+        // Update student record with timetable and status
         $stmt = $conn->prepare("
                   UPDATE sms3_students
                   SET timetable_1 = ?, timetable_2 = ?, timetable_3 = ?, timetable_4 = ?, timetable_5 = ?, timetable_6 = ?, timetable_7 = ?, timetable_8 = ?, status = 'Enrolled', admission_type = 'Continuing'
@@ -231,7 +221,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['enrollment_id'], $_PO
         $stmt->execute();
         $stmt->close();
 
-        echo json_encode(['status' => 'success', 'message' => 'Enrollment marked as paid successfully.']);
+        echo json_encode(['status' => 'success', 'message' => 'Enrollment marked as paid and student enrolled successfully.']);
         exit; // Stop script execution
       } else {
         echo json_encode(['status' => 'error', 'message' => 'Failed to fetch enrollment details.']);
