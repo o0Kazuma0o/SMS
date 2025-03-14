@@ -65,7 +65,7 @@ function autoUpdateReceiptStatus($conn) {
                 $deleteStmt->close();
 
                 // Log the audit entry
-                $userId = $_SESSION['user_id']; // Assuming user ID is stored in session
+                $userId = $_SESSION['user_id'] ?? 'system'; // Assuming user ID is stored in session, default to 'system' for cron job
                 logAudit($conn, $userId, 'ACCEPT', 'sms3_enrollment_data', $row['enrollment_id'], [
                     'student_id' => $row['student_id'],
                     'timetable_1' => $row['timetable_1'],
@@ -113,7 +113,7 @@ if ($conn) {
         ? "Updated enrollments: " . implode(',', $result['updatedEnrollments'])
         : "Error: " . $result['message'];
     
-    file_put_contents('receipt_updates.log', $logMessage . PHP_EOL, FILE_APPEND);
+    file_put_contents(__DIR__ . '/receipt_updates.log', $logMessage . PHP_EOL, FILE_APPEND);
     
     // Optional: Output for manual testing
     if (php_sapi_name() === 'cli') {
@@ -122,7 +122,7 @@ if ($conn) {
 } else {
     $error = "Database connection failed";
     error_log($error);
-    file_put_contents('receipt_updates.log', date('Y-m-d H:i:s') . " - " . $error . PHP_EOL, FILE_APPEND);
+    file_put_contents(__DIR__ . '/receipt_updates.log', date('Y-m-d H:i:s') . " - " . $error . PHP_EOL, FILE_APPEND);
     
     if (php_sapi_name() === 'cli') {
         echo $error . PHP_EOL;
