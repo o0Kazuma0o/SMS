@@ -219,7 +219,7 @@ $semesters = $conn->query("SELECT * FROM sms3_semesters ORDER BY id DESC");
             </li>
 
             <li>
-              <a class="dropdown-item d-flex align-items-center" href="#">
+              <a class="dropdown-item d-flex align-items-center" href="users_profile.php">
                 <i class="bi bi-person"></i>
                 <span>My Profile</span>
               </a>
@@ -227,14 +227,6 @@ $semesters = $conn->query("SELECT * FROM sms3_semesters ORDER BY id DESC");
             <li>
               <hr class="dropdown-divider">
             </li>
-
-            <li>
-              <a class="dropdown-item d-flex align-items-center" href="#">
-                <i class="bi bi-gear"></i>
-                <span>Account Settings</span>
-              </a>
-            </li>
-            <li>
               <hr class="dropdown-divider">
             </li>
 
