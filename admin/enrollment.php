@@ -1,6 +1,7 @@
 <?php
 require('../database.php');
 require_once 'session.php';
+require_once 'audit_log_function.php';
 checkAccess('Admin');
 
 $currentSemester = getCurrentActiveSemester($conn);
@@ -146,6 +147,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['enrollment_id'], $_PO
         $stmt->execute();
         $stmt->close();
 
+        // Log the audit entry
+        logAudit($conn, $userId, 'DELETE', 'sms3_enrollment_data', $enrollmentId, [
+          'student_number' => $enrollmentData['student_number']
+        ]);
+
         echo json_encode(['status' => 'success', 'message' => 'Enrollment rejected successfully.']);
         exit; // Stop script execution after sending the JSON response
       } else {
@@ -220,6 +226,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['enrollment_id'], $_PO
         $stmt->bind_param("i", $enrollmentId);
         $stmt->execute();
         $stmt->close();
+
+        // Log the audit entry
+        $timetableDetailsStr = implode(', ', array_map(function ($t) {
+          return "{$t['subject_name']} ({$t['section_number']})";
+        }, $timetableDetails));
+        logAudit($conn, $userId, 'ADD', 'sms3_enrollment_data', $enrollmentId, [
+          'student_number' => $enrollmentData['student_number'],
+          'timetables' => $timetableDetailsStr
+        ]);
 
         echo json_encode(['status' => 'success', 'message' => 'Enrollment marked as paid and student enrolled successfully.']);
         exit; // Stop script execution
@@ -549,18 +564,18 @@ if (isset($_GET['delete_timetable_from_enrollment'])) {
             <li>
               <hr class="dropdown-divider">
             </li>
-              <hr class="dropdown-divider">
-            </li>
+            <hr class="dropdown-divider">
+        </li>
 
-            <li>
-              <a class="dropdown-item d-flex align-items-center" href="../logout.php">
-                <i class="bi bi-box-arrow-right"></i>
-                <span>Sign Out</span>
-              </a>
-            </li>
+        <li>
+          <a class="dropdown-item d-flex align-items-center" href="../logout.php">
+            <i class="bi bi-box-arrow-right"></i>
+            <span>Sign Out</span>
+          </a>
+        </li>
 
-          </ul><!-- End Profile Dropdown Items -->
-        </li><!-- End Profile Nav -->
+      </ul><!-- End Profile Dropdown Items -->
+      </li><!-- End Profile Nav -->
 
       </ul>
     </nav><!-- End Icons Navigation -->
@@ -616,6 +631,20 @@ if (isset($_GET['delete_timetable_from_enrollment'])) {
         <a class="nav-link " href="students.php">
           <i class="bi bi-grid"></i>
           <span>Students</span>
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link " href="admissions_data.php">
+          <i class="bi bi-grid"></i>
+          <span>Admission Data</span>
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link " href="enrollment_data.php">
+          <i class="bi bi-grid"></i>
+          <span>Enrollment Data</span>
         </a>
       </li><!-- End System Nav -->
 

@@ -3,6 +3,22 @@ require('../database.php');
 require_once 'session.php';
 checkAccess('Student'); // Ensure only users with the 'admin' role can access this page
 
+// Check if the student is already enrolled or has a pending enrollment
+$studentId = $_SESSION['user_id'];
+$enrollmentCheckQuery = "
+    SELECT 
+        (SELECT COUNT(*) FROM sms3_pending_enrollment WHERE student_id = ?) AS pending_count,
+        (SELECT COUNT(*) FROM sms3_students WHERE id = ? AND status = 'Enrolled') AS enrolled_count
+";
+$enrollmentCheckStmt = $conn->prepare($enrollmentCheckQuery);
+$enrollmentCheckStmt->bind_param("ii", $studentId, $studentId);
+$enrollmentCheckStmt->execute();
+$enrollmentCheckResult = $enrollmentCheckStmt->get_result();
+$enrollmentCheck = $enrollmentCheckResult->fetch_assoc();
+$enrollmentCheckStmt->close();
+
+$isEnrolled = $enrollmentCheck['pending_count'] > 0 || $enrollmentCheck['enrolled_count'] > 0;
+
 // Fetch user details from the database
 $user_id = $_SESSION['user_id'];
 $stmt = $conn->prepare("SELECT * FROM sms3_students WHERE id = ?");
@@ -123,21 +139,18 @@ $stmt->close();
                 <span>My Profile</span>
               </a>
             </li>
-            <li>
-              <hr class="dropdown-divider">
-            </li>
-              <hr class="dropdown-divider">
-            </li>
+            <hr class="dropdown-divider">
+        </li>
 
-            <li>
-              <a class="dropdown-item d-flex align-items-center" href="../logout.php">
-                <i class="bi bi-box-arrow-right"></i>
-                <span>Sign Out</span>
-              </a>
-            </li>
+        <li>
+          <a class="dropdown-item d-flex align-items-center" href="../logout.php">
+            <i class="bi bi-box-arrow-right"></i>
+            <span>Sign Out</span>
+          </a>
+        </li>
 
-          </ul><!-- End Profile Dropdown Items -->
-        </li><!-- End Profile Nav -->
+      </ul><!-- End Profile Dropdown Items -->
+      </li><!-- End Profile Nav -->
 
       </ul>
     </nav><!-- End Icons Navigation -->
@@ -178,11 +191,13 @@ $stmt->close();
               <i class="bi bi-circle"></i><span>Current Enrollment</span>
             </a>
           </li>
-          <li>
-            <a href="upcoming_enrollment.php">
-              <i class="bi bi-circle"></i><span>Upcoming Enrollment</span>
-            </a>
-          </li>
+          <?php if (!$isEnrolled): ?>
+            <li>
+              <a href="upcoming_enrollment.php">
+                <i class="bi bi-circle"></i><span>Upcoming Enrollment</span>
+              </a>
+            </li>
+          <?php endif; ?>
         </ul>
       </li><!-- End System Nav -->
 

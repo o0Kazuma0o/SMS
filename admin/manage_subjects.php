@@ -341,6 +341,20 @@ $subjects = $conn->query("SELECT s.*, d.department_code FROM sms3_subjects s JOI
           <i class="bi bi-grid"></i>
           <span>Students</span>
         </a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link " href="admissions_data.php">
+          <i class="bi bi-grid"></i>
+          <span>Admission Data</span>
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link " href="enrollment_data.php">
+          <i class="bi bi-grid"></i>
+          <span>Enrollment Data</span>
+        </a>
       </li><!-- End System Nav -->
 
       <hr class="sidebar-divider">

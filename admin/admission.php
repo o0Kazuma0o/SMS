@@ -38,6 +38,7 @@ function generateStudentNumber($conn)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_id'], $_POST['status'])) {
   $admissionId = intval($_POST['admission_id']);
   $status = $_POST['status'];
+  $userId = $_SESSION['user_id'];
 
   if ($status === 'Temporarily Enrolled') {
     // Move record to sms3_temp_enroll on temporary enrollment
@@ -121,6 +122,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_id'], $_POS
         $updateStmt->bind_param('i', $admissionId);
         $updateStmt->execute();
         $updateStmt->close();
+
+        // Log the audit entry
+        logAudit($conn, $userId, 'ADD', 'sms3_temp_enroll', $admissionId, [
+          'student_number' => $studentNumber
+        ]);
+
         echo json_encode(['success' => true, 'message' => 'Student moved to temporary enrollment successfully!']);
       } else {
         echo json_encode(['success' => false, 'message' => 'Failed to insert student record.']);
@@ -177,6 +184,49 @@ if (!$result) {
   <!-- Template Main CSS File -->
   <link href="../assets/css/style.css" rel="stylesheet">
 
+  <style>
+    .modal .confirmationModal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .modal-content .confirmationModal {
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 5px;
+      text-align: center;
+      width: 300px;
+    }
+
+    .popup-message {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1000;
+      padding: 15px;
+      border-radius: 5px;
+      color: #fff;
+      opacity: 0;
+      transition: opacity 0.5s ease-in-out;
+    }
+
+    .popup-message.success {
+      background-color: green;
+    }
+
+    .popup-message.error {
+      background-color: red;
+    }
+  </style>
+
 </head>
 
 <body>
@@ -218,18 +268,18 @@ if (!$result) {
             <li>
               <hr class="dropdown-divider">
             </li>
-              <hr class="dropdown-divider">
-            </li>
+            <hr class="dropdown-divider">
+        </li>
 
-            <li>
-              <a class="dropdown-item d-flex align-items-center" href="../logout.php">
-                <i class="bi bi-box-arrow-right"></i>
-                <span>Sign Out</span>
-              </a>
-            </li>
+        <li>
+          <a class="dropdown-item d-flex align-items-center" href="../logout.php">
+            <i class="bi bi-box-arrow-right"></i>
+            <span>Sign Out</span>
+          </a>
+        </li>
 
-          </ul><!-- End Profile Dropdown Items -->
-        </li><!-- End Profile Nav -->
+      </ul><!-- End Profile Dropdown Items -->
+      </li><!-- End Profile Nav -->
 
       </ul>
     </nav><!-- End Icons Navigation -->
@@ -285,6 +335,20 @@ if (!$result) {
         <a class="nav-link " href="students.php">
           <i class="bi bi-grid"></i>
           <span>Students</span>
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link " href="admissions_data.php">
+          <i class="bi bi-grid"></i>
+          <span>Admission Data</span>
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link " href="enrollment_data.php">
+          <i class="bi bi-grid"></i>
+          <span>Enrollment Data</span>
         </a>
       </li><!-- End System Nav -->
 
@@ -484,6 +548,25 @@ if (!$result) {
         </div>
         <div class="modal-body" id="informationContent">
           <!-- Information will be loaded here dynamically -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirmation Modal -->
+  <div id="confirmationModal" class="modal fade" tabindex="-1" aria-labelledby="confirmationModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="confirmationModalLabel">Confirm Enrollment</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p>Are you sure you want to temporarily enroll this student?</p>
+        </div>
+        <div class="modal-footer">
+          <button id="confirmEnroll" class="btn btn-primary">Yes</button>
+          <button id="cancelEnroll" class="btn btn-secondary" data-bs-dismiss="modal">No</button>
         </div>
       </div>
     </div>
@@ -794,28 +877,81 @@ if (!$result) {
 
     document.getElementById('admissionForm').addEventListener('submit', function(e) {
       e.preventDefault();
-      const admissionId = document.getElementById('admissionId').value;
-      const formData = new FormData(this);
-      formData.append('status', 'Temporarily Enrolled');
+      const confirmationModal = new bootstrap.Modal(document.getElementById('confirmationModal'));
+      confirmationModal.show();
 
-      fetch('admission.php', {
-          method: 'POST',
-          body: new URLSearchParams(formData)
-        })
-        .then(response => response.json())
-        .then(data => {
-          if (data.success) {
-            alert('Student temporarily enrolled successfully.');
-            location.reload();
-          } else {
-            alert('Failed to enroll student: ' + data.message);
-          }
-        })
-        .catch(error => {
-          console.error('Error:', error);
-          alert('An error occurred while processing the admission.');
-        });
+      document.getElementById('confirmEnroll').onclick = () => {
+        const processAdmissionModal = bootstrap.Modal.getInstance(document.getElementById('processAdmissionModal'));
+        processAdmissionModal.hide(); // Hide the "Process Admission" modal
+
+        const admissionId = document.getElementById('admissionId').value;
+        const formData = new FormData(document.getElementById('admissionForm'));
+        formData.append('status', 'Temporarily Enrolled');
+
+        fetch('admission.php', {
+            method: 'POST',
+            body: new URLSearchParams(formData)
+          })
+          .then(response => response.json())
+          .then(data => {
+            confirmationModal.hide();
+            if (data.success) {
+              showPopupMessage('Student temporarily enrolled successfully.', 'success');
+              setTimeout(() => location.reload(), 3000);
+            } else {
+              showPopupMessage('Failed to enroll student: ' + data.message, 'error');
+            }
+          })
+          .catch(error => {
+            confirmationModal.hide();
+            console.error('Error:', error);
+            showPopupMessage('An error occurred while processing the admission.', 'error');
+          });
+      };
+
+      document.getElementById('cancelEnroll').onclick = () => {
+        confirmationModal.hide();
+      };
     });
+
+    // Function to show popup messages
+    function showPopupMessage(message, type = 'success') {
+      const popup = document.createElement('div');
+      popup.className = `popup-message ${type}`;
+      popup.innerText = message;
+      document.body.appendChild(popup);
+
+      popup.style.opacity = '1';
+      setTimeout(() => {
+        popup.style.opacity = '0';
+        setTimeout(() => popup.remove(), 500);
+      }, 3000);
+    }
+
+    // Function to show popup messages
+    function showPopupMessage(message, type = 'success') {
+      const popup = document.createElement('div');
+      popup.className = `popup-message ${type}`;
+      popup.innerText = message;
+      document.body.appendChild(popup);
+
+      popup.style.opacity = '1';
+      setTimeout(() => {
+        popup.style.opacity = '0';
+        setTimeout(() => popup.remove(), 500);
+      }, 3000);
+    }
+
+    // Show popup on load if a session message exists
+    window.onload = function() {
+      <?php if (isset($_SESSION['error_message'])): ?>
+        showPopupMessage('<?= $_SESSION['error_message']; ?>', 'error');
+        <?php unset($_SESSION['error_message']); ?>
+      <?php elseif (isset($_SESSION['success_message'])): ?>
+        showPopupMessage('<?= $_SESSION['success_message']; ?>', 'success');
+        <?php unset($_SESSION['success_message']); ?>
+      <?php endif; ?>
+    };
   </script>
 
 

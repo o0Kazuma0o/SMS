@@ -84,6 +84,22 @@ if (!empty($timetable_ids)) {
   $timetables = $timetable_result->fetch_all(MYSQLI_ASSOC);
   $stmt->close();
 }
+
+// Check if the student is already enrolled or has a pending enrollment
+$studentId = $_SESSION['user_id'];
+$enrollmentCheckQuery = "
+    SELECT 
+        (SELECT COUNT(*) FROM sms3_pending_enrollment WHERE student_id = ?) AS pending_count,
+        (SELECT COUNT(*) FROM sms3_students WHERE id = ? AND status = 'Enrolled') AS enrolled_count
+";
+$enrollmentCheckStmt = $conn->prepare($enrollmentCheckQuery);
+$enrollmentCheckStmt->bind_param("ii", $studentId, $studentId);
+$enrollmentCheckStmt->execute();
+$enrollmentCheckResult = $enrollmentCheckStmt->get_result();
+$enrollmentCheck = $enrollmentCheckResult->fetch_assoc();
+$enrollmentCheckStmt->close();
+
+$isEnrolled = $enrollmentCheck['pending_count'] > 0 || $enrollmentCheck['enrolled_count'] > 0;
 ?>
 
 <!DOCTYPE html>
@@ -155,21 +171,18 @@ if (!empty($timetable_ids)) {
                 <span>My Profile</span>
               </a>
             </li>
-            <li>
-              <hr class="dropdown-divider">
-            </li>
-              <hr class="dropdown-divider">
-            </li>
+            <hr class="dropdown-divider">
+        </li>
 
-            <li>
-              <a class="dropdown-item d-flex align-items-center" href="../logout.php">
-                <i class="bi bi-box-arrow-right"></i>
-                <span>Sign Out</span>
-              </a>
-            </li>
+        <li>
+          <a class="dropdown-item d-flex align-items-center" href="../logout.php">
+            <i class="bi bi-box-arrow-right"></i>
+            <span>Sign Out</span>
+          </a>
+        </li>
 
-          </ul><!-- End Profile Dropdown Items -->
-        </li><!-- End Profile Nav -->
+      </ul><!-- End Profile Dropdown Items -->
+      </li><!-- End Profile Nav -->
 
       </ul>
     </nav><!-- End Icons Navigation -->
@@ -201,20 +214,22 @@ if (!empty($timetable_ids)) {
       <li class="nav-heading">Enrollment</li>
 
       <li class="nav-item">
-        <a class="nav-link " data-bs-target="#system-nav" data-bs-toggle="collapse" href="#">
+        <a class="nav-link collapsed" data-bs-target="#system-nav" data-bs-toggle="collapse" href="#">
           <i class="bi bi-layout-text-window-reverse"></i><span>Enrollment</span><i class="bi bi-chevron-down ms-auto"></i>
         </a>
-        <ul id="system-nav" class="nav-content collapse show" data-bs-parent="#sidebar-nav">
+        <ul id="system-nav" class="nav-content collapse " data-bs-parent="#sidebar-nav">
           <li>
-            <a href="current_enrollment.php" class="active">
+            <a href="current_enrollment.php">
               <i class="bi bi-circle"></i><span>Current Enrollment</span>
             </a>
           </li>
-          <li>
-            <a href="upcoming_enrollment.php">
-              <i class="bi bi-circle"></i><span>Upcoming Enrollment</span>
-            </a>
-          </li>
+          <?php if (!$isEnrolled): ?>
+            <li>
+              <a href="upcoming_enrollment.php">
+                <i class="bi bi-circle"></i><span>Upcoming Enrollment</span>
+              </a>
+            </li>
+          <?php endif; ?>
         </ul>
       </li><!-- End System Nav -->
 

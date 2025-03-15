@@ -28,6 +28,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_user'])) {
   $phone = $_POST['phone'];
   $email = $_POST['email'];
 
+  // Check for duplicate username or email
+  $stmt = $conn->prepare("SELECT COUNT(*) FROM sms3_user WHERE username = ? OR email = ?");
+  $stmt->bind_param("ss", $username, $email);
+  $stmt->execute();
+  $stmt->bind_result($count);
+  $stmt->fetch();
+  $stmt->close();
+
+  if ($count > 0) {
+    $_SESSION['error_message'] = "Error: Duplicate entry for username or email.";
+    header('Location: manage_user.php');
+    exit;
+  }
+
   try {
     // Insert user if username and email are unique
     $stmt = $conn->prepare("INSERT INTO sms3_user (username, password, name, role, phone, email) VALUES (?, ?, ?, ?, ?, ?)");
@@ -39,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_user'])) {
     header('Location: manage_user.php');
     exit;
   } catch (mysqli_sql_exception $e) {
-    $_SESSION['error_message'] = $e->getCode() === 1062 ? "Error: Duplicate entry for username or email." : "Error: " . $e->getMessage();
+    $_SESSION['error_message'] = "Error: " . $e->getMessage();
     header('Location: manage_user.php');
     exit;
   }
@@ -53,6 +67,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_user'])) {
   $role = $_POST['role'];
   $phone = $_POST['phone'];
   $email = $_POST['email'];
+
+  // Check for duplicate username or email
+  $stmt = $conn->prepare("SELECT COUNT(*) FROM sms3_user WHERE (username = ? OR email = ?) AND id != ?");
+  $stmt->bind_param("ssi", $username, $email, $user_id);
+  $stmt->execute();
+  $stmt->bind_result($count);
+  $stmt->fetch();
+  $stmt->close();
+
+  if ($count > 0) {
+    $_SESSION['error_message'] = "Error: Duplicate entry for username or email.";
+    header('Location: manage_user.php');
+    exit;
+  }
 
   try {
     $stmt = $conn->prepare("UPDATE sms3_user SET username = ?, name = ?, role = ?, phone = ?, email = ? WHERE id = ?");
@@ -275,6 +303,20 @@ $result = $conn->query($sql);
         <a class="nav-link " href="students.php">
           <i class="bi bi-grid"></i>
           <span>Students</span>
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link " href="admissions_data.php">
+          <i class="bi bi-grid"></i>
+          <span>Admission Data</span>
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link " href="enrollment_data.php">
+          <i class="bi bi-grid"></i>
+          <span>Enrollment Data</span>
         </a>
       </li><!-- End System Nav -->
 
