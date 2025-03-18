@@ -239,7 +239,7 @@ while ($department = $departments->fetch_assoc()) {
                           <select class="form-select" id="admissiontype" name="admissiontype" required onchange="validateYearLevel()">
                             <option value="" disabled selected></option>
                             <!-- Options here -->
-                            <option value="New Regular">New Regular</option>
+                            <option value="Freshmen">Freshmen</option>
                             <option value="Transferee">Transferee</option>
                             <option value="Returnee">Returnee</option>
                           </select>
@@ -705,7 +705,7 @@ while ($department = $departments->fetch_assoc()) {
       const yearLevel = document.getElementById('yrlvl');
       const oldStudentNumberRow = document.getElementById('oldStudentNumberRow');
 
-      if (admissionType === 'New Regular') {
+      if (admissionType === 'Freshmen') {
         // Set Year Level to 1st Year and lock it visually
         yearLevel.innerHTML = '<option value="1st" selected>1st Year</option>';
         yearLevel.setAttribute('data-locked', 'true'); // Custom attribute to indicate it's locked

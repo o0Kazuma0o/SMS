@@ -450,7 +450,7 @@ if (!$result) {
                 <label for="filterAdmissionType" class="form-label">Admission Type</label>
                 <select class="form-select" id="filterAdmissionType">
                   <option value="">All Admission Types</option>
-                  <option value="New Regular">New Regular</option>
+                  <option value="Freshmen">Freshmen</option>
                   <option value="Transferee">Transferee</option>
                   <option value="Returnee">Returnee</option>
                 </select>
@@ -733,7 +733,7 @@ if (!$result) {
       document.getElementById('admissionId').value = admissionId;
 
       let requirementsHtml = '';
-      if (admissionType === 'New Regular') {
+      if (admissionType === 'Freshmen') {
         requirementsHtml = `
       <div class="mb-3">
         <div class="form-check">
