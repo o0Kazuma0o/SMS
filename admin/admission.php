@@ -460,7 +460,7 @@ if (!$result) {
                 <select class="form-select" id="filterStatus">
                   <option value="">All Status</option>
                   <option value="Pending">Pending</option>
-                  <option value="Temorarily Enrolled">Temporarily Enrolled</option>
+                  <option value="Temporarily Enrolled">Temporarily Enrolled</option>
                 </select>
               </div>
             </div>
