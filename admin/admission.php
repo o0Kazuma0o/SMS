@@ -455,6 +455,14 @@ if (!$result) {
                   <option value="Returnee">Returnee</option>
                 </select>
               </div>
+              <div class="col-md-4">
+                <label for="filterStatus" class="form-label">Status</label>
+                <select class="form-select" id="filterStatus">
+                  <option value="">All Status</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Temorarily Enrolled">Temporarily Enrolled</option>
+                </select>
+              </div>
             </div>
             <table class="table datatable">
               <thead>
@@ -576,20 +584,24 @@ if (!$result) {
     // Added event listeners for the filter dropdowns
     document.getElementById('filterDepartment').addEventListener('change', filterAdmissions);
     document.getElementById('filterAdmissionType').addEventListener('change', filterAdmissions);
+    document.getElementById('filterStatus').addEventListener('change', filterAdmissions);
 
     function filterAdmissions() {
       const department = document.getElementById('filterDepartment').value;
       const admissionType = document.getElementById('filterAdmissionType').value;
+      const status = document.getElementById('filterStatus').value;
       const rows = document.querySelectorAll('.datatable tbody tr');
 
       rows.forEach(row => {
+        const rowStatus = row.cells[6].textContent.trim();
         const rowDepartment = row.cells[2].textContent.trim();
         const rowAdmissionType = row.cells[1].textContent.trim();
 
+        const statusMatch = status === '' || rowStatus === status;
         const departmentMatch = department === '' || rowDepartment === department;
         const admissionTypeMatch = admissionType === '' || rowAdmissionType === admissionType;
 
-        if (departmentMatch && admissionTypeMatch) {
+        if (statusMatch && departmentMatch && admissionTypeMatch) {
           row.style.display = '';
         } else {
           row.style.display = 'none';
