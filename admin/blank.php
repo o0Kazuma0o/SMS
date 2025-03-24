@@ -1,3 +1,9 @@
+<?php
+require('../database.php');
+require_once 'session.php';
+checkAccess('Admin'); // Ensure only users with the 'admin' role can access this page
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -5,7 +11,7 @@
   <meta charset="utf-8">
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
 
-  <title>Dashboard - Title</title>
+  <title>User</title>
   <meta content="" name="description">
   <meta content="" name="keywords">
 
@@ -28,7 +34,48 @@
 
   <!-- Template Main CSS File -->
   <link href="../assets/css/style.css" rel="stylesheet">
+  <style>
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
 
+    .modal-content {
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 5px;
+      text-align: center;
+      width: 300px;
+    }
+
+    .popup-message {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1000;
+      padding: 15px;
+      border-radius: 5px;
+      color: #fff;
+      opacity: 0;
+      transition: opacity 0.5s ease-in-out;
+    }
+
+    .popup-message.success {
+      background-color: green;
+    }
+
+    .popup-message.error {
+      background-color: red;
+    }
+  </style>
 </head>
 
 <body>
@@ -98,27 +145,6 @@
           <img src="/assets/img/bcp.png" alt="Logo" style="width: 100%; height: 100%; object-fit: cover;">
         </div>
       </div>
-      <!--
-      <div class="flex items-center w-full p-1 pl-6" style="display: flex; align-items: center; padding: 3px; width: 40px; background-color: transparent; height: 4rem;">
-        <div class="flex items-center justify-center" style="display: flex; align-items: center; justify-content: center;">
-            <img src="https://elc-public-images.s3.ap-southeast-1.amazonaws.com/bcp-olp-logo-mini2.png" alt="Logo" style="width: 30px; height: auto;">
-        </div>
-      </div>
-
-      <div style="display: flex; flex-direction: column; align-items: center; padding: 16px;">
-        <div style="display: flex; align-items: center; justify-content: center; width: 96px; height: 96px; border-radius: 50%; background-color: #334155; color: #e2e8f0; font-size: 48px; font-weight: bold; text-transform: uppercase; line-height: 1;">
-            LC
-        </div>
-        <div style="display: flex; flex-direction: column; align-items: center; margin-top: 24px; text-align: center;">
-            <div style="font-weight: 500; color: #fff;">
-                Name
-            </div>
-            <div style="margin-top: 4px; font-size: 14px; color: #fff;">
-                ID
-            </div>
-        </div>
-    </div>
-    -->
 
       <hr class="sidebar-divider">
 
@@ -177,6 +203,17 @@
 
       <hr class="sidebar-divider">
 
+      <li class="nav-heading">TEST CASHIER</li>
+
+      <li class="nav-item">
+        <a class="nav-link " href="manage_payment.php">
+          <i class="bi bi-grid"></i>
+          <span>Payment</span>
+        </a>
+      </li>
+
+      <hr class="sidebar-divider">
+
       <li class="nav-heading">TEST REGISTRAR</li>
 
       <li class="nav-item">
@@ -216,7 +253,6 @@
           <span>Timetable</span>
         </a>
       </li>
-      <!-- End System Nav -->
 
       <hr class="sidebar-divider">
 
@@ -235,7 +271,6 @@
       </li>
 
       <hr class="sidebar-divider">
-
     </ul>
 
   </aside><!-- End Sidebar-->
@@ -243,36 +278,97 @@
   <main id="main" class="main">
 
     <div class="pagetitle">
-      <h1>Dashboard</h1>
+      <h1>User</h1>
       <nav>
         <ol class="breadcrumb">
-          <li class="breadcrumb-item"><a href="index.html">Home</a></li>
-          <li class="breadcrumb-item active">Dashboard</li>
+          <li class="breadcrumb-item"><a href="Dashboard.php">Home</a></li>
+          <li class="breadcrumb-item active">User</li>
         </ol>
       </nav>
     </div><!-- End Page Title -->
 
+    <div id="confirmationModal" class="modal">
+      <div class="modal-content">
+        <p id="confirmationMessage"></p>
+        <div class="modal-buttons">
+          <button id="confirmDelete" class="btn btn-danger">Delete</button>
+          <button id="cancelDelete" class="btn btn-secondary">Cancel</button>
+        </div>
+      </div>
+    </div>
+
     <section class="section dashboard">
       <div class="row">
-
-        <div class="card">
-          <div class="card-body">
-            <h5 class="card-title">??</h5>
-
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-body">
-            <h5 class="card-title">??</h5>
-
-          </div>
-        </div>
 
       </div>
     </section>
 
   </main><!-- End #main -->
+
+  <script>
+    function showPopupMessage(message, type = 'success') {
+      const popup = document.createElement('div');
+      popup.className = `popup-message ${type}`;
+      popup.innerText = message;
+      document.body.appendChild(popup);
+
+      popup.style.opacity = '1';
+      setTimeout(() => {
+        popup.style.opacity = '0';
+        setTimeout(() => popup.remove(), 500);
+      }, 3000);
+    }
+
+    // Confirmation modal for deletion
+    document.querySelectorAll('.delete-link').forEach(button => {
+      button.addEventListener('click', function(event) {
+        event.preventDefault();
+        const deleteUrl = this.href;
+        const username = this.getAttribute('data-username');
+
+        const modal = document.getElementById('confirmationModal');
+        const confirmDeleteBtn = document.getElementById('confirmDelete');
+        const cancelDeleteBtn = document.getElementById('cancelDelete');
+        const confirmationMessage = document.getElementById('confirmationMessage');
+
+        confirmationMessage.innerText = `Are you sure you want to delete the user: ${name}?`;
+        modal.style.display = 'flex';
+
+        confirmDeleteBtn.onclick = () => {
+          window.location.href = deleteUrl;
+          modal.style.display = 'none';
+        };
+
+        cancelDeleteBtn.onclick = () => modal.style.display = 'none';
+      });
+    });
+
+
+    // Popup message function
+    function showPopupMessage(message, type = 'success') {
+      const popup = document.createElement('div');
+      popup.className = `popup-message ${type}`;
+      popup.innerText = message;
+      document.body.appendChild(popup);
+
+      popup.style.opacity = '1';
+      setTimeout(() => {
+        popup.style.opacity = '0';
+        setTimeout(() => popup.remove(), 500);
+      }, 3000);
+    }
+
+    // Show popup on load if a session message exists
+    window.onload = function() {
+      <?php if (isset($_SESSION['error_message'])): ?>
+        showPopupMessage('<?= $_SESSION['error_message']; ?>', 'error');
+        <?php unset($_SESSION['error_message']); ?>
+      <?php elseif (isset($_SESSION['success_message'])): ?>
+        showPopupMessage('<?= $_SESSION['success_message']; ?>', 'success');
+        <?php unset($_SESSION['success_message']); ?>
+      <?php endif; ?>
+    };
+  </script>
 
 
 

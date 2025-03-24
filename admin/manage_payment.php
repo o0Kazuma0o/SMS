@@ -3,103 +3,73 @@ require('../database.php');
 require_once 'session.php';
 checkAccess('Admin'); // Ensure only users with the 'admin' role can access this page
 
-// Edit department
-$edit_department = null;
-if (isset($_GET['edit_department_id'])) {
-  $edit_department_id = $_GET['edit_department_id'];
+// Handle payment form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'add_payment') {
+  $studentNumber = $_POST['student_number'];
+  $amount = $_POST['amount'];
+  $paymentMethod = $_POST['payment_method'];
+  $paymentType = $_POST['payment_type']; // Admission or Enrollment
+  $paymentDate = date('Y-m-d H:i:s');
 
-  // Fetch the department details to pre-fill the form for editing
-  $stmt = $conn->prepare("SELECT * FROM sms3_departments WHERE id = ?");
-  $stmt->bind_param("i", $edit_department_id);
-  $stmt->execute();
-  $result = $stmt->get_result();
-  $edit_department = $result->fetch_assoc();
+  if (empty($studentNumber) || empty($amount) || empty($paymentMethod) || empty($paymentType)) {
+    $_SESSION['error_message'] = 'All fields are required.';
+  } else {
+    // Check if student exists in either sms3_students or sms3_temp_enroll
+    $exists = false;
+    $stmt = $conn->prepare("SELECT 1 FROM sms3_students WHERE student_number = ?");
+    $stmt->bind_param("s", $studentNumber);
+    $stmt->execute();
+    if ($stmt->get_result()->num_rows > 0) {
+      $exists = true;
+    } else {
+      // Check in sms3_temp_enroll for Admission payments
+      if ($paymentType === 'Admission') {
+        $stmt = $conn->prepare("SELECT 1 FROM sms3_temp_enroll WHERE student_number = ?");
+        $stmt->bind_param("s", $studentNumber);
+        $stmt->execute();
+        $exists = $stmt->get_result()->num_rows > 0;
+      }
+    }
+    $stmt->close();
+
+    if ($exists) {
+      $stmt = $conn->prepare("INSERT INTO sms3_payments (student_number, amount, payment_method, payment_type, payment_date) VALUES (?, ?, ?, ?, ?)");
+      $stmt->bind_param("sdsss", $studentNumber, $amount, $paymentMethod, $paymentType, $paymentDate);
+
+      if ($stmt->execute()) {
+        $_SESSION['success_message'] = 'Payment processed successfully.';
+      } else {
+        $_SESSION['error_message'] = 'Failed to process payment: ' . $conn->error;
+      }
+      $stmt->close();
+    } else {
+      $_SESSION['error_message'] = 'Student not found in either enrolled or temporary admission list.';
+    }
+  }
+
+  header('Location: manage_payment.php');
+  exit;
+}
+
+
+// Handle delete payment
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'delete_payment') {
+  $paymentId = $_POST['payment_id'];
+
+  $stmt = $conn->prepare("DELETE FROM sms3_payments WHERE id = ?");
+  $stmt->bind_param("i", $paymentId);
+
+  if ($stmt->execute()) {
+    $_SESSION['success_message'] = 'Payment deleted successfully.';
+  } else {
+    $_SESSION['error_message'] = 'Failed to delete payment.';
+  }
   $stmt->close();
+
+  header('Location: manage_payment.php');
+  exit;
 }
 
-// Add department
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_department'])) {
-  $department_code = $_POST['department_code'];
-  $department_name = $_POST['department_name'];
-
-  try {
-    // Insert department if department code is unique
-    $stmt = $conn->prepare("INSERT INTO sms3_departments (department_code, department_name) VALUES (?, ?)");
-    $stmt->bind_param("ss", $department_code, $department_name);
-    $stmt->execute();
-    $stmt->close();
-
-    $_SESSION['success_message'] = "Department added successfully!";
-    // Redirect to manage_departments.php
-    header('Location: manage_departments.php');
-    exit;
-  } catch (mysqli_sql_exception $e) {
-    if ($e->getCode() == 1062) { // Duplicate entry error code
-      $_SESSION['error_message'] = "Error: Duplicate entry for department code or name.";
-    } else {
-      $_SESSION['error_message'] = "Error: " . $e->getMessage();
-    }
-    header('Location: manage_departments.php'); // Redirect to show error
-    exit;
-  }
-}
-
-// Update department
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_department'])) {
-  $department_id = $_POST['department_id'];  // The ID of the department being updated
-  $department_code = $_POST['department_code'];
-  $department_name = $_POST['department_name'];
-
-  try {
-    // Update the department in the database
-    $stmt = $conn->prepare("UPDATE sms3_departments SET department_code = ?, department_name = ? WHERE id = ?");
-    $stmt->bind_param("ssi", $department_code, $department_name, $department_id);
-    $stmt->execute();
-    $stmt->close();
-
-    $_SESSION['success_message'] = "Department updated successfully!";
-
-    // Redirect to manage_departments.php after updating
-    header('Location: manage_departments.php');
-    exit;
-  } catch (mysqli_sql_exception $e) {
-    if ($e->getCode() == 1062) { // Duplicate entry error code
-      $_SESSION['error_message'] = "Error: Duplicate entry for department code or name.";
-    } else {
-      $_SESSION['error_message'] = "Error: " . $e->getMessage();
-    }
-    header('Location: manage_departments.php'); // Redirect to show error
-    exit;
-  }
-}
-
-// Delete department
-if (isset($_GET['delete_department_id'])) {
-  $delete_id = $_GET['delete_department_id'];
-  try {
-    $stmt = $conn->prepare("DELETE FROM sms3_departments WHERE id = ?");
-    $stmt->bind_param("i", $delete_id);
-    $stmt->execute();
-    $stmt->close();
-
-    $_SESSION['success_message'] = "Department deleted successfully!";
-
-    // Redirect to manage_departments.php
-    header('Location: manage_departments.php');
-    exit;
-  } catch (mysqli_sql_exception $e) {
-    if ($e->getCode() == 1451) { // Foreign key constraint error code
-      $_SESSION['error_message'] = "Error: This department is still connected to other data.";
-    } else {
-      $_SESSION['error_message'] = "Error: " . $e->getMessage();
-    }
-    header('Location: manage_departments.php'); // Redirect to show error
-    exit;
-  }
-}
-
-// Fetch all departments
-$departments = $conn->query("SELECT * FROM sms3_departments");
 ?>
 
 <!DOCTYPE html>
@@ -109,7 +79,7 @@ $departments = $conn->query("SELECT * FROM sms3_departments");
   <meta charset="utf-8">
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
 
-  <title>Department</title>
+  <title>User</title>
   <meta content="" name="description">
   <meta content="" name="keywords">
 
@@ -132,7 +102,6 @@ $departments = $conn->query("SELECT * FROM sms3_departments");
 
   <!-- Template Main CSS File -->
   <link href="../assets/css/style.css" rel="stylesheet">
-
   <style>
     .modal {
       display: none;
@@ -155,26 +124,6 @@ $departments = $conn->query("SELECT * FROM sms3_departments");
       width: 300px;
     }
 
-    .modal-buttons {
-      margin-top: 20px;
-      display: flex;
-      justify-content: space-between;
-    }
-
-    .btn-danger {
-      background-color: #dc3545;
-      color: white;
-    }
-
-    .btn-secondary {
-      background-color: #6c757d;
-      color: white;
-    }
-
-    .btn:hover {
-      opacity: 0.8;
-    }
-
     .popup-message {
       position: fixed;
       top: 20px;
@@ -182,7 +131,6 @@ $departments = $conn->query("SELECT * FROM sms3_departments");
       z-index: 1000;
       padding: 15px;
       border-radius: 5px;
-      font-size: 16px;
       color: #fff;
       opacity: 0;
       transition: opacity 0.5s ease-in-out;
@@ -196,7 +144,6 @@ $departments = $conn->query("SELECT * FROM sms3_departments");
       background-color: red;
     }
   </style>
-
 </head>
 
 <body>
@@ -238,18 +185,18 @@ $departments = $conn->query("SELECT * FROM sms3_departments");
             <li>
               <hr class="dropdown-divider">
             </li>
-              <hr class="dropdown-divider">
-            </li>
+            <hr class="dropdown-divider">
+        </li>
 
-            <li>
-              <a class="dropdown-item d-flex align-items-center" href="../logout.php">
-                <i class="bi bi-box-arrow-right"></i>
-                <span>Sign Out</span>
-              </a>
-            </li>
+        <li>
+          <a class="dropdown-item d-flex align-items-center" href="../logout.php">
+            <i class="bi bi-box-arrow-right"></i>
+            <span>Sign Out</span>
+          </a>
+        </li>
 
-          </ul><!-- End Profile Dropdown Items -->
-        </li><!-- End Profile Nav -->
+      </ul><!-- End Profile Dropdown Items -->
+      </li><!-- End Profile Nav -->
 
       </ul>
     </nav><!-- End Icons Navigation -->
@@ -343,7 +290,7 @@ $departments = $conn->query("SELECT * FROM sms3_departments");
           <span>Academic Structure</span>
         </a>
       </li>
- 
+
       <li class="nav-item">
         <a class="nav-link " href="manage_departments.php">
           <i class="bi bi-grid"></i>
@@ -399,18 +346,18 @@ $departments = $conn->query("SELECT * FROM sms3_departments");
   <main id="main" class="main">
 
     <div class="pagetitle">
-      <h1>Department</h1>
+      <h1>Payment</h1>
       <nav>
         <ol class="breadcrumb">
           <li class="breadcrumb-item"><a href="Dashboard.php">Home</a></li>
-          <li class="breadcrumb-item active">Department</li>
+          <li class="breadcrumb-item active">Payment</li>
         </ol>
       </nav>
     </div><!-- End Page Title -->
 
     <div id="confirmationModal" class="modal">
       <div class="modal-content">
-        <p id="confirmationMessage">Are you sure you want to delete this department?</p>
+        <p id="confirmationMessage"></p>
         <div class="modal-buttons">
           <button id="confirmDelete" class="btn btn-danger">Delete</button>
           <button id="cancelDelete" class="btn btn-secondary">Cancel</button>
@@ -419,138 +366,186 @@ $departments = $conn->query("SELECT * FROM sms3_departments");
     </div>
 
     <section class="section dashboard">
-      <div class="card">
-        <div class="card-body">
-          <h5 class="card-title"><?php if (isset($_GET['edit_department_id'])): ?>
-              Edit Department
-            <?php else: ?>
-              Add Department
-            <?php endif; ?>
-          </h5>
+      <div class="row">
+        <div class="card">
 
-          <!-- Add/Edit Department Form -->
-          <form action="manage_departments.php" method="POST" class="mb-4">
-            <div class="form-group">
-              <label for="department_name">Department Name:</label>
-              <input type="text" class="form-control" name="department_name" id="department_name" required
-                value="<?= isset($edit_department) ? $edit_department['department_name'] : ''; ?>">
+          <!-- Tabs -->
+          <ul class="nav nav-tabs mt-3" id="paymentTabs" role="tablist">
+            <li class="nav-item">
+              <button class="nav-link active" id="admission-tab" data-bs-toggle="tab" data-bs-target="#admission" type="button" role="tab" aria-controls="admission" aria-selected="true">Admission</button>
+            </li>
+            <li class="nav-item">
+              <button class="nav-link" id="enrollment-tab" data-bs-toggle="tab" data-bs-target="#enrollment" type="button" role="tab" aria-controls="enrollment" aria-selected="false">Enrollment</button>
+            </li>
+          </ul>
+          <div class="tab-content mb-3" id="paymentTabsContent">
+            <!-- Admission Tab -->
+            <div class="tab-pane fade show active" id="admission" role="tabpanel" aria-labelledby="admission-tab">
+              <form method="POST" action="">
+                <input type="hidden" name="action" value="add_payment">
+                <input type="hidden" name="payment_type" value="Admission">
+                <div class="mb-3">
+                  <label for="student_number_admission" class="form-label">Student Number</label>
+                  <select class="form-select" id="student_number_admission" name="student_number" required>
+                    <option value="">Select Student</option>
+                    <?php
+                    $result = $conn->query("SELECT student_number, first_name, last_name FROM sms3_temp_enroll");
+                    while ($row = $result->fetch_assoc()) {
+                      echo "<option value='{$row['student_number']}'>{$row['student_number']} - {$row['first_name']} {$row['last_name']}</option>";
+                    }
+                    ?>
+                  </select>
+                </div>
+                <div class="mb-3">
+                  <label for="amount_admission" class="form-label">Amount</label>
+                  <input type="number" class="form-control" id="amount_admission" name="amount" step="0.01" required>
+                </div>
+                <div class="mb-3">
+                  <label for="payment_method_admission" class="form-label">Payment Method</label>
+                  <select class="form-select" id="payment_method_admission" name="payment_method" required>
+                    <option value="Cash">Cash</option>
+                    <option value="Credit Card">Credit Card</option>
+                    <option value="Bank Transfer">Bank Transfer</option>
+                  </select>
+                </div>
+                <button type="submit" class="btn btn-primary">Submit Payment</button>
+              </form>
             </div>
 
-            <div class="form-group mt-2">
-              <label for="department_name">Department Code:</label>
-              <input type="text" class="form-control" name="department_code" id="department_code" required
-                value="<?= isset($edit_department) ? $edit_department['department_code'] : ''; ?>">
+            <!-- Enrollment Tab -->
+            <div class="tab-pane fade" id="enrollment" role="tabpanel" aria-labelledby="enrollment-tab">
+              <form method="POST" action="">
+                <input type="hidden" name="action" value="add_payment">
+                <input type="hidden" name="payment_type" value="Enrollment">
+                <div class="mb-3">
+                  <label for="student_number_enrollment" class="form-label">Student Number</label>
+                  <select class="form-select" id="student_number_enrollment" name="student_number" required>
+                    <option value="">Select Student</option>
+                    <?php
+                    $result = $conn->query("SELECT student_number, first_name, last_name FROM sms3_students");
+                    while ($row = $result->fetch_assoc()) {
+                      echo "<option value='{$row['student_number']}'>{$row['student_number']} - {$row['first_name']} {$row['last_name']}</option>";
+                    }
+                    ?>
+                  </select>
+                </div>
+                <div class="mb-3">
+                  <label for="amount_enrollment" class="form-label">Amount</label>
+                  <input type="number" class="form-control" id="amount_enrollment" name="amount" step="0.01" required>
+                </div>
+                <div class="mb-3">
+                  <label for="payment_method_enrollment" class="form-label">Payment Method</label>
+                  <select class="form-select" id="payment_method_enrollment" name="payment_method" required>
+                    <option value="Cash">Cash</option>
+                    <option value="Credit Card">Credit Card</option>
+                    <option value="Bank Transfer">Bank Transfer</option>
+                  </select>
+                </div>
+                <button type="submit" class="btn btn-primary">Submit Payment</button>
+              </form>
             </div>
-            <?php if (isset($edit_department)): ?>
-              <input type="hidden" name="department_id" value="<?= $edit_department['id']; ?>">
-              <button type="submit" name="update_department" class="btn btn-warning mt-3">Update Department</button>
-            <?php else: ?>
-              <button type="submit" name="add_department" class="btn btn-primary mt-3">Add Department</button>
-            <?php endif; ?>
-          </form>
+          </div><!-- End Tabs -->
+
         </div>
-      </div>
-      <div class="card">
-        <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;" class="card-body">
-          <h5 class="card-title">Department List</h5>
-          <!-- List of Departments -->
-          <table style="width: 100%; min-width: 800px;" class="table table-bordered">
+        <div class="card">
+          <!-- Payment Records -->
+          <h5 class="card-title mt-5">Payment Records</h5>
+          <table class="table datatable">
             <thead>
               <tr>
-                <th>Department Code</th>
-                <th>Department Name</th>
-                <th>Actions</th>
+                <th>ID</th>
+                <th>Student Number</th>
+                <th>Amount</th>
+                <th>Payment Method</th>
+                <th>Payment Type</th>
+                <th>Date</th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody>
-              <?php while ($department = $departments->fetch_assoc()): ?>
-                <tr>
-                  <td><?= $department['department_code']; ?></td>
-                  <td><?= $department['department_name']; ?></td>
-                  <td>
-                    <a href="manage_departments.php?edit_department_id=<?= $department['id']; ?>"
-                      class="btn btn-info btn-sm">Edit</a>
-                    <a href="manage_departments.php?delete_department_id=<?= $department['id']; ?>"
-                      class="btn btn-danger btn-sm delete-link"
-                      data-department-name="<?= $department['department_name']; ?>">Delete</a>
-                  </td>
-                </tr>
-              <?php endwhile; ?>
+              <?php
+              $result = $conn->query("SELECT * FROM sms3_payments");
+              while ($row = $result->fetch_assoc()) {
+                echo "<tr>
+                    <td>{$row['id']}</td>
+                    <td>{$row['student_number']}</td>
+                    <td>{$row['amount']}</td>
+                    <td>{$row['payment_method']}</td>
+                    <td>{$row['payment_type']}</td>
+                    <td>{$row['payment_date']}</td>
+                    <td>
+                      <form method='POST' action='' style='display:inline;'>
+                        <input type='hidden' name='action' value='delete_payment'>
+                        <input type='hidden' name='payment_id' value='{$row['id']}'>
+                        <button type='button' class='btn btn-danger btn-sm delete-btn' data-id='{$row['id']}'>Delete</button>
+                      </form>
+                    </td>
+                  </tr>";
+              }
+              ?>
             </tbody>
           </table>
         </div>
+
       </div>
     </section>
 
   </main><!-- End #main -->
 
   <script>
-    function showConfirmationModal(message, onConfirm) {
-      const modal = document.getElementById('confirmationModal');
-      const confirmDeleteBtn = document.getElementById('confirmDelete');
-      const cancelDeleteBtn = document.getElementById('cancelDelete');
-      const confirmationMessage = document.getElementById('confirmationMessage');
+    function showPopupMessage(message, type = 'success') {
+      const popup = document.createElement('div');
+      popup.className = `popup-message ${type}`;
+      popup.innerText = message;
+      document.body.appendChild(popup);
 
-      confirmationMessage.innerText = message;
-      modal.style.display = 'flex';
-
-      confirmDeleteBtn.onclick = () => {
-        onConfirm();
-        closeModal();
-      };
-
-      cancelDeleteBtn.onclick = closeModal;
-
-      function closeModal() {
-        modal.style.display = 'none';
-      }
+      popup.style.opacity = '1';
+      setTimeout(() => {
+        popup.style.opacity = '0';
+        setTimeout(() => popup.remove(), 500);
+      }, 3000);
     }
 
+    // Confirmation modal for deletion
     document.querySelectorAll('.delete-link').forEach(button => {
       button.addEventListener('click', function(event) {
         event.preventDefault();
         const deleteUrl = this.href;
-        const departmentName = this.getAttribute('data-department-name');
+        const username = this.getAttribute('data-username');
 
-        showConfirmationModal(`Are you sure you want to delete the Department: ${departmentName}?`, () => {
+        const modal = document.getElementById('confirmationModal');
+        const confirmDeleteBtn = document.getElementById('confirmDelete');
+        const cancelDeleteBtn = document.getElementById('cancelDelete');
+        const confirmationMessage = document.getElementById('confirmationMessage');
+
+        confirmationMessage.innerText = `Are you sure you want to delete the user: ${name}?`;
+        modal.style.display = 'flex';
+
+        confirmDeleteBtn.onclick = () => {
           window.location.href = deleteUrl;
-        });
+          modal.style.display = 'none';
+        };
+
+        cancelDeleteBtn.onclick = () => modal.style.display = 'none';
       });
     });
 
+
+    // Popup message function
     function showPopupMessage(message, type = 'success') {
-      // Create the popup element
       const popup = document.createElement('div');
       popup.className = `popup-message ${type}`;
       popup.innerText = message;
-
-      // Style the popup element
-      popup.style.position = 'fixed';
-      popup.style.top = '20px';
-      popup.style.right = '20px';
-      popup.style.padding = '15px';
-      popup.style.zIndex = '1000';
-      popup.style.borderRadius = '5px';
-      popup.style.color = '#fff';
-      popup.style.fontSize = '16px';
-      popup.style.backgroundColor = type === 'success' ? 'green' : 'red';
-      popup.style.opacity = '1';
-      popup.style.transition = 'opacity 0.5s ease';
-
-      // Add the popup to the document
       document.body.appendChild(popup);
 
-      // Fade out after 3 seconds
+      popup.style.opacity = '1';
       setTimeout(() => {
         popup.style.opacity = '0';
-        // Remove the element after the transition ends
-        setTimeout(() => {
-          popup.remove();
-        }, 500);
+        setTimeout(() => popup.remove(), 500);
       }, 3000);
     }
 
-    // Trigger the popup based on the session message
+    // Show popup on load if a session message exists
     window.onload = function() {
       <?php if (isset($_SESSION['error_message'])): ?>
         showPopupMessage('<?= $_SESSION['error_message']; ?>', 'error');

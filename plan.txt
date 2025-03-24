@@ -1,15 +1,3 @@
-Admission Process:
-1.
-  Screening of Documents
-  Assigning Student Number
-2.
-  Submission of Documents
-  Encoding of Details
-3. Cashier
-  Payment
-4.
-  ID
-5. COR
 
 478793835
 tmqk thdt vfsb rrkp
@@ -35,4 +23,6 @@ AI - sana gumana agad
 
 optional:
 merge rooms, sections and subjects
-optimize adding timetable - fuck this
+
+
+accounting - create a semi Cashier

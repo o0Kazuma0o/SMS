@@ -55,12 +55,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_id'], $_POS
       // Insert data into sms3_temp_enroll
       $stmt = $conn->prepare("INSERT INTO sms3_temp_enroll (
               student_number, first_name, middle_name, last_name, department_id, branch, admission_type, 
-              year_level, sex, civil_status, religion, birthday, email, contact_number, facebook_name, 
-              address, father_name, mother_name, guardian_name, guardian_contact, primary_school, primary_year, 
+              year_level, sex, civil_status, religion, birthday, email, contact_number, 
+              address, guardian_name, guardian_contact, primary_school, primary_year, 
               secondary_school, secondary_year, last_school, last_school_year, referral_source, working_student, member4ps,
               form138, good_moral, form137, birth_certificate, brgy_clearance,
               honorable_dismissal, transcript_of_records, certificate_of_grades, status, receipt_status
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
       $form138 = isset($_POST['form138']) ? 'Submitted' : 'To Be Followed';
       $form137 = isset($_POST['form137']) ? 'Submitted' : 'To Be Followed';
@@ -74,7 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_id'], $_POS
       $receiptStatus = 'Not Paid';
 
       $stmt->bind_param(
-        "sssssssssssssssssssssssssssssssssssssss",
+        "ssssssssssssssssssssssssssssssssssss",
         $studentNumber,
         $admissionData['first_name'],
         $admissionData['middle_name'],
@@ -89,10 +89,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_id'], $_POS
         $admissionData['birthday'],
         $admissionData['email'],
         $admissionData['contact_number'],
-        $admissionData['facebook_name'],
         $admissionData['address'],
-        $admissionData['father_name'],
-        $admissionData['mother_name'],
         $admissionData['guardian_name'],
         $admissionData['guardian_contact'],
         $admissionData['primary_school'],
@@ -571,7 +568,6 @@ if (!$result) {
               <p><strong>Contact Number:</strong> ${info.contact_number}</p>
               <p><strong>Email:</strong> ${info.email}</p>
               <p><strong>Address:</strong> ${info.address}</p>
-              <p><strong>Facebook Name:</strong> ${info.facebook_name}</p>
             </div>
             <div class="col-md-6">
               <p><strong>Admission Type:</strong> ${info.admission_type}</p>
@@ -586,10 +582,6 @@ if (!$result) {
           <hr>
           <h4>Parent/Guardian Information</h4>
           <div class="row">
-            <div class="col-md-6">
-              <p><strong>Father's Full Name:</strong> ${info.father_name}</p>
-              <p><strong>Mother's Full Name:</strong> ${info.mother_name}</p>
-            </div>
             <div class="col-md-6">
               <p><strong>Guardian's Full Name:</strong> ${info.guardian_name}</p>
               <p><strong>Guardian's Contact Number:</strong> ${info.guardian_contact}</p>

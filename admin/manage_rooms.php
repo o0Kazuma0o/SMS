@@ -395,6 +395,17 @@ $rooms = $conn->query("SELECT r.*, d.department_code FROM sms3_rooms r JOIN sms3
 
       <hr class="sidebar-divider">
 
+      <li class="nav-heading">TEST CASHIER</li>
+
+      <li class="nav-item">
+        <a class="nav-link " href="manage_payment.php">
+          <i class="bi bi-grid"></i>
+          <span>Payment</span>
+        </a>
+      </li>
+
+      <hr class="sidebar-divider">
+
       <li class="nav-heading">TEST REGISTRAR</li>
 
       <li class="nav-item">

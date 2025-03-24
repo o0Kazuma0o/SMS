@@ -362,7 +362,7 @@ $semesters = $conn->query("SELECT * FROM sms3_semesters ORDER BY id DESC");
         <div class="card-body">
           <div class="tab-content">
             <!-- Academic Year Tab -->
-            <div class="tab-pane fade <?= $_SESSION['active_tab'] == 'academicYear' ? 'active' : '' ?>" id="academicYear">
+            <div class="tab-pane fade show active <?= $_SESSION['active_tab'] == 'academicYear' ? 'active' : '' ?>" id="academicYear">
               <div class="row">
                 <div class="col-md-4">
                   <h5 class="card-title">Add New Academic Year</h5>

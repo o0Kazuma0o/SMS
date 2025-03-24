@@ -68,17 +68,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_id'], $_POS
       // Insert data into sms3_students
       $stmt = $conn->prepare("INSERT INTO sms3_students (
               student_number, first_name, middle_name, last_name, academic_year, username, password, role, department_id, admission_type, 
-              year_level, sex, civil_status, religion, birthday, email, contact_number, facebook_name, 
-              address, father_name, mother_name, guardian_name, guardian_contact, primary_school, primary_year, 
+              year_level, sex, civil_status, religion, birthday, email, contact_number, 
+              address, guardian_name, guardian_contact, primary_school, primary_year, 
               secondary_school, secondary_year, last_school, last_school_year, referral_source, working_student, member4ps, status
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
       $username = 's' . $studentNumber;
       $role = 'Student';
       $status = 'Not Enrolled';
 
       $stmt->bind_param(
-        "sssssssssssssssssssssssssssssssss",
+        "ssssssssssssssssssssssssssssss",
         $studentNumber,
         $admissionData['first_name'],
         $admissionData['middle_name'],
@@ -96,10 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_id'], $_POS
         $admissionData['birthday'],
         $admissionData['email'],
         $admissionData['contact_number'],
-        $admissionData['facebook_name'],
         $admissionData['address'],
-        $admissionData['father_name'],
-        $admissionData['mother_name'],
         $admissionData['guardian_name'],
         $admissionData['guardian_contact'],
         $admissionData['primary_school'],
@@ -307,6 +304,17 @@ if (!$result) {
 
       <hr class="sidebar-divider">
 
+      <li class="nav-heading">TEST CASHIER</li>
+
+      <li class="nav-item">
+        <a class="nav-link " href="manage_payment.php">
+          <i class="bi bi-grid"></i>
+          <span>Payment</span>
+        </a>
+      </li>
+
+      <hr class="sidebar-divider">
+
       <li class="nav-heading">TEST REGISTRAR</li>
 
       <li class="nav-item">
@@ -480,13 +488,11 @@ if (!$result) {
           <p><strong>Sex:</strong> ${info.sex || 'N/A'}</p>
           <p><strong>Email:</strong> ${info.email || 'N/A'}</p>
           <p><strong>Contact Number:</strong> ${info.contact_number || 'N/A'}</p>
-          <p><strong>Facebook Name:</strong> ${info.facebook_name || 'N/A'}</p>
           <p><strong>Working Student:</strong> ${info.working_student === 'Yes' ? 'Yes' : 'No'}</p>
           <p><strong>Address:</strong> ${info.address || 'N/A'}</p>
           <p><strong>Civil Status:</strong> ${info.civil_status || 'N/A'}</p>
           <p><strong>Religion:</strong> ${info.religion || 'N/A'}</p>
           <p><strong>Father's Name:</strong> ${info.father_name || 'N/A'}</p>
-          <p><strong>Mother's Name:</strong> ${info.mother_name || 'N/A'}</p>
           <p><strong>Guardian's Name:</strong> ${info.guardian_name || 'N/A'}</p>
           <p><strong>Guardian's Contact:</strong> ${info.guardian_contact || 'N/A'}</p>
           <p><strong>Member 4Ps:</strong> ${info.member4ps === 'Yes' ? 'Yes' : 'No'}</p>

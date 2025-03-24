@@ -340,11 +340,6 @@ while ($department = $departments->fetch_assoc()) {
                           <input type="number" class="form-control" id="contactnumber" name="contactnumber" required pattern="[0-9]{10}" placeholder="11-digit phone number" oninput="validateContactNumber(this)">
                           <div class="text-danger" id="contactnumber-error"></div>
                         </div>
-                        <div class="col-md-3">
-                          <label for="facebookmessenger" class="form-label">Facebook Name</label>
-                          <input type="text" class="form-control" id="facebookmessenger" name="facebookname" required>
-                          <div class="text-danger" id="facebookmessenger-error"></div>
-                        </div>
                       </div>
                       <div class="d-flex justify-content-end">
                         <button type="button" class="btn btn-primary" onclick="validateBasicInfo()">Next</button>
@@ -416,50 +411,13 @@ while ($department = $departments->fetch_assoc()) {
               <div class="accordion-item">
                 <h2 class="accordion-header" id="headingThree">
                   <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree" disabled>
-                    Parent's/Guardian's Information
+                    Guardian's Information
                   </button>
                 </h2>
                 <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#admission">
                   <div class="accordion-body">
                     <form action="admission.php" id="guardian-form" method="post" class="mb-4">
-                      <!-- Row 1: Father's Name -->
-                      <div class="row form-row">
-                        <div class="col-md-3">
-                          <label for="flastname" class="form-label">Father's Last Name</label>
-                          <input type="text" class="form-control" id="flastname" name="father_lastname" required oninput="validateLettersOnly(this)">
-                          <div class="text-danger" id="flastname-error"></div>
-                        </div>
-                        <div class="col-md-3">
-                          <label for="ffirstname" class="form-label">Father's First Name</label>
-                          <input type="text" class="form-control" id="ffirstname" name="father_firstname" required oninput="validateLettersOnly(this)">
-                          <div class="text-danger" id="ffirstname-error"></div>
-                        </div>
-                        <div class="col-md-3">
-                          <label for="fmiddlename" class="form-label">Father's Middle Name</label>
-                          <input type="text" class="form-control" id="fmiddlename" name="father_middlename" required oninput="validateLettersOnly(this)">
-                          <div class="text-danger" id="fmiddlename-error"></div>
-                        </div>
-                      </div>
-                      <!-- Row 2: Mother's Name -->
-                      <div class="row form-row">
-                        <h6>Mother's Maiden Name</h6>
-                        <div class="col-md-3">
-                          <label for="mlastname" class="form-label">Mother's Last Name</label>
-                          <input type="text" class="form-control" id="mlastname" name="mother_lastname" required oninput="validateLettersOnly(this)">
-                          <div class="text-danger" id="mlastname-error"></div>
-                        </div>
-                        <div class="col-md-3">
-                          <label for="mfirstname" class="form-label">Mother's First Name</label>
-                          <input type="text" class="form-control" id="mfirstname" name="mother_firstname" required oninput="validateLettersOnly(this)">
-                          <div class="text-danger" id="mfirstname-error"></div>
-                        </div>
-                        <div class="col-md-3">
-                          <label for="mmiddlename" class="form-label">Mother's Middle Name</label>
-                          <input type="text" class="form-control" id="mmiddlename" name="mother_middlename" required oninput="validateLettersOnly(this)">
-                          <div class="text-danger" id="mmiddlename-error"></div>
-                        </div>
-                      </div>
-                      <!-- Row 3: Guardian's Name -->
+                      <!-- Row 1: Guardian's Name -->
                       <div class="row form-row">
                         <div class="col-md-3">
                           <label for="glastname" class="form-label">Guardian's Last Name</label>
@@ -1091,9 +1049,7 @@ while ($department = $departments->fetch_assoc()) {
 
       const fullAddress = `${addressInfo.address}, ${addressInfo.barangay}, ${addressInfo.municipality} - ${addressInfo.region}`;
 
-      // Combine Parent and Guardian Names
-      const fatherFullName = `${guardianInfo.father_lastname}, ${guardianInfo.father_firstname} ${guardianInfo.father_middlename}`;
-      const motherFullName = `${guardianInfo.mother_lastname}, ${guardianInfo.mother_firstname} ${guardianInfo.mother_middlename}`;
+      // Combine Guardian Names
       const guardianFullName = `${guardianInfo.guardian_lastname}, ${guardianInfo.guardian_firstname} ${guardianInfo.guardian_middlename}`;
 
       // Basic Information Section in Two Columns
@@ -1110,7 +1066,6 @@ while ($department = $departments->fetch_assoc()) {
           <p><strong>Contact Number:</strong> ${basicInfo.contactnumber}</p>
           <p><strong>Email:</strong> ${basicInfo.email}</p>
           <p><strong>Address:</strong> ${fullAddress}</p>
-          <p><strong>Facebook Name:</strong> ${basicInfo.facebookname}</p>
         </div>
         <div class="col-md-6">
           <p><strong>Admission Type:</strong> ${basicInfo.admissiontype}</p>
@@ -1127,12 +1082,8 @@ while ($department = $departments->fetch_assoc()) {
 
       // Parent/Guardian Information in Two Columns
       summaryHtml += `
-      <h4>Parent/Guardian Information</h4>
+      <h4>Guardian Information</h4>
       <div class="row">
-        <div class="col-md-6">
-          <p><strong>Father's Full Name:</strong> ${fatherFullName}</p>
-          <p><strong>Mother's Full Name:</strong> ${motherFullName}</p>
-        </div>
         <div class="col-md-6">
           <p><strong>Guardian's Full Name:</strong> ${guardianFullName}</p>
           <p><strong>Guardian's Contact Number:</strong> ${guardianInfo.gcontactnumber}</p>

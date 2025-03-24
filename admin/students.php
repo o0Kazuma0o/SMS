@@ -418,6 +418,17 @@ if (isset($_GET['delete_timetable_from_student'])) {
 
       <hr class="sidebar-divider">
 
+      <li class="nav-heading">TEST CASHIER</li>
+
+      <li class="nav-item">
+        <a class="nav-link " href="manage_payment.php">
+          <i class="bi bi-grid"></i>
+          <span>Payment</span>
+        </a>
+      </li>
+
+      <hr class="sidebar-divider">
+
       <li class="nav-heading">TEST REGISTRAR</li>
 
       <li class="nav-item">
@@ -736,7 +747,6 @@ if (isset($_GET['delete_timetable_from_student'])) {
               <p><strong>Contact Number:</strong> ${info.contact_number}</p>
               <p><strong>Email:</strong> ${info.email}</p>
               <p><strong>Address:</strong> ${info.address}</p>
-              <p><strong>Facebook Name:</strong> ${info.facebook_name}</p>
             </div>
             <div class="col-md-6">
               <p><strong>Admission Type:</strong> ${info.admission_type}</p>
@@ -750,10 +760,6 @@ if (isset($_GET['delete_timetable_from_student'])) {
           <hr>
           <h4>Parent/Guardian Information</h4>
           <div class="row">
-            <div class="col-md-6">
-              <p><strong>Father's Full Name:</strong> ${info.father_name}</p>
-              <p><strong>Mother's Full Name:</strong> ${info.mother_name}</p>
-            </div>
             <div class="col-md-6">
               <p><strong>Guardian's Full Name:</strong> ${info.guardian_name}</p>
               <p><strong>Guardian's Contact Number:</strong> ${info.guardian_contact}</p>
