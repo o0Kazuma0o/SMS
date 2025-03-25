@@ -440,18 +440,18 @@ if (isset($_GET['delete_row_id'])) {
             <li>
               <hr class="dropdown-divider">
             </li>
-              <hr class="dropdown-divider">
-            </li>
+            <hr class="dropdown-divider">
+        </li>
 
-            <li>
-              <a class="dropdown-item d-flex align-items-center" href="../logout.php">
-                <i class="bi bi-box-arrow-right"></i>
-                <span>Sign Out</span>
-              </a>
-            </li>
+        <li>
+          <a class="dropdown-item d-flex align-items-center" href="../logout.php">
+            <i class="bi bi-box-arrow-right"></i>
+            <span>Sign Out</span>
+          </a>
+        </li>
 
-          </ul><!-- End Profile Dropdown Items -->
-        </li><!-- End Profile Nav -->
+      </ul><!-- End Profile Dropdown Items -->
+      </li><!-- End Profile Nav -->
 
       </ul>
     </nav><!-- End Icons Navigation -->
@@ -625,7 +625,7 @@ if (isset($_GET['delete_row_id'])) {
         <div class="card">
           <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;" class="card-body">
             <h5 class="card-title">List of Timetables</h5>
-            
+
             <!-- Filter Dropdowns -->
             <div class="row mb-3">
               <div class="col-md-4">
@@ -942,6 +942,9 @@ if (isset($_GET['delete_row_id'])) {
             document.getElementById('editStartTime').value = data.start_time;
             document.getElementById('editEndTime').value = data.end_time;
 
+            // Get the section's branch from the data
+            const sectionBranch = data.section_branch;
+
             // Fetch and populate subjects based on the department
             fetch(`fetch_subjects.php?department_id=${data.department_id}`)
               .then(response => response.text()) // Expecting HTML as response
@@ -952,8 +955,8 @@ if (isset($_GET['delete_row_id'])) {
               })
               .catch(error => console.error('Error fetching subjects:', error));
 
-            // Fetch and populate rooms based on the department
-            fetch(`fetch_rooms.php?department_id=${data.department_id}`)
+            // Fetch and populate rooms based on the section's branch and department
+            fetch(`fetch_rooms.php?branch=${sectionBranch}&department_id=${data.department_id}`)
               .then(response => response.text()) // Expecting HTML as response
               .then(roomOptions => {
                 const roomDropdown = document.getElementById('editRoom');
