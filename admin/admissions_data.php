@@ -294,7 +294,7 @@ if (!$result) {
                       </td>
                       <td><?= htmlspecialchars($row['created_at']) ?></td>
                       <td>
-                        <span class="badge bg-<?= $row['status'] == 'Temporarily Enrolled' ? 'success' : ($row['status'] == 'Enrolled' ? 'primary' : 'danger') ?>">
+                        <span class="badge bg-<?= $row['status'] == 'Processing' ? 'success' : ($row['status'] == 'Accepted' ? 'primary' : 'danger') ?>">
                           <?= htmlspecialchars($row['status']) ?>
                         </span>
                       </td>

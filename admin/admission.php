@@ -40,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_id'], $_POS
   $status = $_POST['status'];
   $userId = $_SESSION['user_id'];
 
-  if ($status === 'Temporarily Enrolled') {
+  if ($status === 'Processing') {
     // Move record to sms3_temp_enroll on temporary enrollment
     $stmt = $conn->prepare("SELECT * FROM sms3_pending_admission WHERE id = ?");
     $stmt->bind_param('i', $admissionId);
@@ -71,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_id'], $_POS
       $honorableDismissal = isset($_POST['honorable_dismissal']) ? ($_POST['honorable_dismissal'] === 'on' ? 'Submitted' : 'To Be Followed') : (isset($_POST['honorable_dismissal_shown']) ? 'To Be Followed' : NULL);
       $transcriptOfRecords = isset($_POST['transcript_of_records']) ? ($_POST['transcript_of_records'] === 'on' ? 'Submitted' : 'To Be Followed') : (isset($_POST['transcript_of_records_shown']) ? 'To Be Followed' : NULL);
       $certificateOfGrades = isset($_POST['certificate_of_grades']) ? ($_POST['certificate_of_grades'] === 'on' ? 'Submitted' : 'To Be Followed') : (isset($_POST['certificate_of_grades_shown']) ? 'To Be Followed' : NULL);
-      $status = 'Temporarily Enrolled';
+      $status = 'Processing';
       $receiptStatus = 'Not Paid';
 
       $stmt->bind_param(
@@ -115,7 +115,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_id'], $_POS
       );
 
       if ($stmt->execute()) {
-        $updateStmt = $conn->prepare("UPDATE sms3_pending_admission SET status = 'Temporarily Enrolled' WHERE id = ?");
+        $updateStmt = $conn->prepare("UPDATE sms3_pending_admission SET status = 'Processing' WHERE id = ?");
         $updateStmt->bind_param('i', $admissionId);
         $updateStmt->execute();
         $updateStmt->close();
@@ -468,7 +468,7 @@ if (!$result) {
                 <select class="form-select" id="filterStatus">
                   <option value="">All Status</option>
                   <option value="Pending">Pending</option>
-                  <option value="Temporarily Enrolled">Temporarily Enrolled</option>
+                  <option value="Processing">Processing</option>
                 </select>
               </div>
             </div>
@@ -502,13 +502,13 @@ if (!$result) {
                       </td>
                       <td><?= htmlspecialchars($row['created_at']) ?></td>
                       <td>
-                        <span class="badge bg-<?= $row['status'] == 'Pending' ? 'warning' : ($row['status'] == 'Temporarily Enrolled' ? 'success' : 'danger') ?>">
+                        <span class="badge bg-<?= $row['status'] == 'Pending' ? 'warning' : ($row['status'] == 'Processing' ? 'success' : 'danger') ?>">
                           <?= htmlspecialchars($row['status']) ?>
                         </span>
                       </td>
                       <td>
                         <!-- Approve and Reject buttons -->
-                        <?php if ($row['status'] !== 'Temporarily Enrolled' && $row['status'] !== 'Rejected'): ?>
+                        <?php if ($row['status'] !== 'Processing' && $row['status'] !== 'Rejected'): ?>
                           <button class="btn btn-primary btn-sm" onclick="processAdmission(<?= $row['id'] ?>, '<?= $row['admission_type'] ?>', '<?= $row['old_student_number'] ?>')">Process Admission</button>
                         <?php else: ?>
                           <!-- No action if already approved or rejected -->
@@ -641,7 +641,7 @@ if (!$result) {
               departmentOptions = '<option value="">No departments available</option>';
             }
 
-            const isTemporarilyEnrolled = info.status === 'Temporarily Enrolled';
+            const isTemporarilyEnrolled = info.status === 'Processing';
             const programContent = isTemporarilyEnrolled ?
               `<p><strong>Program:</strong> ${info.department_name}</p>` :
               `<p><strong>Program:</strong></p>
@@ -920,7 +920,7 @@ if (!$result) {
 
         const admissionId = document.getElementById('admissionId').value;
         const formData = new FormData(document.getElementById('admissionForm'));
-        formData.append('status', 'Temporarily Enrolled');
+        formData.append('status', 'Processing');
 
         fetch('admission.php', {
             method: 'POST',
@@ -930,7 +930,7 @@ if (!$result) {
           .then(data => {
             confirmationModal.hide();
             if (data.success) {
-              showPopupMessage('Student temporarily enrolled successfully.', 'success');
+              showPopupMessage('Student updated successfully.', 'success');
               setTimeout(() => location.reload(), 3000);
             } else {
               showPopupMessage('Failed to enroll student: ' + data.message, 'error');
