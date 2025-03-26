@@ -1,6 +1,8 @@
 <?php
 require('../database.php');
 require_once 'session.php';
+require_once 'audit_log_function.php';
+$userId = $_SESSION['user_id'];
 checkAccess('Admin');
 
 $currentSemester = getCurrentActiveSemester($conn);
@@ -146,6 +148,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['enrollment_id'], $_PO
         $stmt->execute();
         $stmt->close();
 
+        // Log the audit entry
+        logAudit($conn, $userId, 'DELETE', 'sms3_enrollment_data', $enrollmentId, [
+          'student_id' => $enrollmentData['student_id']
+        ]);
+
         echo json_encode(['status' => 'success', 'message' => 'Enrollment rejected successfully.']);
         exit; // Stop script execution after sending the JSON response
       } else {
@@ -153,6 +160,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['enrollment_id'], $_PO
         exit; // Stop script execution
       }
     } elseif ($receiptStatus === 'Paid') {
+      // Update receipt_status to Paid in sms3_pending_enrollment
+      $stmt = $conn->prepare("UPDATE sms3_pending_enrollment SET receipt_status = 'Paid' WHERE id = ?");
+      $stmt->bind_param("i", $enrollmentId);
+      $stmt->execute();
+      $stmt->close();
+
       // Fetch pending enrollment details
       $stmt = $conn->prepare("
               SELECT student_id, timetable_1, timetable_2, timetable_3, timetable_4, timetable_5, timetable_6, timetable_7, timetable_8
@@ -165,28 +178,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['enrollment_id'], $_PO
       $stmt->close();
 
       if ($enrollmentData) {
-        // Check if the student is already enrolled
-        $stmt = $conn->prepare("SELECT status FROM sms3_students WHERE id = ?");
-        $stmt->bind_param("i", $enrollmentData['student_id']);
+        // Initialize $timetableDetails to avoid undefined variable errors
+        $timetableDetails = [];
+
+        // Fetch timetable details for logging purposes
+        $stmt = $conn->prepare("
+            SELECT t.id, sec.section_number, sub.subject_code
+            FROM sms3_timetable t
+            JOIN sms3_sections sec ON t.section_id = sec.id
+            JOIN sms3_subjects sub ON t.subject_id = sub.id
+            WHERE t.id IN (?, ?, ?, ?, ?, ?, ?, ?)
+        ");
+        $stmt->bind_param(
+          "iiiiiiii",
+          $enrollmentData['timetable_1'],
+          $enrollmentData['timetable_2'],
+          $enrollmentData['timetable_3'],
+          $enrollmentData['timetable_4'],
+          $enrollmentData['timetable_5'],
+          $enrollmentData['timetable_6'],
+          $enrollmentData['timetable_7'],
+          $enrollmentData['timetable_8']
+        );
         $stmt->execute();
         $result = $stmt->get_result();
-        $studentData = $result->fetch_assoc();
+        while ($row = $result->fetch_assoc()) {
+          $timetableDetails[] = $row;
+        }
         $stmt->close();
 
-        if ($studentData && $studentData['status'] === 'Enrolled') {
-          // Update receipt_status to Paid in sms3_pending_enrollment
-          $stmt = $conn->prepare("UPDATE sms3_pending_enrollment SET receipt_status = 'Paid' WHERE id = ?");
-          $stmt->bind_param("i", $enrollmentId);
-          $stmt->execute();
-          $stmt->close();
-        }
-
-        // Update student record with timetable
+        // Update student record with timetable and status
         $stmt = $conn->prepare("
-                  UPDATE sms3_students
-                  SET timetable_1 = ?, timetable_2 = ?, timetable_3 = ?, timetable_4 = ?, timetable_5 = ?, timetable_6 = ?, timetable_7 = ?, timetable_8 = ?, status = 'Enrolled', admission_type = 'Continuing'
-                  WHERE id = ?
-              ");
+            UPDATE sms3_students
+            SET timetable_1 = ?, timetable_2 = ?, timetable_3 = ?, timetable_4 = ?, timetable_5 = ?, timetable_6 = ?, timetable_7 = ?, timetable_8 = ?, status = 'Enrolled', admission_type = 'Continuing'
+            WHERE id = ?
+        ");
         $stmt->bind_param(
           "iiiiiiiii",
           $enrollmentData['timetable_1'],
@@ -204,8 +230,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['enrollment_id'], $_PO
 
         // Insert data into sms3_enrollment_data with status Approved
         $stmt = $conn->prepare("INSERT INTO sms3_enrollment_data (
-                student_id, timetable_1, timetable_2, timetable_3, timetable_4, timetable_5, timetable_6, timetable_7, timetable_8, receipt_status, status
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            student_id, timetable_1, timetable_2, timetable_3, timetable_4, timetable_5, timetable_6, timetable_7, timetable_8, receipt_status, status
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         $status = 'Approved';
         $paidStatus = 'Paid';
         $stmt->bind_param(
@@ -231,7 +257,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['enrollment_id'], $_PO
         $stmt->execute();
         $stmt->close();
 
-        echo json_encode(['status' => 'success', 'message' => 'Enrollment marked as paid successfully.']);
+        // Log the audit entry
+        $timetableDetailsStr = implode(', ', array_map(function ($t) {
+          return "{$t['subject_code']} ({$t['section_number']})";
+        }, $timetableDetails));
+        logAudit($conn, $userId, 'ADD', 'sms3_enrollment_data', $enrollmentId, [
+          'student_id' => $enrollmentData['student_id'],
+          'timetables' => $timetableDetailsStr
+        ]);
+
+        echo json_encode(['status' => 'success', 'message' => 'Enrollment marked as paid and student enrolled successfully.']);
         exit; // Stop script execution
       } else {
         echo json_encode(['status' => 'error', 'message' => 'Failed to fetch enrollment details.']);
@@ -559,18 +594,18 @@ if (isset($_GET['delete_timetable_from_enrollment'])) {
             <li>
               <hr class="dropdown-divider">
             </li>
-              <hr class="dropdown-divider">
-            </li>
+            <hr class="dropdown-divider">
+        </li>
 
-            <li>
-              <a class="dropdown-item d-flex align-items-center" href="../logout.php">
-                <i class="bi bi-box-arrow-right"></i>
-                <span>Sign Out</span>
-              </a>
-            </li>
+        <li>
+          <a class="dropdown-item d-flex align-items-center" href="../logout.php">
+            <i class="bi bi-box-arrow-right"></i>
+            <span>Sign Out</span>
+          </a>
+        </li>
 
-          </ul><!-- End Profile Dropdown Items -->
-        </li><!-- End Profile Nav -->
+      </ul><!-- End Profile Dropdown Items -->
+      </li><!-- End Profile Nav -->
 
       </ul>
     </nav><!-- End Icons Navigation -->
@@ -599,21 +634,7 @@ if (isset($_GET['delete_timetable_from_enrollment'])) {
 
       <hr class="sidebar-divider">
 
-      <li class="nav-heading">Admission & Enrollment</li>
-
-      <li class="nav-item">
-        <a class="nav-link " href="admission.php">
-          <i class="bi bi-grid"></i>
-          <span>Admission</span>
-        </a>
-      </li>
-
-      <li class="nav-item">
-        <a class="nav-link " href="admission_temp.php">
-          <i class="bi bi-grid"></i>
-          <span>Temporary Admission</span>
-        </a>
-      </li>
+      <li class="nav-heading">Enrollment</li>
 
       <li class="nav-item">
         <a class="nav-link " href="enrollment.php">
@@ -639,7 +660,7 @@ if (isset($_GET['delete_timetable_from_enrollment'])) {
           <span>Academic Structure</span>
         </a>
       </li>
-
+ 
       <li class="nav-item">
         <a class="nav-link " href="manage_departments.php">
           <i class="bi bi-grid"></i>
@@ -671,22 +692,6 @@ if (isset($_GET['delete_timetable_from_enrollment'])) {
         </a>
       </li>
       <!-- End System Nav -->
-
-      <hr class="sidebar-divider">
-
-      <li class="nav-heading">MANAGE USER</li>
-      <li class="nav-item">
-        <a class="nav-link " href="audit_logs.php">
-          <i class="bi bi-grid"></i>
-          <span>Audit Logs</span>
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link " href="manage_user.php">
-          <i class="bi bi-grid"></i>
-          <span>Users</span>
-        </a>
-      </li>
 
       <hr class="sidebar-divider">
 
@@ -767,7 +772,7 @@ if (isset($_GET['delete_timetable_from_enrollment'])) {
                         </span>
                       </td>
                       <td>
-                        <button class="btn btn-success btn-sm" onclick="updateEnrollmentStatus(<?= $row['enrollment_id']; ?>, 'Paid')">Paid</button>
+                        <button class="btn btn-info btn-sm" onclick="showTransactionModal(<?= $row['enrollment_id']; ?>, '<?= $row['student_number']; ?>', '<?= htmlspecialchars($row['first_name'] . ' ' . $row['last_name']); ?>')">View Transactions</button>
                         <button class="btn btn-danger btn-sm" onclick="updateEnrollmentStatus(<?= $row['enrollment_id']; ?>, 'Rejected')">Reject</button>
                       </td>
                     </tr>
@@ -861,7 +866,161 @@ if (isset($_GET['delete_timetable_from_enrollment'])) {
 
   </main><!-- End #main -->
 
+  <!-- Transaction Modal -->
+  <div class="modal fade transaction-modal" id="transactionModal" tabindex="-1" aria-labelledby="transactionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="transactionModalLabel">Transaction Details</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="modalEnrollmentId">
+          <h6>Student Information</h6>
+          <p><strong>Student Number:</strong> <span id="modalStudentNumber"></span></p>
+          <p><strong>Student Name:</strong> <span id="modalStudentName"></span></p>
+          <hr>
+          <h6>Transaction History</h6>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Transaction ID</th>
+                <th>Amount</th>
+                <th>Payment Method</th>
+                <th>Payment Type</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody id="transactionTableBody">
+              <!-- Transactions will be dynamically loaded here -->
+            </tbody>
+          </table>
+          <hr>
+          <button type="button" class="btn btn-success" id="confirmEnrollmentButton" onclick="showConfirmationModal()">Confirm Enrollment</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirmation Modal -->
+  <div class="modal fade confirmation-modal" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="confirmationModalLabel">Confirm Enrollment</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          Are you sure you want to confirm the enrollment for <strong><span id="confirmStudentName"></span></strong> (Student Number: <strong><span id="confirmStudentNumber"></span></strong>)?
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-success" id="finalConfirmEnrollmentButton">Confirm</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
+    function showTransactionModal(enrollmentId, studentNumber, studentName) {
+      // Set student information in the modal
+      document.getElementById('modalStudentNumber').innerText = studentNumber;
+      document.getElementById('modalStudentName').innerText = studentName;
+      document.getElementById('modalEnrollmentId').value = enrollmentId; // Set the enrollmentId in the hidden input field
+
+      // Fetch transaction details via AJAX
+      fetch(`get_transactions.php?student_number=${studentNumber}`)
+        .then(response => response.json())
+        .then(data => {
+          const transactionTableBody = document.getElementById('transactionTableBody');
+          const confirmButton = document.getElementById('confirmEnrollmentButton');
+          transactionTableBody.innerHTML = ''; // Clear previous data
+
+          if (data.success && data.transactions.length > 0) {
+            let hasEnrollmentTransaction = false;
+
+            data.transactions.forEach(transaction => {
+              if (transaction.payment_type === 'Enrollment') {
+                hasEnrollmentTransaction = true;
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                <td>${transaction.id}</td>
+                <td>${transaction.amount}</td>
+                <td>${transaction.payment_method}</td>
+                <td>${transaction.payment_type}</td>
+                <td>${transaction.payment_date}</td>
+              `;
+                transactionTableBody.appendChild(row);
+              }
+            });
+
+            // Enable or disable the confirm button based on transactions
+            confirmButton.disabled = !hasEnrollmentTransaction;
+
+            if (!hasEnrollmentTransaction) {
+              transactionTableBody.innerHTML = '<tr><td colspan="5" class="text-center">No enrollment transactions found</td></tr>';
+            }
+          } else {
+            transactionTableBody.innerHTML = '<tr><td colspan="5" class="text-center">No transactions found</td></tr>';
+            confirmButton.disabled = true; // Disable the confirm button
+          }
+
+          // Show the transaction modal
+          new bootstrap.Modal(document.getElementById('transactionModal')).show();
+        })
+        .catch(error => {
+          console.error('Error fetching transactions:', error);
+          alert('An error occurred while fetching transaction details.');
+        });
+    }
+
+    function showConfirmationModal() {
+      const studentName = document.getElementById('modalStudentName').innerText;
+      const studentNumber = document.getElementById('modalStudentNumber').innerText;
+      const enrollmentId = document.getElementById('modalEnrollmentId').value;
+
+      document.getElementById('confirmStudentName').innerText = studentName;
+      document.getElementById('confirmStudentNumber').innerText = studentNumber;
+
+      const confirmButton = document.getElementById('finalConfirmEnrollmentButton');
+      confirmButton.onclick = function() {
+        updateEnrollmentStatus(enrollmentId, 'Paid');
+        const confirmationModal = bootstrap.Modal.getInstance(document.getElementById('confirmationModal'));
+        confirmationModal.hide();
+      };
+
+      new bootstrap.Modal(document.getElementById('confirmationModal')).show();
+    }
+
+    function updateEnrollmentStatus(enrollmentId, receiptStatus) {
+      const form = new FormData();
+      form.append('enrollment_id', enrollmentId);
+      form.append('receipt_status', receiptStatus);
+
+      fetch('enrollment.php', {
+          method: 'POST',
+          body: form,
+        })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          return response.json();
+        })
+        .then(data => {
+          if (data.status === 'success') {
+            alert(data.message);
+            location.reload(); // Reload the page to reflect changes
+          } else {
+            alert(data.message);
+          }
+        })
+        .catch(error => {
+          console.error('Error handling enrollment status:', error);
+          alert('An unexpected error occurred.');
+        });
+    }
+
     // Added event listeners for the filter inputs
     document.getElementById('filterDepartment').addEventListener('change', filterEnrollments);
     document.getElementById('filterStartDate').addEventListener('change', filterEnrollments);

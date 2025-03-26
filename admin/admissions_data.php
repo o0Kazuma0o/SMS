@@ -87,18 +87,18 @@ if (!$result) {
             <li>
               <hr class="dropdown-divider">
             </li>
-              <hr class="dropdown-divider">
-            </li>
+            <hr class="dropdown-divider">
+        </li>
 
-            <li>
-              <a class="dropdown-item d-flex align-items-center" href="../logout.php">
-                <i class="bi bi-box-arrow-right"></i>
-                <span>Sign Out</span>
-              </a>
-            </li>
+        <li>
+          <a class="dropdown-item d-flex align-items-center" href="../logout.php">
+            <i class="bi bi-box-arrow-right"></i>
+            <span>Sign Out</span>
+          </a>
+        </li>
 
-          </ul><!-- End Profile Dropdown Items -->
-        </li><!-- End Profile Nav -->
+      </ul><!-- End Profile Dropdown Items -->
+      </li><!-- End Profile Nav -->
 
       </ul>
     </nav><!-- End Icons Navigation -->
@@ -157,19 +157,7 @@ if (!$result) {
         </a>
       </li>
 
-      <li class="nav-item">
-        <a class="nav-link " href="admissions_data.php">
-          <i class="bi bi-grid"></i>
-          <span>Admission Data</span>
-        </a>
-      </li>
-
-      <li class="nav-item">
-        <a class="nav-link " href="enrollment_data.php">
-          <i class="bi bi-grid"></i>
-          <span>Enrollment Data</span>
-        </a>
-      </li><!-- End System Nav -->
+ <!-- End System Nav -->
 
       <hr class="sidebar-divider">
 
@@ -226,7 +214,7 @@ if (!$result) {
 
       <hr class="sidebar-divider">
 
-      <li class="nav-heading">MANAGE USER</li>
+      <li class="nav-heading">MANAGE USER & DATA</li>
 
       <li class="nav-item">
         <a class="nav-link " href="audit_logs.php">
@@ -238,6 +226,20 @@ if (!$result) {
         <a class="nav-link " href="manage_user.php">
           <i class="bi bi-grid"></i>
           <span>Users</span>
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link " href="admissions_data.php">
+          <i class="bi bi-grid"></i>
+          <span>Admission Data</span>
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link " href="enrollment_data.php">
+          <i class="bi bi-grid"></i>
+          <span>Enrollment Data</span>
         </a>
       </li>
 
@@ -274,7 +276,6 @@ if (!$result) {
                   <th>Date Submitted</th>
                   <th>Status</th>
                   <th>Receipt Status</th>
-                  <th>Accepted By</th>
                 </tr>
               </thead>
               <tbody>
@@ -294,12 +295,15 @@ if (!$result) {
                       </td>
                       <td><?= htmlspecialchars($row['created_at']) ?></td>
                       <td>
-                        <span class="badge bg-<?= $row['status'] == 'Processing' ? 'success' : ($row['status'] == 'Accepted' ? 'primary' : 'danger') ?>">
+                        <span class="badge bg-<?= $row['status'] == 'Accepted' ? 'success' : ($row['status'] == 'Processing' ? 'primary' : 'danger') ?>">
                           <?= htmlspecialchars($row['status']) ?>
                         </span>
                       </td>
-                      <td><?= htmlspecialchars($row['receipt_status']) ?></td>
-                      <td><?= htmlspecialchars($row['accepted_by']) ?></td>
+                      <td>
+                        <span class="badge bg-<?= $row['receipt_status'] == 'Not Paid' ? 'warning' : ($row['receipt_status'] == 'Paid' ? 'success' : 'danger') ?>">
+                          <?= htmlspecialchars($row['receipt_status']); ?>
+                        </span>
+                      </td>
                     </tr>
                   <?php endwhile; ?>
                 <?php else: ?>

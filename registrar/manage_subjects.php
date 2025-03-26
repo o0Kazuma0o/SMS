@@ -313,21 +313,7 @@ $subjects = $conn->query("SELECT s.*, d.department_code FROM sms3_subjects s JOI
 
       <hr class="sidebar-divider">
 
-      <li class="nav-heading">Admission & Enrollment</li>
-
-      <li class="nav-item">
-        <a class="nav-link " href="admission.php">
-          <i class="bi bi-grid"></i>
-          <span>Admission</span>
-        </a>
-      </li>
-
-      <li class="nav-item">
-        <a class="nav-link " href="admission_temp.php">
-          <i class="bi bi-grid"></i>
-          <span>Temporary Admission</span>
-        </a>
-      </li>
+      <li class="nav-heading">Enrollment</li>
 
       <li class="nav-item">
         <a class="nav-link " href="enrollment.php">
@@ -353,7 +339,7 @@ $subjects = $conn->query("SELECT s.*, d.department_code FROM sms3_subjects s JOI
           <span>Academic Structure</span>
         </a>
       </li>
-
+ 
       <li class="nav-item">
         <a class="nav-link " href="manage_departments.php">
           <i class="bi bi-grid"></i>
@@ -384,24 +370,10 @@ $subjects = $conn->query("SELECT s.*, d.department_code FROM sms3_subjects s JOI
           <span>Timetable</span>
         </a>
       </li>
+      <!-- End System Nav -->
 
       <hr class="sidebar-divider">
 
-      <li class="nav-heading">MANAGE USER</li>
-      <li class="nav-item">
-        <a class="nav-link " href="audit_logs.php">
-          <i class="bi bi-grid"></i>
-          <span>Audit Logs</span>
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link " href="manage_user.php">
-          <i class="bi bi-grid"></i>
-          <span>Users</span>
-        </a>
-      </li>
-
-      <hr class="sidebar-divider">
     </ul>
 
   </aside><!-- End Sidebar-->

@@ -22,6 +22,33 @@ $query = "
 ";
 
 $result = $conn->query($query);
+
+if (isset($_GET['timetable_details'])) {
+  $enrollmentId = intval($_GET['timetable_details']);
+  $query = "
+      SELECT sec.section_number, sub.subject_code, 
+             CONCAT(t.day_of_week, ' ', TIME_FORMAT(t.start_time, '%H:%i'), '-', TIME_FORMAT(t.end_time, '%H:%i')) AS schedule
+      FROM sms3_enrollment_data ed
+      JOIN sms3_timetable t ON t.id IN (ed.timetable_1, ed.timetable_2, ed.timetable_3, ed.timetable_4, ed.timetable_5, ed.timetable_6, ed.timetable_7, ed.timetable_8)
+      JOIN sms3_sections sec ON t.section_id = sec.id
+      JOIN sms3_subjects sub ON t.subject_id = sub.id
+      WHERE ed.id = ?
+  ";
+  $stmt = $conn->prepare($query);
+  $stmt->bind_param("i", $enrollmentId);
+  $stmt->execute();
+  $result = $stmt->get_result();
+
+  $timetableDetails = [];
+  while ($row = $result->fetch_assoc()) {
+    $timetableDetails[] = $row;
+  }
+  $stmt->close();
+
+  header('Content-Type: application/json');
+  echo json_encode($timetableDetails);
+  exit;
+}
 ?>
 
 <!DOCTYPE html>
@@ -189,19 +216,7 @@ $result = $conn->query($query);
         </a>
       </li>
 
-      <li class="nav-item">
-        <a class="nav-link " href="admissions_data.php">
-          <i class="bi bi-grid"></i>
-          <span>Admission Data</span>
-        </a>
-      </li>
-
-      <li class="nav-item">
-        <a class="nav-link " href="enrollment_data.php">
-          <i class="bi bi-grid"></i>
-          <span>Enrollment Data</span>
-        </a>
-      </li><!-- End System Nav -->
+      <!-- End System Nav -->
 
       <hr class="sidebar-divider">
 
@@ -259,7 +274,8 @@ $result = $conn->query($query);
 
       <hr class="sidebar-divider">
 
-      <li class="nav-heading">MANAGE USER</li>
+      <li class="nav-heading">MANAGE USER & DATA</li>
+      
       <li class="nav-item">
         <a class="nav-link " href="audit_logs.php">
           <i class="bi bi-grid"></i>
@@ -270,6 +286,20 @@ $result = $conn->query($query);
         <a class="nav-link " href="manage_user.php">
           <i class="bi bi-grid"></i>
           <span>Users</span>
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link " href="admissions_data.php">
+          <i class="bi bi-grid"></i>
+          <span>Admission Data</span>
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link " href="enrollment_data.php">
+          <i class="bi bi-grid"></i>
+          <span>Enrollment Data</span>
         </a>
       </li>
 
@@ -347,7 +377,7 @@ $result = $conn->query($query);
                       </td>
                       <td><?= htmlspecialchars($row['created_at']); ?></td>
                       <td>
-                        <span class="badge bg-<?= $row['receipt_status'] == 'Not Enrolled' ? 'warning' : ($row['receipt_status'] == 'Paid' ? 'success' : 'danger') ?>">
+                        <span class="badge bg-<?= $row['receipt_status'] == 'Not Paid' ? 'warning' : ($row['receipt_status'] == 'Paid' ? 'success' : 'danger') ?>">
                           <?= htmlspecialchars($row['receipt_status']); ?>
                         </span>
                       </td>
@@ -368,36 +398,36 @@ $result = $conn->query($query);
           </div>
         </div>
 
-        <!-- Timetable Modal -->
-        <div class="modal fade" id="timetableModal" tabindex="-1" aria-labelledby="timetableModalLabel" aria-hidden="true">
-          <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-              <div class="modal-header">
-                <h5 class="modal-title" id="timetableModalLabel">Timetable Details</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-              </div>
-              <div class="modal-body">
-                <table class="table table-bordered">
-                  <thead>
-                    <tr>
-                      <th>Section</th>
-                      <th>Subject</th>
-                      <th>Schedule</th>
-                    </tr>
-                  </thead>
-                  <tbody id="timetableDetails">
-                    <!-- Content populated dynamically -->
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-
       </div>
     </section>
 
   </main><!-- End #main -->
+
+  <!-- Timetable Modal -->
+  <div class="modal fade" id="timetableModal" tabindex="-1" aria-labelledby="timetableModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="timetableModalLabel">Timetable Details</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <table class="table table-bordered">
+            <thead>
+              <tr>
+                <th>Section</th>
+                <th>Subject</th>
+                <th>Schedule</th>
+              </tr>
+            </thead>
+            <tbody id="timetableDetails">
+              <!-- Content populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <script>
     // Added event listeners for the filter inputs
@@ -428,6 +458,7 @@ $result = $conn->query($query);
     }
 
     function viewTimetableDetails(enrollmentId) {
+      // Fetch timetable details via AJAX
       fetch(`enrollment_data.php?timetable_details=${enrollmentId}`)
         .then(response => {
           if (!response.ok) {
@@ -442,17 +473,18 @@ $result = $conn->query($query);
           }
 
           const timetableDetails = document.getElementById('timetableDetails');
-          timetableDetails.innerHTML = '';
+          timetableDetails.innerHTML = ''; // Clear previous data
           data.forEach(item => {
             timetableDetails.innerHTML += `
-              <tr>
-                  <td>${item.section_number}</td>
-                  <td>${item.subject_code}</td>
-                  <td>${item.schedule}</td>
-              </tr>
-            `;
+            <tr>
+              <td>${item.section_number}</td>
+              <td>${item.subject_code}</td>
+              <td>${item.schedule}</td>
+            </tr>
+          `;
           });
 
+          // Show the modal
           const modal = new bootstrap.Modal(document.getElementById('timetableModal'));
           modal.show();
         })
@@ -497,20 +529,20 @@ $result = $conn->query($query);
     };
   </script>
 
-<a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
+  <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
 
-<!-- Vendor JS Files -->
-<script src="../assets/vendor/apexcharts/apexcharts.min.js"></script>
-<script src="../assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
-<script src="../assets/vendor/chart.js/chart.umd.js"></script>
-<script src="../assets/vendor/echarts/echarts.min.js"></script>
-<script src="../assets/vendor/quill/quill.js"></script>
-<script src="../assets/vendor/simple-datatables/simple-datatables.js"></script>
-<script src="../assets/vendor/tinymce/tinymce.min.js"></script>
-<script src="../assets/vendor/php-email-form/validate.js"></script>
+  <!-- Vendor JS Files -->
+  <script src="../assets/vendor/apexcharts/apexcharts.min.js"></script>
+  <script src="../assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script src="../assets/vendor/chart.js/chart.umd.js"></script>
+  <script src="../assets/vendor/echarts/echarts.min.js"></script>
+  <script src="../assets/vendor/quill/quill.js"></script>
+  <script src="../assets/vendor/simple-datatables/simple-datatables.js"></script>
+  <script src="../assets/vendor/tinymce/tinymce.min.js"></script>
+  <script src="../assets/vendor/php-email-form/validate.js"></script>
 
-<!-- Template Main JS File -->
-<script src="../assets/js/main.js"></script>
+  <!-- Template Main JS File -->
+  <script src="../assets/js/main.js"></script>
 
 </body>
 

@@ -117,18 +117,18 @@ checkAccess('Admin'); // Ensure only users with the 'admin' role can access this
             <li>
               <hr class="dropdown-divider">
             </li>
-              <hr class="dropdown-divider">
-            </li>
+            <hr class="dropdown-divider">
+        </li>
 
-            <li>
-              <a class="dropdown-item d-flex align-items-center" href="../logout.php">
-                <i class="bi bi-box-arrow-right"></i>
-                <span>Sign Out</span>
-              </a>
-            </li>
+        <li>
+          <a class="dropdown-item d-flex align-items-center" href="../logout.php">
+            <i class="bi bi-box-arrow-right"></i>
+            <span>Sign Out</span>
+          </a>
+        </li>
 
-          </ul><!-- End Profile Dropdown Items -->
-        </li><!-- End Profile Nav -->
+      </ul><!-- End Profile Dropdown Items -->
+      </li><!-- End Profile Nav -->
 
       </ul>
     </nav><!-- End Icons Navigation -->
@@ -187,19 +187,7 @@ checkAccess('Admin'); // Ensure only users with the 'admin' role can access this
         </a>
       </li>
 
-      <li class="nav-item">
-        <a class="nav-link " href="admissions_data.php">
-          <i class="bi bi-grid"></i>
-          <span>Admission Data</span>
-        </a>
-      </li>
-
-      <li class="nav-item">
-        <a class="nav-link " href="enrollment_data.php">
-          <i class="bi bi-grid"></i>
-          <span>Enrollment Data</span>
-        </a>
-      </li><!-- End System Nav -->
+      <!-- End System Nav -->
 
       <hr class="sidebar-divider">
 
@@ -222,7 +210,7 @@ checkAccess('Admin'); // Ensure only users with the 'admin' role can access this
           <span>Academic Structure</span>
         </a>
       </li>
- 
+
       <li class="nav-item">
         <a class="nav-link " href="manage_departments.php">
           <i class="bi bi-grid"></i>
@@ -256,7 +244,7 @@ checkAccess('Admin'); // Ensure only users with the 'admin' role can access this
 
       <hr class="sidebar-divider">
 
-      <li class="nav-heading">MANAGE USER</li>
+      <li class="nav-heading">MANAGE USER & DATA</li>
       <li class="nav-item">
         <a class="nav-link " href="audit_logs.php">
           <i class="bi bi-grid"></i>
@@ -267,6 +255,20 @@ checkAccess('Admin'); // Ensure only users with the 'admin' role can access this
         <a class="nav-link " href="manage_user.php">
           <i class="bi bi-grid"></i>
           <span>Users</span>
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link " href="admissions_data.php">
+          <i class="bi bi-grid"></i>
+          <span>Admission Data</span>
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link " href="enrollment_data.php">
+          <i class="bi bi-grid"></i>
+          <span>Enrollment Data</span>
         </a>
       </li>
 

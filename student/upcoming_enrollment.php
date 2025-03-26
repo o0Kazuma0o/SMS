@@ -55,6 +55,56 @@ while ($row = $sectionsResult->fetch_assoc()) {
   }
 }
 $stmt->close();
+
+// Function to handle enrollment
+function enrollInTimetables($studentId, $selectedTimetables)
+{
+  global $conn;
+
+  // Prepare the INSERT statement with dynamic columns for timetables
+  $timetablePlaceholders = implode(', ', array_map(fn($n) => "timetable_$n", range(1, count($selectedTimetables))));
+
+  $query = "
+        INSERT INTO sms3_pending_enrollment (student_id, $timetablePlaceholders)
+        VALUES (?, " . str_repeat('?, ', count($selectedTimetables) - 1) . "?)
+    ";
+
+  $stmt = $conn->prepare($query);
+
+  // Merge the student ID and timetable IDs for parameter binding
+  $params = array_merge([$studentId], $selectedTimetables);
+  $stmt->bind_param(str_repeat('i', count($params)), ...$params);
+
+  if ($stmt->execute()) {
+    echo json_encode(['status' => 'success', 'message' => 'Enrollment successful!']);
+  } else {
+    echo json_encode(['status' => 'error', 'message' => 'Error: ' . $stmt->error]);
+  }
+
+  $stmt->close();
+}
+
+// Handle AJAX request for enrollment
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+  header('Content-Type: application/json');
+
+  $inputData = json_decode(file_get_contents('php://input'), true);
+
+  if (json_last_error() !== JSON_ERROR_NONE) {
+    echo json_encode(['status' => 'error', 'message' => 'Invalid JSON data received.']);
+    exit;
+  }
+
+  if (!isset($inputData['enroll'], $inputData['timetables'])) {
+    echo json_encode(['status' => 'error', 'message' => 'Missing enrollment data.']);
+    exit;
+  }
+
+  $selectedTimetables = array_slice($inputData['timetables'], 0, 8); // Limit to 8 timetables
+
+  enrollInTimetables($studentId, $selectedTimetables);
+  exit;
+}
 ?>
 
 <!DOCTYPE html>
@@ -144,18 +194,18 @@ $stmt->close();
                 <span>My Profile</span>
               </a>
             </li>
-              <hr class="dropdown-divider">
-            </li>
+            <hr class="dropdown-divider">
+        </li>
 
-            <li>
-              <a class="dropdown-item d-flex align-items-center" href="../logout.php">
-                <i class="bi bi-box-arrow-right"></i>
-                <span>Sign Out</span>
-              </a>
-            </li>
+        <li>
+          <a class="dropdown-item d-flex align-items-center" href="../logout.php">
+            <i class="bi bi-box-arrow-right"></i>
+            <span>Sign Out</span>
+          </a>
+        </li>
 
-          </ul><!-- End Profile Dropdown Items -->
-        </li><!-- End Profile Nav -->
+      </ul><!-- End Profile Dropdown Items -->
+      </li><!-- End Profile Nav -->
 
       </ul>
     </nav><!-- End Icons Navigation -->
@@ -197,11 +247,11 @@ $stmt->close();
             </a>
           </li>
           <?php if (!$isEnrolled): ?>
-          <li>
-            <a href="upcoming_enrollment.php" class="active">
-              <i class="bi bi-circle"></i><span>Upcoming Enrollment</span>
-            </a>
-          </li>
+            <li>
+              <a href="upcoming_enrollment.php" class="active">
+                <i class="bi bi-circle"></i><span>Upcoming Enrollment</span>
+              </a>
+            </li>
           <?php endif; ?>
         </ul>
       </li><!-- End System Nav -->

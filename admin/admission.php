@@ -335,19 +335,7 @@ if (!$result) {
         </a>
       </li>
 
-      <li class="nav-item">
-        <a class="nav-link " href="admissions_data.php">
-          <i class="bi bi-grid"></i>
-          <span>Admission Data</span>
-        </a>
-      </li>
-
-      <li class="nav-item">
-        <a class="nav-link " href="enrollment_data.php">
-          <i class="bi bi-grid"></i>
-          <span>Enrollment Data</span>
-        </a>
-      </li><!-- End System Nav -->
+ <!-- End System Nav -->
 
       <hr class="sidebar-divider">
 
@@ -404,7 +392,7 @@ if (!$result) {
 
       <hr class="sidebar-divider">
 
-      <li class="nav-heading">MANAGE USER</li>
+      <li class="nav-heading">MANAGE USER & DATA</li>
 
       <li class="nav-item">
         <a class="nav-link " href="audit_logs.php">
@@ -416,6 +404,20 @@ if (!$result) {
         <a class="nav-link " href="manage_user.php">
           <i class="bi bi-grid"></i>
           <span>Users</span>
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link " href="admissions_data.php">
+          <i class="bi bi-grid"></i>
+          <span>Admission Data</span>
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link " href="enrollment_data.php">
+          <i class="bi bi-grid"></i>
+          <span>Enrollment Data</span>
         </a>
       </li>
 
