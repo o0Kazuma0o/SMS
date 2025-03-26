@@ -17,10 +17,10 @@ if (!$selectedBranch) {
 $sql = "INSERT INTO sms3_pending_admission (
     first_name, middle_name, last_name, department_id, branch, admission_type, year_level, sex, civil_status, religion, 
     birthday, email, contact_number, working_student, address, 
-    guardian_name, guardian_contact, member4ps, primary_school, primary_year, secondary_school, 
+    guardian_name, guardian_contact, primary_school, primary_year, secondary_school, 
     secondary_year, last_school, last_school_year, referral_source, old_student_number, status
 ) VALUES (
-    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending'
+    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending'
 )";
 
 try {
@@ -31,7 +31,7 @@ try {
 
     // Bind parameters to the statement
     $stmt->bind_param(
-        'ssssssssssssssssssssssssss',
+        'sssssssssssssssssssssssss',
         $data['basicInfo']['firstname'],
         $data['basicInfo']['middlename'],
         $data['basicInfo']['lastname'],
@@ -49,7 +49,6 @@ try {
         $address,
         $guardianName,
         $data['guardianInfo']['gcontactnumber'],
-        $data['guardianInfo']['member4ps'],
         $data['educationInfo']['primary'],
         $data['educationInfo']['pyear'],
         $data['educationInfo']['secondary'],

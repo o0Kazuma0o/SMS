@@ -58,10 +58,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_id'], $_POS
         student_number, first_name, middle_name, last_name, department_id, branch, admission_type, 
         year_level, sex, civil_status, religion, birthday, email, contact_number,
         address, guardian_name, guardian_contact, primary_school, primary_year, 
-        secondary_school, secondary_year, last_school, last_school_year, referral_source, working_student, member4ps,
+        secondary_school, secondary_year, last_school, last_school_year, referral_source, working_student,
         form138, good_moral, form137, birth_certificate, brgy_clearance,
         honorable_dismissal, transcript_of_records, certificate_of_grades, status, receipt_status
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
       $form138 = isset($_POST['form138']) ? ($_POST['form138'] === 'on' ? 'Submitted' : 'To Be Followed') : (isset($_POST['form138_shown']) ? 'To Be Followed' : NULL);
       $form137 = isset($_POST['form137']) ? ($_POST['form137'] === 'on' ? 'Submitted' : 'To Be Followed') : (isset($_POST['form137_shown']) ? 'To Be Followed' : NULL);
@@ -75,7 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_id'], $_POS
       $receiptStatus = 'Not Paid';
 
       $stmt->bind_param(
-        "ssssssssssssssssssssssssssssssssssss",
+        "sssssssssssssssssssssssssssssssssss",
         $studentNumber,
         $admissionData['first_name'],
         $admissionData['middle_name'],
@@ -101,7 +101,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_id'], $_POS
         $admissionData['last_school_year'],
         $admissionData['referral_source'],
         $admissionData['working_student'],
-        $admissionData['member4ps'],
         $form138,
         $goodMoral,
         $form137,
@@ -681,7 +680,6 @@ if (!$result) {
             <div class="col-md-6">
               <p><strong>Guardian's Full Name:</strong> ${info.guardian_name}</p>
               <p><strong>Guardian's Contact Number:</strong> ${info.guardian_contact}</p>
-              <p><strong>Guardian's member of 4ps:</strong> ${info.member4ps === 'Yes' ? 'Yes' : 'No'}</p>
             </div>
           </div>
           <hr>

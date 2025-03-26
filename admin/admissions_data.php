@@ -375,7 +375,6 @@ if (!$result) {
                 <div class="col-md-6">
                   <p><strong>Guardian's Full Name:</strong> ${info.guardian_name}</p>
                   <p><strong>Guardian's Contact Number:</strong> ${info.guardian_contact}</p>
-                  <p><strong>Guardian's member of 4ps:</strong> ${info.member4ps === 'Yes' ? 'Yes' : 'No'}</p>
                 </div>
               </div>
               <hr>

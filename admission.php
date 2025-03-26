@@ -438,12 +438,6 @@ while ($department = $departments->fetch_assoc()) {
                           <label for="gcontactnumber" class="form-label">Contact Number</label>
                           <input type="number" class="form-control" id="gcontactnumber" name="gcontactnumber" required pattern="[0-9]{10}" placeholder="11-digit phone number" oninput="validateContactNumber(this)">
                           <div class="text-danger" id="gcontactnumber-error"></div>
-                          <br>
-                          <label class="form-check-label">
-                            <input type="checkbox" class="form-check-input" name="member4ps" id="member4ps" onchange="updateCheckboxValue4ps(this)">
-                            Parent / Guardian member of 4Ps?
-                            <input type="hidden" name="member4ps" id="member4ps-hidden" value="No">
-                          </label>
                         </div>
                       </div>
                       <div class="d-flex justify-content-end">
@@ -650,11 +644,6 @@ while ($department = $departments->fetch_assoc()) {
 
     function updateCheckboxValueInfo(checkbox) {
       const hiddenInput = document.getElementById('workingstudent-hidden');
-      hiddenInput.value = checkbox.checked ? 'Yes' : 'No';
-    }
-
-    function updateCheckboxValue4ps(checkbox) {
-      const hiddenInput = document.getElementById('member4ps-hidden');
       hiddenInput.value = checkbox.checked ? 'Yes' : 'No';
     }
 
@@ -916,8 +905,6 @@ while ($department = $departments->fetch_assoc()) {
         });
       });
 
-      updateCheckboxValue4ps(document.getElementById('member4ps'));
-
       if (valid) {
         const formData = new FormData(form);
         formData.forEach((value, key) => {
@@ -1087,7 +1074,6 @@ while ($department = $departments->fetch_assoc()) {
         <div class="col-md-6">
           <p><strong>Guardian's Full Name:</strong> ${guardianFullName}</p>
           <p><strong>Guardian's Contact Number:</strong> ${guardianInfo.gcontactnumber}</p>
-          <p><strong>Guardian's member of 4ps:</strong> ${guardianInfo.member4ps}</p>
         </div>
       </div>
       <hr>
