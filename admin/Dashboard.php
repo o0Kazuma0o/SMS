@@ -616,47 +616,47 @@ if ($result_enrollment_status) {
                   <h5 class="card-title">Students by Department</h5>
 
                   <!-- Pie Chart -->
-                  <div id="departmentPieChart"></div>
+                  <div id="departmentPieChart" style="min-height: 400px;" class="echart"></div>
 
                   <script>
                     document.addEventListener("DOMContentLoaded", () => {
                       const departmentLabels = <?php echo json_encode($department_labels); ?>;
                       const studentCounts = <?php echo json_encode($student_counts); ?>;
 
-                      const chart = new ApexCharts(document.querySelector("#departmentPieChart"), {
-                        series: studentCounts,
-                        chart: {
+                      // Initialize echarts instance
+                      const chart = echarts.init(document.querySelector("#departmentPieChart"));
+
+                      // Set chart options
+                      chart.setOption({
+                        tooltip: {
+                          trigger: 'item'
+                        },
+                        legend: {
+                          orient: 'vertical',
+                          left: 'left'
+                        },
+                        series: [{
+                          name: 'Students',
                           type: 'pie',
-                          height: 350,
-                          toolbar: {
-                            show: true
-                          }
-                        },
-                        labels: departmentLabels,
-                        title: {
-                          text: "Students Distribution by Department",
-                          align: "center"
-                        },
-                        responsive: [{
-                          breakpoint: 480,
-                          options: {
-                            chart: {
-                              width: '100%'
-                            },
-                            legend: {
-                              position: 'bottom'
+                          radius: '50%',
+                          data: departmentLabels.map((name, index) => ({
+                            value: studentCounts[index],
+                            name: name
+                          })),
+                          emphasis: {
+                            itemStyle: {
+                              shadowBlur: 10,
+                              shadowOffsetX: 0,
+                              shadowColor: 'rgba(0, 0, 0, 0.5)'
                             }
                           }
-                        }],
-                        legend: {
-                          position: 'bottom',
-                          horizontalAlign: 'center',
-                          markers: {
-                            width: 12,
-                            height: 12
-                          }
-                        }
-                      }).render();
+                        }]
+                      });
+
+                      // Handle window resize to maintain chart responsiveness
+                      window.addEventListener('resize', () => {
+                        chart.resize();
+                      });
                     });
                   </script>
                   <!-- End Pie Chart -->
