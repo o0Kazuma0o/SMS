@@ -1,6 +1,7 @@
 <?php
 require('../database.php');
 require_once __DIR__ . '/../vendor/autoload.php'; // Adjust path based on your structure
+require_once '../models/PredictiveModel.php';
 require_once 'session.php';
 
 checkAccess('Admin'); // Ensure only users with the 'admin' role can access this page
@@ -86,6 +87,30 @@ function getTotalUsers($propertyId)
   }
 }
 
+// Fetch historical admission data for forecasting
+$sql_forecast = "
+    SELECT 
+        YEAR(created_at) AS year,
+        MONTH(created_at) AS month,
+        COUNT(*) AS admissions
+    FROM sms3_admissions_data
+    GROUP BY YEAR(created_at), MONTH(created_at)
+    ORDER BY YEAR(created_at), MONTH(created_at)
+";
+$result_forecast = $conn->query($sql_forecast);
+$historicalData = [];
+while ($row = $result_forecast->fetch_assoc()) {
+  $historicalData[] = [
+    'year' => $row['year'],
+    'month' => $row['month'],
+    'admissions' => $row['admissions']
+  ];
+}
+
+// Initialize the predictive model
+$model = new SARIMAModel($historicalData, 3);
+$forecast = $model->forecast();
+
 // Fetch the total number of pending admissions
 $sql = "SELECT COUNT(*) as total_pending FROM sms3_pending_admission WHERE status = 'Pending'";
 $result = $conn->query($sql);
@@ -116,12 +141,12 @@ if ($result_students && $row_students = $result_students->fetch_assoc()) {
 // Fetch student count grouped by department
 $sql_departments = "
     SELECT 
-        d.department_name AS department_name, 
+        d.department_code AS department_code, 
         COUNT(s.id) AS student_count
     FROM sms3_departments d
     LEFT JOIN sms3_students s ON s.department_id = d.id
     GROUP BY d.id
-    ORDER BY d.department_name ASC
+    ORDER BY d.department_code ASC
 ";
 $result_departments = $conn->query($sql_departments);
 
@@ -130,7 +155,7 @@ $student_counts = [];
 
 if ($result_departments) {
   while ($row = $result_departments->fetch_assoc()) {
-    $department_labels[] = $row['department_name'] ? $row['department_name'] : "Unassigned";
+    $department_labels[] = $row['department_code'] ? $row['department_code'] : "Unassigned";
     $student_counts[] = $row['student_count'];
   }
 }
@@ -534,81 +559,69 @@ if ($result_enrollment_status) {
             <!-- Forecasting -->
             <div class="col-12">
               <div class="card">
-
-                <div class="filter">
-                  <a class="icon" href="#" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></a>
-                  <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
-                    <li class="dropdown-header text-start">
-                      <h6>Filter</h6>
-                    </li>
-                    <li><a class="dropdown-item" href="#">Today</a></li>
-                    <li><a class="dropdown-item" href="#">This Month</a></li>
-                    <li><a class="dropdown-item" href="#">This Year</a></li>
-                  </ul>
-                </div>
-
-                <!-- Forecasting Card -->
                 <div class="card-body">
-                  <h5 class="card-title">Forecasting(In Development) <span>/Today</span></h5>
+                  <h5 class="card-title">Admission Forecast</h5>
 
-                  <!-- Line Chart -->
-                  <div id="reportsChart"></div>
+                  <div id="lineChart" style="min-height: 400px;" class="echart"></div>
 
                   <script>
                     document.addEventListener("DOMContentLoaded", () => {
-                      new ApexCharts(document.querySelector("#reportsChart"), {
-                        series: [{
-                          name: 'Actual Applicant',
-                          data: [31, 40, 28, 51, 42, 82, 56],
-                        }, {
-                          name: 'Predicted Applicant',
-                          data: [11, 32, 45, 32, 34, 52, 41]
-                        }],
-                        chart: {
-                          height: 350,
-                          type: 'area',
-                          toolbar: {
-                            show: false
-                          },
-                        },
-                        markers: {
-                          size: 4
-                        },
-                        colors: ['#4154f1', '#2eca6a'],
-                        fill: {
-                          type: "gradient",
-                          gradient: {
-                            shadeIntensity: 1,
-                            opacityFrom: 0.3,
-                            opacityTo: 0.4,
-                            stops: [0, 90, 100]
-                          }
-                        },
-                        dataLabels: {
-                          enabled: false
-                        },
-                        stroke: {
-                          curve: 'smooth',
-                          width: 2
-                        },
-                        xaxis: {
-                          type: 'datetime',
-                          categories: ["2018-09-19T00:00:00.000Z", "2018-09-19T01:30:00.000Z", "2018-09-19T02:30:00.000Z", "2018-09-19T03:30:00.000Z", "2018-09-19T04:30:00.000Z", "2018-09-19T05:30:00.000Z", "2018-09-19T06:30:00.000Z"]
-                        },
+                      const historicalData = <?php echo json_encode($historicalData); ?>;
+                      const forecast = <?php echo json_encode($forecast); ?>;
+
+                      if (historicalData.length === 0 || forecast.length === 0) {
+                        document.getElementById('lineChart').innerHTML = '<div style="text-align: center; padding: 20px;">No data available for forecasting.</div>';
+                        return;
+                      }
+
+                      // Prepare data for chart
+                      const months = historicalData.map(item => `${item.year}-${item.month}`);
+                      const historicalValues = historicalData.map(item => item.admissions);
+                      const forecastValues = forecast.map(item => item.predicted_admissions);
+                      const forecastMonths = forecast.map(item => `${item.year}-${item.month}`);
+
+                      echarts.init(document.querySelector("#lineChart")).setOption({
+                        // Set chart options
                         tooltip: {
-                          x: {
-                            format: 'dd/MM/yy HH:mm'
+                          trigger: 'item'
+                        },
+                        legend: {
+                          data: ['Historical', 'Forecast']
+                        },
+                        xAxis: {
+                          type: 'category',
+                          data: [...months, ...forecastMonths]
+                        },
+                        yAxis: {
+                          type: 'value'
+                        },
+                        series: [{
+                            name: 'Historical',
+                            type: 'line',
+                            smooth: true,
+                            data: historicalValues
                           },
-                        }
-                      }).render();
+                          {
+                            name: 'Forecast',
+                            type: 'line',
+                            smooth: true,
+                            data: [...Array(months.length).fill(null), ...forecastValues],
+                            label: {
+                              show: true
+                            }
+                          }
+                        ]
+                      });
+
+                      // Handle window resize
+                      window.addEventListener('resize', () => {
+                        chart.resize();
+                      });
                     });
                   </script>
-                  <!-- End Line Chart -->
-
                 </div>
-
               </div>
-            </div><!-- End Reports -->
+            </div>
 
             <div class="col-lg-6">
               <div class="card">
@@ -620,7 +633,7 @@ if ($result_enrollment_status) {
 
                   <script>
                     document.addEventListener("DOMContentLoaded", () => {
-                      const departmentLabels = <?php echo json_encode($department_labels); ?>;
+                      const departmentCodes = <?php echo json_encode($department_labels); ?>;
                       const studentCounts = <?php echo json_encode($student_counts); ?>;
 
                       // Initialize echarts instance
@@ -639,9 +652,9 @@ if ($result_enrollment_status) {
                           name: 'Students',
                           type: 'pie',
                           radius: '50%',
-                          data: departmentLabels.map((name, index) => ({
+                          data: departmentCodes.map((code, index) => ({
                             value: studentCounts[index],
-                            name: name
+                            name: code
                           })),
                           emphasis: {
                             itemStyle: {
@@ -681,7 +694,7 @@ if ($result_enrollment_status) {
                       new ApexCharts(document.querySelector("#enrollmentPieChart"), {
                         series: statusCounts,
                         chart: {
-                          height: 350,
+                          height: 400,
                           type: 'pie',
                           toolbar: {
                             show: true
