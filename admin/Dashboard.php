@@ -118,9 +118,10 @@ $sql_departments = "
     SELECT 
         d.department_name AS department_name, 
         COUNT(s.id) AS student_count
-    FROM sms3_students s
-    LEFT JOIN sms3_departments d ON s.department_id = d.id
-    GROUP BY s.department_id
+    FROM sms3_departments d
+    LEFT JOIN sms3_students s ON s.department_id = d.id
+    GROUP BY d.id
+    ORDER BY d.department_name ASC
 ";
 $result_departments = $conn->query($sql_departments);
 
@@ -622,11 +623,11 @@ if ($result_enrollment_status) {
                       const departmentLabels = <?php echo json_encode($department_labels); ?>;
                       const studentCounts = <?php echo json_encode($student_counts); ?>;
 
-                      new ApexCharts(document.querySelector("#departmentPieChart"), {
+                      const chart = new ApexCharts(document.querySelector("#departmentPieChart"), {
                         series: studentCounts,
                         chart: {
-                          height: 350,
                           type: 'pie',
+                          height: 350,
                           toolbar: {
                             show: true
                           }
@@ -636,6 +637,25 @@ if ($result_enrollment_status) {
                           text: "Students Distribution by Department",
                           align: "center"
                         },
+                        responsive: [{
+                          breakpoint: 480,
+                          options: {
+                            chart: {
+                              width: '100%'
+                            },
+                            legend: {
+                              position: 'bottom'
+                            }
+                          }
+                        }],
+                        legend: {
+                          position: 'bottom',
+                          horizontalAlign: 'center',
+                          markers: {
+                            width: 12,
+                            height: 12
+                          }
+                        }
                       }).render();
                     });
                   </script>

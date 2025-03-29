@@ -1141,38 +1141,6 @@ if (isset($_GET['delete_timetable_from_enrollment'])) {
         .catch(error => console.error("Error fetching timetable details:", error));
     }
 
-
-    function updateEnrollmentStatus(enrollmentId, receiptStatus) {
-      if (!confirm(`Are you sure you want to mark this enrollment as ${receiptStatus.toLowerCase()}?`)) return;
-
-      const form = new FormData();
-      form.append('enrollment_id', enrollmentId);
-      form.append('receipt_status', receiptStatus);
-
-      fetch('enrollment.php', {
-          method: 'POST',
-          body: form,
-        })
-        .then(response => {
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-          return response.json();
-        })
-        .then(data => {
-          if (data.status === 'success') {
-            showPopupMessage(data.message, 'success');
-            setTimeout(() => location.reload(), 1000); // Reload after showing message
-          } else {
-            showPopupMessage(data.message, 'error');
-          }
-        })
-        .catch(error => {
-          console.error('Error handling enrollment status:', error);
-          showPopupMessage('An unexpected error occurred.', 'error');
-        });
-    }
-
     function deleteTimetableRow(timetableId) {
       if (!confirm("Are you sure you want to delete this timetable entry?")) return;
 
