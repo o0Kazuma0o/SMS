@@ -575,13 +575,17 @@ if ($result_enrollment_status) {
                       }
 
                       // Prepare data for chart
-                      const months = historicalData.map(item => `${item.year}-${item.month}`);
+                      const months = historicalData.map(item => `${item.year}-${String(item.month).padStart(2, '0')}`);
                       const historicalValues = historicalData.map(item => item.admissions);
                       const forecastValues = forecast.map(item => item.predicted_admissions);
-                      const forecastMonths = forecast.map(item => `${item.year}-${item.month}`);
+                      const forecastMonths = forecast.map(item => `${item.year}-${String(item.month).padStart(2, '0')}`);
+
+                      // Create date formatter
+                      const formatMonth = (year, month) => {
+                        return `${year}-${String(month).padStart(2, '0')}`;
+                      };
 
                       echarts.init(document.querySelector("#lineChart")).setOption({
-                        // Set chart options
                         tooltip: {
                           trigger: 'item'
                         },
@@ -606,9 +610,6 @@ if ($result_enrollment_status) {
                             type: 'line',
                             smooth: true,
                             data: [...Array(months.length).fill(null), ...forecastValues],
-                            label: {
-                              show: true
-                            }
                           }
                         ]
                       });

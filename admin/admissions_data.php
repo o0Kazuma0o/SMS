@@ -46,6 +46,50 @@ if (!$result) {
 
   <!-- Template Main CSS File -->
   <link href="../assets/css/style.css" rel="stylesheet">
+
+  <style>
+    .modal .confirmationModal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .modal-content .confirmationModal {
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 5px;
+      text-align: center;
+      width: 300px;
+    }
+
+    .popup-message {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1000;
+      padding: 15px;
+      border-radius: 5px;
+      color: #fff;
+      opacity: 0;
+      transition: opacity 0.5s ease-in-out;
+    }
+
+    .popup-message.success {
+      background-color: green;
+    }
+
+    .popup-message.error {
+      background-color: red;
+    }
+  </style>
+
 </head>
 
 <body>
@@ -157,7 +201,7 @@ if (!$result) {
         </a>
       </li>
 
- <!-- End System Nav -->
+      <!-- End System Nav -->
 
       <hr class="sidebar-divider">
 
@@ -251,11 +295,11 @@ if (!$result) {
   <main id="main" class="main">
 
     <div class="pagetitle">
-      <h1>Admission Data</h1>
+      <h1>Admission</h1>
       <nav>
         <ol class="breadcrumb">
           <li class="breadcrumb-item"><a href="Dashboard.php">Home</a></li>
-          <li class="breadcrumb-item active">Admission Data</li>
+          <li class="breadcrumb-item active">Admission</li>
         </ol>
       </nav>
     </div><!-- End Page Title -->
@@ -264,7 +308,30 @@ if (!$result) {
       <div class="row">
         <div class="card">
           <div class="card-body">
-            <h5 class="card-title">Admission Data</h5>
+            <h5 class="card-title">Basic Information</h5>
+            <!-- Added filter dropdowns -->
+            <div class="row mb-3">
+              <div class="col-md-4">
+                <label for="filterDepartment" class="form-label">Department</label>
+                <select class="form-select" id="filterDepartment">
+                  <option value="">All Departments</option>
+                  <?php
+                  $departments = $conn->query("SELECT * FROM sms3_departments");
+                  while ($department = $departments->fetch_assoc()): ?>
+                    <option value="<?= $department['department_code']; ?>"><?= $department['department_code']; ?></option>
+                  <?php endwhile; ?>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label for="filterAdmissionType" class="form-label">Admission Type</label>
+                <select class="form-select" id="filterAdmissionType">
+                  <option value="">All Admission Types</option>
+                  <option value="Freshmen">Freshmen</option>
+                  <option value="Transferee">Transferee</option>
+                  <option value="Returnee">Returnee</option>
+                </select>
+              </div>
+            </div>
             <table class="table datatable">
               <thead>
                 <tr>
@@ -317,11 +384,11 @@ if (!$result) {
           <!-- End Table with stripped rows -->
         </div>
       </div>
+      </div>
     </section>
 
   </main><!-- End #main -->
 
-  <!-- Modal for viewing information -->
   <div class="modal fade" id="informationModal" tabindex="-1" aria-labelledby="informationModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
       <div class="modal-content">
@@ -337,6 +404,34 @@ if (!$result) {
   </div>
 
   <script>
+    // Added event listeners for the filter dropdowns
+    document.getElementById('filterDepartment').addEventListener('change', filterAdmissions);
+    document.getElementById('filterAdmissionType').addEventListener('change', filterAdmissions);
+    document.getElementById('filterStatus').addEventListener('change', filterAdmissions);
+
+    function filterAdmissions() {
+      const department = document.getElementById('filterDepartment').value;
+      const admissionType = document.getElementById('filterAdmissionType').value;
+      const status = document.getElementById('filterStatus').value;
+      const rows = document.querySelectorAll('.datatable tbody tr');
+
+      rows.forEach(row => {
+        const rowDepartment = row.cells[2].textContent.trim();
+        const rowAdmissionType = row.cells[1].textContent.trim();
+
+        const departmentMatch = department === '' || rowDepartment === department;
+        const admissionTypeMatch = admissionType === '' || rowAdmissionType === admissionType;
+
+        if (departmentMatch && admissionTypeMatch) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    }
+
+    let departments = <?= $jsonDepartments ?: '[]' ?>; // This will ensure departments is always an array
+
     function viewInformation(id) {
       // Fetch additional information using AJAX
       fetch('get_admission_data_info.php?id=' + id)
