@@ -2,7 +2,6 @@
 require('../database.php');
 require_once 'session.php';
 require_once 'audit_log_function.php';
-$userId = $_SESSION['user_id'];
 checkAccess('Admin');
 
 $currentSemester = getCurrentActiveSemester($conn);
@@ -149,7 +148,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['enrollment_id'], $_PO
         $stmt->close();
 
         // Log the audit entry
-        logAudit($conn, $userId, 'DELETE', 'sms3_enrollment_data', $enrollmentId, [
+        logAudit($conn, $_SESSION['user_id'], 'DELETE', 'sms3_enrollment_data', $enrollmentId, [
+          'id' => $enrollmentId,
           'student_id' => $enrollmentData['student_id']
         ]);
 
@@ -261,7 +261,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['enrollment_id'], $_PO
         $timetableDetailsStr = implode(', ', array_map(function ($t) {
           return "{$t['subject_code']} ({$t['section_number']})";
         }, $timetableDetails));
-        logAudit($conn, $userId, 'ADD', 'sms3_enrollment_data', $enrollmentId, [
+        logAudit($conn, $_SESSION['user_id'], 'ADD', 'sms3_enrollment_data', $enrollmentId, [
+          'id' => $enrollmentId,
           'student_id' => $enrollmentData['student_id'],
           'timetables' => $timetableDetailsStr
         ]);
@@ -798,7 +799,7 @@ if (isset($_GET['delete_timetable_from_enrollment'])) {
               </div>
             </div>
 
-            <table class="table datatable">
+            <table class="table">
               <thead>
                 <tr>
                   <th>Student Number</th>

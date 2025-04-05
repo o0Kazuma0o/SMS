@@ -332,7 +332,21 @@ if (!$result) {
                 </select>
               </div>
             </div>
-            <table class="table datatable">
+            <div class="col-md-6">
+              <label for="itemsPerPage" class="form-label">Items per Page</label>
+              <select id="itemsPerPage" class="form-select">
+                <option value="10" selected>10</option>
+                <option value="20">20</option>
+              </select>
+            </div>
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="searchBar" class="form-label">Search</label>
+                <input type="text" id="searchBar" class="form-control" placeholder="Search by Room Name, Location, or Department">
+              </div>
+            </div>
+
+            <table id="admissionTable" class="table table-bordered">
               <thead>
                 <tr>
                   <th>Name</th>
@@ -380,6 +394,7 @@ if (!$result) {
                 <?php endif; ?>
               </tbody>
             </table>
+            <div id="paginationControls" class="d-flex justify-content-center mt-3"></div>
           </div>
           <!-- End Table with stripped rows -->
         </div>
@@ -404,15 +419,119 @@ if (!$result) {
   </div>
 
   <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const table = document.getElementById('admissionTable');
+      const tbody = table.querySelector('tbody');
+      const rows = Array.from(tbody.querySelectorAll('tr'));
+      const searchBar = document.getElementById('searchBar');
+      const itemsPerPageSelect = document.getElementById('itemsPerPage');
+      const paginationControls = document.getElementById('paginationControls');
+
+      let currentPage = 1;
+      let itemsPerPage = parseInt(itemsPerPageSelect.value);
+
+      function renderTable() {
+        const searchQuery = searchBar.value.toLowerCase();
+        const filteredRows = rows.filter(row => {
+          const cells = Array.from(row.cells);
+          return cells.some(cell => cell.textContent.toLowerCase().includes(searchQuery));
+        });
+
+        const totalPages = Math.ceil(filteredRows.length / itemsPerPage);
+        currentPage = Math.min(currentPage, totalPages);
+
+        tbody.innerHTML = '';
+        const start = (currentPage - 1) * itemsPerPage;
+        const end = start + itemsPerPage;
+        filteredRows.slice(start, end).forEach(row => tbody.appendChild(row));
+
+        renderPaginationControls(totalPages);
+      }
+
+      function renderPaginationControls(totalPages) {
+        paginationControls.innerHTML = '';
+
+        if (totalPages <= 1) return; // No need for pagination if there's only one page
+
+        // Create "First" and "Previous" buttons
+        const firstButton = document.createElement('button');
+        firstButton.textContent = '<<';
+        firstButton.className = 'btn btn-sm btn-secondary mx-1';
+        firstButton.disabled = currentPage === 1;
+        firstButton.addEventListener('click', () => {
+          currentPage = 1;
+          renderTable();
+        });
+        paginationControls.appendChild(firstButton);
+
+        const prevButton = document.createElement('button');
+        prevButton.textContent = '<';
+        prevButton.className = 'btn btn-sm btn-secondary mx-1';
+        prevButton.disabled = currentPage === 1;
+        prevButton.addEventListener('click', () => {
+          currentPage = Math.max(1, currentPage - 1);
+          renderTable();
+        });
+        paginationControls.appendChild(prevButton);
+
+        // Show up to 5 page buttons around the current page
+        const maxVisiblePages = 5;
+        const startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+        const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+        for (let i = startPage; i <= endPage; i++) {
+          const button = document.createElement('button');
+          button.textContent = i;
+          button.className = 'btn btn-sm btn-primary mx-1';
+          if (i === currentPage) {
+            button.classList.add('active');
+          }
+          button.addEventListener('click', () => {
+            currentPage = i;
+            renderTable();
+          });
+          paginationControls.appendChild(button);
+        }
+
+        // Create "Next" and "Last" buttons
+        const nextButton = document.createElement('button');
+        nextButton.textContent = '>';
+        nextButton.className = 'btn btn-sm btn-secondary mx-1';
+        nextButton.disabled = currentPage === totalPages;
+        nextButton.addEventListener('click', () => {
+          currentPage = Math.min(totalPages, currentPage + 1);
+          renderTable();
+        });
+        paginationControls.appendChild(nextButton);
+
+        const lastButton = document.createElement('button');
+        lastButton.textContent = '>>';
+        lastButton.className = 'btn btn-sm btn-secondary mx-1';
+        lastButton.disabled = currentPage === totalPages;
+        lastButton.addEventListener('click', () => {
+          currentPage = totalPages;
+          renderTable();
+        });
+        paginationControls.appendChild(lastButton);
+      }
+
+      searchBar.addEventListener('input', renderTable);
+      itemsPerPageSelect.addEventListener('change', () => {
+        itemsPerPage = parseInt(itemsPerPageSelect.value);
+        currentPage = 1;
+        renderTable();
+      });
+
+      renderTable();
+    });
+
     // Added event listeners for the filter dropdowns
     document.getElementById('filterDepartment').addEventListener('change', filterAdmissions);
     document.getElementById('filterAdmissionType').addEventListener('change', filterAdmissions);
-    document.getElementById('filterStatus').addEventListener('change', filterAdmissions);
 
     function filterAdmissions() {
       const department = document.getElementById('filterDepartment').value;
       const admissionType = document.getElementById('filterAdmissionType').value;
-      const status = document.getElementById('filterStatus').value;
       const rows = document.querySelectorAll('.datatable tbody tr');
 
       rows.forEach(row => {
@@ -429,8 +548,6 @@ if (!$result) {
         }
       });
     }
-
-    let departments = <?= $jsonDepartments ?: '[]' ?>; // This will ensure departments is always an array
 
     function viewInformation(id) {
       // Fetch additional information using AJAX
