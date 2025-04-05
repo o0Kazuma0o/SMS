@@ -353,7 +353,6 @@ if (!$result) {
                   <th>Admission Type</th>
                   <th>Department</th>
                   <th>Year Level</th>
-                  <th>Information</th>
                   <th>Date Submitted</th>
                   <th>Status</th>
                   <th>Receipt Status</th>
@@ -371,9 +370,6 @@ if (!$result) {
                       <td><?= htmlspecialchars($row['admission_type']) ?></td>
                       <td><?= htmlspecialchars($row['department']) ?></td>
                       <td><?= htmlspecialchars($row['year_level']) ?></td>
-                      <td>
-                        <button class="btn btn-info btn-sm" onclick="viewInformation(<?= $row['id'] ?>)">View Information</button>
-                      </td>
                       <td><?= htmlspecialchars($row['created_at']) ?></td>
                       <td>
                         <span class="badge bg-<?= $row['status'] == 'Accepted' ? 'success' : ($row['status'] == 'Processing' ? 'primary' : 'danger') ?>">
