@@ -527,7 +527,7 @@ $subjects = $conn->query("SELECT s.*, d.department_code FROM sms3_subjects s JOI
               <?php endwhile; ?>
             </tbody>
           </table>
-
+          <div id="paginationControls" class="d-flex justify-content-center mt-3"></div>
         </div>
       </div>
 

@@ -785,6 +785,7 @@ if (isset($_GET['delete_row_id'])) {
                 <?php endwhile; ?>
               </tbody>
             </table>
+            <div id="paginationControls" class="d-flex justify-content-center mt-3"></div>
           </div>
         </div>
 
