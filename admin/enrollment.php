@@ -2,6 +2,7 @@
 require('../database.php');
 require_once 'session.php';
 require_once 'audit_log_function.php';
+require '../models/Predictivemodel.php';
 checkAccess('Admin');
 
 $currentSemester = getCurrentActiveSemester($conn);
@@ -771,6 +772,52 @@ if (isset($_GET['delete_timetable_from_enrollment'])) {
 
     <section class="section dashboard">
       <div class="row">
+
+        <h1>Enrollment Clustering Results</h1>
+        <div id="chart" style="width: 100%; height: 500px;"></div>
+
+        <script>
+          // Fetch clustering data from the backend
+          fetch('../models/Predictivemodel.php') // Replace with the actual PHP file path
+            .then(response => response.json())
+            .then(data => {
+              // Initialize eCharts
+              var chart = echarts.init(document.getElementById('chart'));
+
+              // Configure chart options
+              var option = {
+                title: {
+                  text: 'Clustering Results',
+                  subtext: 'Based on Timetable Data',
+                  left: 'center'
+                },
+                tooltip: {
+                  trigger: 'item'
+                },
+                legend: {
+                  orient: 'vertical',
+                  left: 'left'
+                },
+                series: [{
+                  name: 'Clusters',
+                  type: 'pie',
+                  radius: '50%',
+                  data: data,
+                  emphasis: {
+                    itemStyle: {
+                      shadowBlur: 10,
+                      shadowOffsetX: 0,
+                      shadowColor: 'rgba(0, 0, 0, 0.5)'
+                    }
+                  }
+                }]
+              };
+
+              // Render chart
+              chart.setOption(option);
+            })
+            .catch(error => console.error('Error fetching clustering data:', error));
+        </script>
 
         <div class="card">
           <div class="card-body">

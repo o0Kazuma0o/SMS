@@ -616,22 +616,38 @@ $sections = $conn->query("
   </main><!-- End #main -->
 
   <script>
-    document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function() {
       const table = document.getElementById('sectionTable');
       const tbody = table.querySelector('tbody');
       const rows = Array.from(tbody.querySelectorAll('tr'));
       const searchBar = document.getElementById('searchBar');
       const itemsPerPageSelect = document.getElementById('itemsPerPage');
       const paginationControls = document.getElementById('paginationControls');
+      const filterBranch = document.getElementById('filterBranch');
+      const filterDepartment = document.getElementById('filterDepartment');
+      const filterYearLevel = document.getElementById('filterYearLevel');
 
       let currentPage = 1;
       let itemsPerPage = parseInt(itemsPerPageSelect.value);
 
       function renderTable() {
         const searchQuery = searchBar.value.toLowerCase();
+        const branch = filterBranch.value;
+        const department = filterDepartment.value;
+        const yearLevel = filterYearLevel.value;
+
         const filteredRows = rows.filter(row => {
           const cells = Array.from(row.cells);
-          return cells.some(cell => cell.textContent.toLowerCase().includes(searchQuery));
+          const rowBranch = row.cells[6].textContent.trim();
+          const rowDepartment = row.cells[5].textContent.trim();
+          const rowYearLevel = row.cells[1].textContent.trim();
+
+          const branchMatch = branch === '' || rowBranch === branch;
+          const departmentMatch = department === '' || rowDepartment === department;
+          const yearLevelMatch = yearLevel === '' || rowYearLevel === yearLevel;
+          const searchMatch = cells.some(cell => cell.textContent.toLowerCase().includes(searchQuery));
+
+          return branchMatch && departmentMatch && yearLevelMatch && searchMatch;
         });
 
         const totalPages = Math.ceil(filteredRows.length / itemsPerPage);
@@ -648,9 +664,8 @@ $sections = $conn->query("
       function renderPaginationControls(totalPages) {
         paginationControls.innerHTML = '';
 
-        if (totalPages <= 1) return; // No need for pagination if there's only one page
+        if (totalPages <= 1) return;
 
-        // Create "First" and "Previous" buttons
         const firstButton = document.createElement('button');
         firstButton.textContent = '<<';
         firstButton.className = 'btn btn-sm btn-secondary mx-1';
@@ -671,7 +686,6 @@ $sections = $conn->query("
         });
         paginationControls.appendChild(prevButton);
 
-        // Show up to 5 page buttons around the current page
         const maxVisiblePages = 5;
         const startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
         const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
@@ -690,7 +704,6 @@ $sections = $conn->query("
           paginationControls.appendChild(button);
         }
 
-        // Create "Next" and "Last" buttons
         const nextButton = document.createElement('button');
         nextButton.textContent = '>';
         nextButton.className = 'btn btn-sm btn-secondary mx-1';
@@ -718,6 +731,9 @@ $sections = $conn->query("
         currentPage = 1;
         renderTable();
       });
+      filterBranch.addEventListener('change', renderTable);
+      filterDepartment.addEventListener('change', renderTable);
+      filterYearLevel.addEventListener('change', renderTable);
 
       renderTable();
     });
@@ -791,33 +807,6 @@ $sections = $conn->query("
         <?php unset($_SESSION['success_message']); ?>
       <?php endif; ?>
     };
-
-    document.getElementById('filterBranch').addEventListener('change', filterSections);
-    document.getElementById('filterDepartment').addEventListener('change', filterSections);
-    document.getElementById('filterYearLevel').addEventListener('change', filterSections);
-
-    function filterSections() {
-      const branch = document.getElementById('filterBranch').value;
-      const department = document.getElementById('filterDepartment').value;
-      const yearLevel = document.getElementById('filterYearLevel').value;
-      const rows = document.querySelectorAll('#sectionTable tbody tr');
-
-      rows.forEach(row => {
-        const rowBranch = row.cells[6].textContent.trim();
-        const rowDepartment = row.cells[5].textContent.trim();
-        const rowYearLevel = row.cells[1].textContent.trim();
-
-        const branchMatch = branch === '' || rowBranch === branch;
-        const departmentMatch = department === '' || rowDepartment === department;
-        const yearLevelMatch = yearLevel === '' || rowYearLevel === yearLevel;
-
-        if (branchMatch && departmentMatch && yearLevelMatch) {
-          row.style.display = '';
-        } else {
-          row.style.display = 'none';
-        }
-      });
-    }
   </script>
 
 

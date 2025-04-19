@@ -582,15 +582,28 @@ $rooms = $conn->query("SELECT r.*, d.department_code FROM sms3_rooms r JOIN sms3
       const searchBar = document.getElementById('searchBar');
       const itemsPerPageSelect = document.getElementById('itemsPerPage');
       const paginationControls = document.getElementById('paginationControls');
+      const filterBranch = document.getElementById('filterBranch');
+      const filterDepartment = document.getElementById('filterDepartment');
 
       let currentPage = 1;
       let itemsPerPage = parseInt(itemsPerPageSelect.value);
 
       function renderTable() {
         const searchQuery = searchBar.value.toLowerCase();
+        const branch = filterBranch.value;
+        const department = filterDepartment.value;
+
+        // Filter rows based on search, branch, and department
         const filteredRows = rows.filter(row => {
           const cells = Array.from(row.cells);
-          return cells.some(cell => cell.textContent.toLowerCase().includes(searchQuery));
+          const rowBranch = row.cells[3].textContent.trim();
+          const rowDepartment = row.cells[2].textContent.trim();
+
+          const matchesSearch = cells.some(cell => cell.textContent.toLowerCase().includes(searchQuery));
+          const matchesBranch = branch === '' || rowBranch === branch;
+          const matchesDepartment = department === '' || rowDepartment === department;
+
+          return matchesSearch && matchesBranch && matchesDepartment;
         });
 
         const totalPages = Math.ceil(filteredRows.length / itemsPerPage);
@@ -671,12 +684,15 @@ $rooms = $conn->query("SELECT r.*, d.department_code FROM sms3_rooms r JOIN sms3
         paginationControls.appendChild(lastButton);
       }
 
+      // Event listeners for filtering and pagination
       searchBar.addEventListener('input', renderTable);
       itemsPerPageSelect.addEventListener('change', () => {
         itemsPerPage = parseInt(itemsPerPageSelect.value);
         currentPage = 1;
         renderTable();
       });
+      filterBranch.addEventListener('change', renderTable);
+      filterDepartment.addEventListener('change', renderTable);
 
       renderTable();
     });
@@ -750,30 +766,6 @@ $rooms = $conn->query("SELECT r.*, d.department_code FROM sms3_rooms r JOIN sms3
         <?php unset($_SESSION['success_message']); ?>
       <?php endif; ?>
     };
-
-    // Filter rooms based on branch and department
-    document.getElementById('filterBranch').addEventListener('change', filterRooms);
-    document.getElementById('filterDepartment').addEventListener('change', filterRooms);
-
-    function filterRooms() {
-      const branch = document.getElementById('filterBranch').value;
-      const department = document.getElementById('filterDepartment').value;
-      const rows = document.querySelectorAll('#roomTable tbody tr');
-
-      rows.forEach(row => {
-        const rowBranch = row.cells[3].textContent.trim();
-        const rowDepartment = row.cells[2].textContent.trim();
-
-        const branchMatch = branch === '' || rowBranch === branch;
-        const departmentMatch = department === '' || rowDepartment === department;
-
-        if (branchMatch && departmentMatch) {
-          row.style.display = '';
-        } else {
-          row.style.display = 'none';
-        }
-      });
-    }
   </script>
 
 

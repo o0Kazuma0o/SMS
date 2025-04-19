@@ -536,22 +536,34 @@ $subjects = $conn->query("SELECT s.*, d.department_code FROM sms3_subjects s JOI
   </main><!-- End #main -->
 
   <script>
-    document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function() {
       const table = document.getElementById('subjectTable');
       const tbody = table.querySelector('tbody');
       const rows = Array.from(tbody.querySelectorAll('tr'));
       const searchBar = document.getElementById('searchBar');
       const itemsPerPageSelect = document.getElementById('itemsPerPage');
       const paginationControls = document.getElementById('paginationControls');
+      const filterDepartment = document.getElementById('filterDepartment');
+      const filterYearLevel = document.getElementById('filterYearLevel');
 
       let currentPage = 1;
       let itemsPerPage = parseInt(itemsPerPageSelect.value);
 
       function renderTable() {
         const searchQuery = searchBar.value.toLowerCase();
+        const department = filterDepartment.value;
+        const yearLevel = filterYearLevel.value;
+
         const filteredRows = rows.filter(row => {
           const cells = Array.from(row.cells);
-          return cells.some(cell => cell.textContent.toLowerCase().includes(searchQuery));
+          const rowDepartment = row.cells[2].textContent.trim();
+          const rowYearLevel = row.cells[3].textContent.trim().split(' ')[0];
+
+          const departmentMatch = department === '' || rowDepartment === department;
+          const yearLevelMatch = yearLevel === '' || rowYearLevel === yearLevel;
+          const searchMatch = cells.some(cell => cell.textContent.toLowerCase().includes(searchQuery));
+
+          return departmentMatch && yearLevelMatch && searchMatch;
         });
 
         const totalPages = Math.ceil(filteredRows.length / itemsPerPage);
@@ -568,9 +580,8 @@ $subjects = $conn->query("SELECT s.*, d.department_code FROM sms3_subjects s JOI
       function renderPaginationControls(totalPages) {
         paginationControls.innerHTML = '';
 
-        if (totalPages <= 1) return; // No need for pagination if there's only one page
+        if (totalPages <= 1) return;
 
-        // Create "First" and "Previous" buttons
         const firstButton = document.createElement('button');
         firstButton.textContent = '<<';
         firstButton.className = 'btn btn-sm btn-secondary mx-1';
@@ -591,7 +602,6 @@ $subjects = $conn->query("SELECT s.*, d.department_code FROM sms3_subjects s JOI
         });
         paginationControls.appendChild(prevButton);
 
-        // Show up to 5 page buttons around the current page
         const maxVisiblePages = 5;
         const startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
         const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
@@ -610,7 +620,6 @@ $subjects = $conn->query("SELECT s.*, d.department_code FROM sms3_subjects s JOI
           paginationControls.appendChild(button);
         }
 
-        // Create "Next" and "Last" buttons
         const nextButton = document.createElement('button');
         nextButton.textContent = '>';
         nextButton.className = 'btn btn-sm btn-secondary mx-1';
@@ -638,33 +647,11 @@ $subjects = $conn->query("SELECT s.*, d.department_code FROM sms3_subjects s JOI
         currentPage = 1;
         renderTable();
       });
+      filterDepartment.addEventListener('change', renderTable);
+      filterYearLevel.addEventListener('change', renderTable);
 
       renderTable();
     });
-
-    // Added event listeners for the filter inputs
-    document.getElementById('filterDepartment').addEventListener('change', filterSubjects);
-    document.getElementById('filterYearLevel').addEventListener('change', filterSubjects);
-
-    function filterSubjects() {
-      const department = document.getElementById('filterDepartment').value;
-      const yearLevel = document.getElementById('filterYearLevel').value;
-      const rows = document.querySelectorAll('#subjectTable tbody tr');
-
-      rows.forEach(row => {
-        const rowDepartment = row.cells[2].textContent.trim();
-        const rowYearLevel = row.cells[3].textContent.trim().split(' ')[0];
-
-        const departmentMatch = department === '' || rowDepartment === department;
-        const yearLevelMatch = yearLevel === '' || rowYearLevel === yearLevel;
-
-        if (departmentMatch && yearLevelMatch) {
-          row.style.display = '';
-        } else {
-          row.style.display = 'none';
-        }
-      });
-    }
 
     function showConfirmationModal(message, onConfirm) {
       const modal = document.getElementById('confirmationModal');
