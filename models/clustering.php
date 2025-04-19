@@ -4,11 +4,13 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 ini_set('memory_limit', '256M'); // Increase memory limit to 256MB
+
 require('../database.php');
 
 // Initialize response
 $response = [];
 
+// Fetch enrollment data in chunks
 $offset = 0;
 $limit = 1000; // Process 1000 rows at a time
 $data = [];
@@ -18,9 +20,8 @@ do {
               FROM sms3_enrollment_data LIMIT $offset, $limit";
   $result = $conn->query($query);
 
-  // Debugging: Check the contents of $data
-  if (empty($data)) {
-    $response['error'] = 'Data array is empty after processing rows';
+  if (!$result) {
+    $response['error'] = 'Database query failed: ' . $conn->error;
     header('Content-Type: application/json');
     echo json_encode($response);
     exit;
@@ -34,7 +35,6 @@ do {
     $row_count++;
   }
 
-  // Debugging: Output the number of rows fetched in this iteration
   error_log("Rows fetched in this iteration: $row_count");
 
   $offset += $limit;
@@ -56,7 +56,6 @@ function normalize($row)
   $min = min($row);
   $max = max($row);
   if ($min === $max) {
-    // Avoid division by zero if all values in the row are the same
     return array_fill(0, count($row), 0);
   }
   return array_map(function ($value) use ($min, $max) {
@@ -67,8 +66,8 @@ function normalize($row)
 // Prepare data for clustering
 $timetable_data = array_map('normalize', $data);
 
-// Debugging: Output the number of rows fetched in this iteration
-error_log("Rows fetched in this iteration: $row_count");
+// Debugging: Output the first few rows of normalized data
+error_log("Normalized data: " . print_r(array_slice($timetable_data, 0, 5), true));
 
 // K-Means Clustering
 function kmeans($data, $k, $max_iterations = 100)
