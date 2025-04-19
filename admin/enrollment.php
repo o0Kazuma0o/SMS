@@ -773,198 +773,204 @@ if (isset($_GET['delete_timetable_from_enrollment'])) {
     <section class="section dashboard">
       <div class="row">
 
-        <h1>Enrollment Clustering Results</h1>
-        <div id="chart" style="width: 100%; height: 500px;"></div>
-
-        <script>
-          // Fetch clustering data from the backend
-          fetch('../models/Predictivemodel.php') // Replace with the actual PHP file path
-            .then(response => response.json())
-            .then(data => {
-              // Initialize eCharts
-              var chart = echarts.init(document.getElementById('chart'));
-
-              // Configure chart options
-              var option = {
-                title: {
-                  text: 'Clustering Results',
-                  subtext: 'Based on Timetable Data',
-                  left: 'center'
-                },
-                tooltip: {
-                  trigger: 'item'
-                },
-                legend: {
-                  orient: 'vertical',
-                  left: 'left'
-                },
-                series: [{
-                  name: 'Clusters',
-                  type: 'pie',
-                  radius: '50%',
-                  data: data,
-                  emphasis: {
-                    itemStyle: {
-                      shadowBlur: 10,
-                      shadowOffsetX: 0,
-                      shadowColor: 'rgba(0, 0, 0, 0.5)'
-                    }
-                  }
-                }]
-              };
-
-              // Render chart
-              chart.setOption(option);
-            })
-            .catch(error => console.error('Error fetching clustering data:', error));
-        </script>
-
         <div class="card">
           <div class="card-body">
-            <h5 class="card-title">Pending Enrollment</h5>
+            <h5 class="card-title">Enrollment Clustering Results</h5>
+            <div id="chart" style="width: 100%; height: 500px;"></div>
 
-            <!-- Filter Inputs -->
-            <div class="row mb-3">
-              <div class="col-md-4">
-                <label for="filterDepartment" class="form-label">Department</label>
-                <select id="filterDepartment" class="form-select">
-                  <option value="">All Departments</option>
-                  <?php
-                  $departments = $conn->query("SELECT * FROM sms3_departments");
-                  while ($department = $departments->fetch_assoc()): ?>
-                    <option value="<?= $department['department_code']; ?>"><?= $department['department_code']; ?></option>
-                  <?php endwhile; ?>
-                </select>
-              </div>
-              <div class="col-md-4">
-                <label for="filterStartDate" class="form-label">Start Date</label>
-                <input type="date" id="filterStartDate" class="form-control">
-              </div>
-              <div class="col-md-4">
-                <label for="filterEndDate" class="form-label">End Date</label>
-                <input type="date" id="filterEndDate" class="form-control">
-              </div>
+            <script>
+              // Fetch clustering data from the backend
+              fetch('../models/Predictivemodel.php') // Replace with the actual PHP file path
+                .then(response => response.json())
+                .then(data => {
+                  // Initialize eCharts
+                  var chart = echarts.init(document.getElementById('chart'));
+
+                  // Configure chart options
+                  var option = {
+                    title: {
+                      text: 'Clustering Results',
+                      subtext: 'Based on Timetable Data',
+                      left: 'center'
+                    },
+                    tooltip: {
+                      trigger: 'item'
+                    },
+                    legend: {
+                      orient: 'vertical',
+                      left: 'left'
+                    },
+                    series: [{
+                      name: 'Clusters',
+                      type: 'pie',
+                      radius: '50%',
+                      data: data,
+                      emphasis: {
+                        itemStyle: {
+                          shadowBlur: 10,
+                          shadowOffsetX: 0,
+                          shadowColor: 'rgba(0, 0, 0, 0.5)'
+                        }
+                      }
+                    }]
+                  };
+
+                  // Render chart
+                  chart.setOption(option);
+                })
+                .catch(error => console.error('Error fetching clustering data:', error));
+            </script>
+          </div>
+        </div><!-- End Card -->
+      </div><!-- End Card -->
+
+
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title">Pending Enrollment</h5>
+
+          <!-- Filter Inputs -->
+          <div class="row mb-3">
+            <div class="col-md-4">
+              <label for="filterDepartment" class="form-label">Department</label>
+              <select id="filterDepartment" class="form-select">
+                <option value="">All Departments</option>
+                <?php
+                $departments = $conn->query("SELECT * FROM sms3_departments");
+                while ($department = $departments->fetch_assoc()): ?>
+                  <option value="<?= $department['department_code']; ?>"><?= $department['department_code']; ?></option>
+                <?php endwhile; ?>
+              </select>
             </div>
+            <div class="col-md-4">
+              <label for="filterStartDate" class="form-label">Start Date</label>
+              <input type="date" id="filterStartDate" class="form-control">
+            </div>
+            <div class="col-md-4">
+              <label for="filterEndDate" class="form-label">End Date</label>
+              <input type="date" id="filterEndDate" class="form-control">
+            </div>
+          </div>
 
-            <table class="table">
-              <thead>
-                <tr>
-                  <th>Student Number</th>
-                  <th>Student</th>
-                  <th>Admission Type</th>
-                  <th>Department</th>
-                  <th>Subjects</th>
-                  <th>Date Submitted</th>
-                  <th>Status</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                <?php if ($result && $result->num_rows > 0): ?>
-                  <?php while ($row = $result->fetch_assoc()): ?>
-                    <tr data-enrollment-id="<?= $row['enrollment_id']; ?>">
-                      <td><?= htmlspecialchars($row['student_number']); ?></td>
-                      <td><?= htmlspecialchars($row['first_name'] . ' ' . $row['last_name']); ?></td>
-                      <td><?= htmlspecialchars($row['admission_type']); ?></td>
-                      <td><?= htmlspecialchars($row['department_code']); ?></td>
-                      <td>
-                        <button class="btn btn-info btn-sm" onclick="viewTimetableDetails(<?= $row['enrollment_id']; ?>)">View Timetable</button>
-                      </td>
-                      <td><?= htmlspecialchars($row['created_at']); ?></td>
-                      <td>
-                        <span class="badge bg-<?= $row['receipt_status'] == 'Not Enrolled' ? 'warning' : ($row['receipt_status'] == 'Approved' ? 'success' : 'danger') ?>">
-                          <?= htmlspecialchars($row['receipt_status']); ?>
-                        </span>
-                      </td>
-                      <td>
-                        <button class="btn btn-info btn-sm" onclick="showTransactionModal(<?= $row['enrollment_id']; ?>, '<?= $row['student_number']; ?>', '<?= htmlspecialchars($row['first_name'] . ' ' . $row['last_name']); ?>')">View Transactions</button>
-                        <button class="btn btn-danger btn-sm" onclick="updateEnrollmentStatus(<?= $row['enrollment_id']; ?>, 'Rejected')">Reject</button>
-                      </td>
-                    </tr>
-                  <?php endwhile; ?>
-                <?php else: ?>
-                  <tr>
-                    <td colspan="8" class="text-center">No pending enrollments found</td>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Student Number</th>
+                <th>Student</th>
+                <th>Admission Type</th>
+                <th>Department</th>
+                <th>Subjects</th>
+                <th>Date Submitted</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <?php if ($result && $result->num_rows > 0): ?>
+                <?php while ($row = $result->fetch_assoc()): ?>
+                  <tr data-enrollment-id="<?= $row['enrollment_id']; ?>">
+                    <td><?= htmlspecialchars($row['student_number']); ?></td>
+                    <td><?= htmlspecialchars($row['first_name'] . ' ' . $row['last_name']); ?></td>
+                    <td><?= htmlspecialchars($row['admission_type']); ?></td>
+                    <td><?= htmlspecialchars($row['department_code']); ?></td>
+                    <td>
+                      <button class="btn btn-info btn-sm" onclick="viewTimetableDetails(<?= $row['enrollment_id']; ?>)">View Timetable</button>
+                    </td>
+                    <td><?= htmlspecialchars($row['created_at']); ?></td>
+                    <td>
+                      <span class="badge bg-<?= $row['receipt_status'] == 'Not Enrolled' ? 'warning' : ($row['receipt_status'] == 'Approved' ? 'success' : 'danger') ?>">
+                        <?= htmlspecialchars($row['receipt_status']); ?>
+                      </span>
+                    </td>
+                    <td>
+                      <button class="btn btn-info btn-sm" onclick="showTransactionModal(<?= $row['enrollment_id']; ?>, '<?= $row['student_number']; ?>', '<?= htmlspecialchars($row['first_name'] . ' ' . $row['last_name']); ?>')">View Transactions</button>
+                      <button class="btn btn-danger btn-sm" onclick="updateEnrollmentStatus(<?= $row['enrollment_id']; ?>, 'Rejected')">Reject</button>
+                    </td>
                   </tr>
-                <?php endif; ?>
-              </tbody>
-            </table>
-          </div>
+                <?php endwhile; ?>
+              <?php else: ?>
+                <tr>
+                  <td colspan="8" class="text-center">No pending enrollments found</td>
+                </tr>
+              <?php endif; ?>
+            </tbody>
+          </table>
         </div>
+      </div>
 
-        <!-- Timetable Modal -->
-        <div class="modal fade" id="timetableModal" tabindex="-1" aria-labelledby="timetableModalLabel" aria-hidden="true">
-          <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-              <div class="modal-header">
-                <h5 class="modal-title" id="timetableModalLabel">Timetable Details</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-              </div>
-              <div class="modal-body">
-                <table class="table table-bordered">
-                  <thead>
-                    <tr>
-                      <th>Section</th>
-                      <th>Subject</th>
-                      <th>Schedule</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody id="timetableDetails">
-                    <!-- Content populated dynamically -->
-                  </tbody>
-                </table>
-              </div>
+      <!-- Timetable Modal -->
+      <div class="modal fade" id="timetableModal" tabindex="-1" aria-labelledby="timetableModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="timetableModalLabel">Timetable Details</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table table-bordered">
+                <thead>
+                  <tr>
+                    <th>Section</th>
+                    <th>Subject</th>
+                    <th>Schedule</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="timetableDetails">
+                  <!-- Content populated dynamically -->
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
+      </div>
 
-        <div class="modal fade" id="editTimetableModal" tabindex="-1" aria-hidden="true">
-          <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-              <div class="modal-header">
-                <h5 class="modal-title">Edit Timetable</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-              </div>
-              <div class="modal-body">
-                <form method="POST" action="enrollment.php">
-                  <input type="hidden" id="editTimetableId" name="timetable_id">
+      <div class="modal fade" id="editTimetableModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Edit Timetable</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              <form method="POST" action="enrollment.php">
+                <input type="hidden" id="editTimetableId" name="timetable_id">
 
-                  <div class="mb-3">
-                    <label for="editSection" class="form-label">Section</label>
-                    <select id="editSection" class="form-control" required>
-                      <option value="">Select Section</option>
-                    </select>
-                  </div>
+                <div class="mb-3">
+                  <label for="editSection" class="form-label">Section</label>
+                  <select id="editSection" class="form-control" required>
+                    <option value="">Select Section</option>
+                  </select>
+                </div>
 
-                  <div class="mb-3">
-                    <label for="newTimetableId" class="form-label">Timetable</label>
-                    <select id="newTimetableId" name="new_timetable_id" class="form-control" required>
-                      <option value="">Select Timetable</option>
-                    </select>
-                  </div>
+                <div class="mb-3">
+                  <label for="newTimetableId" class="form-label">Timetable</label>
+                  <select id="newTimetableId" name="new_timetable_id" class="form-control" required>
+                    <option value="">Select Timetable</option>
+                  </select>
+                </div>
 
-                  <div class="mb-3">
-                    <label for="editDay" class="form-label">Day</label>
-                    <input type="text" id="editDay" class="form-control" disabled>
-                  </div>
+                <div class="mb-3">
+                  <label for="editDay" class="form-label">Day</label>
+                  <input type="text" id="editDay" class="form-control" disabled>
+                </div>
 
-                  <div class="mb-3">
-                    <label for="editStartTime" class="form-label">Start Time</label>
-                    <input type="time" id="editStartTime" class="form-control" disabled>
-                  </div>
+                <div class="mb-3">
+                  <label for="editStartTime" class="form-label">Start Time</label>
+                  <input type="time" id="editStartTime" class="form-control" disabled>
+                </div>
 
-                  <div class="mb-3">
-                    <label for="editEndTime" class="form-label">End Time</label>
-                    <input type="time" id="editEndTime" class="form-control" disabled>
-                  </div>
+                <div class="mb-3">
+                  <label for="editEndTime" class="form-label">End Time</label>
+                  <input type="time" id="editEndTime" class="form-control" disabled>
+                </div>
 
-                  <button type="submit" name="update_timetable" class="btn btn-primary">Save Changes</button>
-                </form>
-              </div>
+                <button type="submit" name="update_timetable" class="btn btn-primary">Save Changes</button>
+              </form>
             </div>
           </div>
         </div>
+      </div>
 
       </div>
     </section>
