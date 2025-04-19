@@ -780,13 +780,22 @@ if (isset($_GET['delete_timetable_from_enrollment'])) {
 
             <script>
               // Fetch clustering data from the backend
-              fetch('../models/Predictivemodel.php') // Replace with the actual PHP file path
-                .then(response => response.json())
+              fetch('../models/clustering.php') // Replace with the actual PHP file path
+                .then(response => {
+                  if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                  }
+                  return response.json();
+                })
                 .then(data => {
-                  // Initialize eCharts
-                  var chart = echarts.init(document.getElementById('chart'));
+                  if (data.error) {
+                    console.error('Error from backend:', data.error); // Log the error from the backend
+                    alert('Error fetching clustering data: ' + data.error);
+                    return;
+                  }
 
-                  // Configure chart options
+                  // Process and render the chart
+                  var chart = echarts.init(document.getElementById('chart'));
                   var option = {
                     title: {
                       text: 'Clustering Results',
@@ -814,11 +823,12 @@ if (isset($_GET['delete_timetable_from_enrollment'])) {
                       }
                     }]
                   };
-
-                  // Render chart
                   chart.setOption(option);
                 })
-                .catch(error => console.error('Error fetching clustering data:', error));
+                .catch(error => {
+                  console.error('Error fetching clustering data:', error); // Log the error to the console
+                  alert('An unexpected error occurred while fetching clustering data.');
+                });
             </script>
           </div>
         </div><!-- End Card -->
