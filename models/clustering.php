@@ -3,7 +3,7 @@
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
-ini_set('memory_limit', '1G'); // Increase memory limit to 256MB
+ini_set('memory_limit', '256M'); // Increase memory limit to 256MB
 require('../database.php');
 
 // Initialize response
@@ -18,31 +18,31 @@ do {
               FROM sms3_enrollment_data LIMIT $offset, $limit";
   $result = $conn->query($query);
 
-  if (!$result) {
-    break;
+  // Debugging: Check the contents of $data
+  if (empty($data)) {
+    $response['error'] = 'Data array is empty after processing rows';
+    header('Content-Type: application/json');
+    echo json_encode($response);
+    exit;
   }
 
+  $row_count = 0; // Debugging: Count rows in this iteration
   while ($row = $result->fetch_assoc()) {
-    $data[] = array_map('intval', array_values($row));
+    $data[] = array_map(function ($value) {
+      return is_null($value) ? 0 : intval($value);
+    }, array_values($row));
+    $row_count++;
   }
+
+  // Debugging: Output the number of rows fetched in this iteration
+  error_log("Rows fetched in this iteration: $row_count");
 
   $offset += $limit;
 } while ($result->num_rows > 0);
 
-if (!$result) {
-  // Handle query failure
-  $response['error'] = 'Database query failed: ' . $conn->error;
-  header('Content-Type: application/json');
-  echo json_encode($response);
-  exit;
-}
+// Debugging: Output the size of $data
+error_log("Total rows in data array: " . count($data));
 
-$data = [];
-while ($row = $result->fetch_assoc()) {
-  $data[] = array_map('intval', array_values($row)); // Convert timetable IDs to integers
-}
-
-// Check if data is empty
 if (empty($data)) {
   $response['error'] = 'No data available for clustering';
   header('Content-Type: application/json');
@@ -66,6 +66,9 @@ function normalize($row)
 
 // Prepare data for clustering
 $timetable_data = array_map('normalize', $data);
+
+// Debugging: Output the number of rows fetched in this iteration
+error_log("Rows fetched in this iteration: $row_count");
 
 // K-Means Clustering
 function kmeans($data, $k, $max_iterations = 100)
