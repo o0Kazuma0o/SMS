@@ -3,15 +3,31 @@
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
+ini_set('memory_limit', '1G'); // Increase memory limit to 256MB
 require('../database.php');
 
 // Initialize response
 $response = [];
 
-// Fetch enrollment data
-$query = "SELECT timetable_1, timetable_2, timetable_3, timetable_4, timetable_5, timetable_6, timetable_7, timetable_8 
-          FROM sms3_enrollment_data";
-$result = $conn->query($query);
+$offset = 0;
+$limit = 1000; // Process 1000 rows at a time
+$data = [];
+
+do {
+  $query = "SELECT timetable_1, timetable_2, timetable_3, timetable_4, timetable_5, timetable_6, timetable_7, timetable_8 
+              FROM sms3_enrollment_data LIMIT $offset, $limit";
+  $result = $conn->query($query);
+
+  if (!$result) {
+    break;
+  }
+
+  while ($row = $result->fetch_assoc()) {
+    $data[] = array_map('intval', array_values($row));
+  }
+
+  $offset += $limit;
+} while ($result->num_rows > 0);
 
 if (!$result) {
   // Handle query failure
