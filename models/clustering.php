@@ -32,29 +32,29 @@ class Clustering
   private function processBatch($offset)
   {
     $query = "
-            SELECT 
-                ed.id,
-                ed.student_id,
-                t1.subject_id as subj1,
-                t2.subject_id as subj2,
-                t3.subject_id as subj3,
-                t4.subject_id as subj4,
-                t5.subject_id as subj5,
-                t6.subject_id as subj6,
-                t7.subject_id as subj7,
-                t8.subject_id as subj8
-            FROM sms3_enrollment_data ed
-            LEFT JOIN sms3_timetable t1 ON ed.timetable_1 = t1.id
-            LEFT JOIN sms3_timetable t2 ON ed.timetable_2 = t2.id
-            LEFT JOIN sms3_timetable t3 ON ed.timetable_3 = t3.id
-            LEFT JOIN sms3_timetable t4 ON ed.timetable_4 = t4.id
-            LEFT JOIN sms3_timetable t5 ON ed.timetable_5 = t5.id
-            LEFT JOIN sms3_timetable t6 ON ed.timetable_6 = t6.id
-            LEFT JOIN sms3_timetable t7 ON ed.timetable_7 = t7.id
-            LEFT JOIN sms3_timetable t8 ON ed.timetable_8 = t8.id
-            WHERE ed.receipt_status = 'Paid' AND ed.status = 'Approved'
-            LIMIT {$this->batchSize} OFFSET {$offset}
-        ";
+        SELECT 
+            ed.id,
+            ed.student_id,
+            t1.subject_id as subj1,
+            t2.subject_id as subj2,
+            t3.subject_id as subj3,
+            t4.subject_id as subj4,
+            t5.subject_id as subj5,
+            t6.subject_id as subj6,
+            t7.subject_id as subj7,
+            t8.subject_id as subj8
+        FROM sms3_enrollment_data ed
+        LEFT JOIN sms3_timetable t1 ON ed.timetable_1 = t1.id
+        LEFT JOIN sms3_timetable t2 ON ed.timetable_2 = t2.id
+        LEFT JOIN sms3_timetable t3 ON ed.timetable_3 = t3.id
+        LEFT JOIN sms3_timetable t4 ON ed.timetable_4 = t4.id
+        LEFT JOIN sms3_timetable t5 ON ed.timetable_5 = t5.id
+        LEFT JOIN sms3_timetable t6 ON ed.timetable_6 = t6.id
+        LEFT JOIN sms3_timetable t7 ON ed.timetable_7 = t7.id
+        LEFT JOIN sms3_timetable t8 ON ed.timetable_8 = t8.id
+        WHERE ed.receipt_status = 'Paid' AND ed.status = 'Approved'
+        LIMIT {$this->batchSize} OFFSET {$offset}
+    ";
 
     $result = $this->db->query($query, MYSQLI_USE_RESULT);
     $data = array();
@@ -77,6 +77,7 @@ class Clustering
     $clusters = $this->kmeans_clustering($data, 3);
     $this->analyze_clusters($clusters, $subjects);
   }
+
 
   private function kmeans_clustering($vectors, $k = 3, $max_iterations = 100)
   {
@@ -161,7 +162,7 @@ class Clustering
       $subject_counts = array_fill(0, count($subjects), 0);
       foreach ($cluster_points as $point) {
         foreach ($point as $dim => $value) {
-          if ($value == 1) {
+          if ($value !== null && $value !== '') { // Check if the subject ID exists
             $subject_counts[$dim]++;
           }
         }
@@ -178,11 +179,13 @@ class Clustering
     // This is a placeholder, you should implement actual storage
     echo "Cluster Analysis:\n";
     foreach ($cluster_analysis as $cluster_id => $counts) {
-      $cluster_number = (int)$cluster_id + 1; // Convert $cluster_id to integer before adding
+      $cluster_number = (int)$cluster_id + 1; // Convert $cluster_id to integer
       echo "Cluster {$cluster_number}:\n";
       arsort($counts);
       foreach ($counts as $subject_id => $count) {
-        echo "Subject " . $subjects[$subject_id] . ": $count\n";
+        if ($count > 0) { // Only display subjects with positive counts
+          echo "Subject " . $subjects[$subject_id] . ": $count\n";
+        }
       }
       echo "\n";
     }
