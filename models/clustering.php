@@ -32,29 +32,29 @@ class Clustering
   private function processBatch($offset)
   {
     $query = "
-        SELECT 
-            ed.id,
-            ed.student_id,
-            t1.subject_id as subj1,
-            t2.subject_id as subj2,
-            t3.subject_id as subj3,
-            t4.subject_id as subj4,
-            t5.subject_id as subj5,
-            t6.subject_id as subj6,
-            t7.subject_id as subj7,
-            t8.subject_id as subj8
-        FROM sms3_enrollment_data ed
-        LEFT JOIN sms3_timetable t1 ON ed.timetable_1 = t1.id
-        LEFT JOIN sms3_timetable t2 ON ed.timetable_2 = t2.id
-        LEFT JOIN sms3_timetable t3 ON ed.timetable_3 = t3.id
-        LEFT JOIN sms3_timetable t4 ON ed.timetable_4 = t4.id
-        LEFT JOIN sms3_timetable t5 ON ed.timetable_5 = t5.id
-        LEFT JOIN sms3_timetable t6 ON ed.timetable_6 = t6.id
-        LEFT JOIN sms3_timetable t7 ON ed.timetable_7 = t7.id
-        LEFT JOIN sms3_timetable t8 ON ed.timetable_8 = t8.id
-        WHERE ed.receipt_status = 'Paid' AND ed.status = 'Approved'
-        LIMIT {$this->batchSize} OFFSET {$offset}
-    ";
+            SELECT 
+                ed.id,
+                ed.student_id,
+                t1.subject_id as subj1,
+                t2.subject_id as subj2,
+                t3.subject_id as subj3,
+                t4.subject_id as subj4,
+                t5.subject_id as subj5,
+                t6.subject_id as subj6,
+                t7.subject_id as subj7,
+                t8.subject_id as subj8
+            FROM sms3_enrollment_data ed
+            LEFT JOIN sms3_timetable t1 ON ed.timetable_1 = t1.id
+            LEFT JOIN sms3_timetable t2 ON ed.timetable_2 = t2.id
+            LEFT JOIN sms3_timetable t3 ON ed.timetable_3 = t3.id
+            LEFT JOIN sms3_timetable t4 ON ed.timetable_4 = t4.id
+            LEFT JOIN sms3_timetable t5 ON ed.timetable_5 = t5.id
+            LEFT JOIN sms3_timetable t6 ON ed.timetable_6 = t6.id
+            LEFT JOIN sms3_timetable t7 ON ed.timetable_7 = t7.id
+            LEFT JOIN sms3_timetable t8 ON ed.timetable_8 = t8.id
+            WHERE ed.receipt_status = 'Paid' AND ed.status = 'Approved'
+            LIMIT {$this->batchSize} OFFSET {$offset}
+        ";
 
     $result = $this->db->query($query, MYSQLI_USE_RESULT);
     $data = array();
@@ -64,7 +64,7 @@ class Clustering
       $student_data = array();
       for ($i = 1; $i <= 8; $i++) {
         $subject_id = $row['subj' . $i];
-        if (!in_array($subject_id, $subjects)) {
+        if (!in_array($subject_id, $subjects) && $subject_id !== null && $subject_id !== '') {
           $subjects[] = $subject_id;
         }
         $student_data[] = $subject_id;
@@ -77,7 +77,6 @@ class Clustering
     $clusters = $this->kmeans_clustering($data, 3);
     $this->analyze_clusters($clusters, $subjects);
   }
-
 
   private function kmeans_clustering($vectors, $k = 3, $max_iterations = 100)
   {
@@ -97,13 +96,18 @@ class Clustering
         $nearest_centroid = 0;
         $min_distance = INF;
         foreach ($centroids as $centroid_id => $centroid) {
+          if (is_null($centroid) || count($centroid) !== $dimensions) {
+            continue; // Skip invalid centroids
+          }
           $distance = $this->calculate_distance($point, $centroid);
           if ($distance < $min_distance) {
             $min_distance = $distance;
             $nearest_centroid = $centroid_id;
           }
         }
-        $clusters[$nearest_centroid][] = $point;
+        if (!is_null($nearest_centroid)) {
+          $clusters[$nearest_centroid][] = $point;
+        }
       }
 
       $new_centroids = array();
@@ -115,12 +119,16 @@ class Clustering
         $centroid = array_fill(0, $dimensions, 0);
         foreach ($cluster as $point) {
           foreach ($point as $dim => $value) {
-            $centroid[$dim] += $value;
+            if (!is_null($value)) {
+              $centroid[$dim] += $value;
+            }
           }
         }
         $count = count($cluster);
         foreach ($point as $dim => $value) {
-          $centroid[$dim] /= $count;
+          if (!is_null($value)) {
+            $centroid[$dim] /= $count;
+          }
         }
         $new_centroids[] = $centroid;
       }
@@ -138,7 +146,9 @@ class Clustering
   {
     $distance = 0;
     foreach ($point1 as $dim => $value) {
-      $distance += pow($value - $point2[$dim], 2);
+      if (!is_null($value) && !is_null($point2[$dim])) {
+        $distance += pow($value - $point2[$dim], 2);
+      }
     }
     return $distance;
   }
@@ -162,7 +172,7 @@ class Clustering
       $subject_counts = array_fill(0, count($subjects), 0);
       foreach ($cluster_points as $point) {
         foreach ($point as $dim => $value) {
-          if ($value !== null && $value !== '') { // Check if the subject ID exists
+          if ($value !== null && $value !== '' && isset($subjects[$dim])) {
             $subject_counts[$dim]++;
           }
         }
@@ -174,16 +184,13 @@ class Clustering
 
   private function store_cluster_analysis($cluster_analysis, $subjects)
   {
-    // Implement logic to store or log the cluster analysis
-    // For example, insert into a log table or file
-    // This is a placeholder, you should implement actual storage
     echo "Cluster Analysis:\n";
     foreach ($cluster_analysis as $cluster_id => $counts) {
-      $cluster_number = (int)$cluster_id + 1; // Convert $cluster_id to integer
+      $cluster_number = (int)$cluster_id + 1;
       echo "Cluster {$cluster_number}:\n";
       arsort($counts);
       foreach ($counts as $subject_id => $count) {
-        if ($count > 0) { // Only display subjects with positive counts
+        if ($count > 0 && isset($subjects[$subject_id])) {
           echo "Subject " . $subjects[$subject_id] . ": $count\n";
         }
       }
