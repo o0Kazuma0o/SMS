@@ -46,10 +46,62 @@ while ($row = $result_last_school->fetch_assoc()) {
 $mpdf = new Mpdf();
 $mpdf->SetTitle('Dashboard Report');
 
+// Add a header and footer
+$mpdf->SetHTMLHeader('
+    <div style="text-align: center; font-weight: bold; font-size: 14px;">
+        Dashboard Report
+    </div>
+    <hr style="border: 1px solid #000;">
+');
+$mpdf->SetHTMLFooter('
+    <hr style="border: 1px solid #000;">
+    <div style="text-align: center; font-size: 12px;">
+        Page {PAGENO} of {nbpg}
+    </div>
+');
+
 // Start HTML content for the PDF
 $html = "
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        font-size: 12px;
+        color: #333;
+    }
+    h1 {
+        text-align: center;
+        color: #0056b3;
+    }
+    h2 {
+        color: #0056b3;
+        border-bottom: 2px solid #0056b3;
+        padding-bottom: 5px;
+    }
+    ul {
+        list-style-type: none;
+        padding: 0;
+    }
+    ul li {
+        margin: 5px 0;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+    table th, table td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+    }
+    table th {
+        background-color: #f2f2f2;
+        color: #333;
+    }
+</style>
+
 <h1>Dashboard Report</h1>
-<p>Date: " . date('F j, Y') . "</p>
+<p style='text-align: center;'>Date: " . date('F j, Y') . "</p>
 
 <h2>Summary</h2>
 <ul>
@@ -60,7 +112,7 @@ $html = "
 </ul>
 
 <h2>Students by Last School</h2>
-<table border='1' cellpadding='10' cellspacing='0' style='width: 100%; border-collapse: collapse;'>
+<table>
     <thead>
         <tr>
             <th>Last School</th>
