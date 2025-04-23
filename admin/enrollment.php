@@ -2,7 +2,7 @@
 require('../database.php');
 require_once 'session.php';
 require_once 'audit_log_function.php';
-require '../models/clustering.php';
+require '../models/EnrollmentPredictiveModel.php';
 checkAccess('Admin');
 
 $currentSemester = getCurrentActiveSemester($conn);
@@ -411,30 +411,30 @@ if (isset($_GET['delete_timetable_from_enrollment'])) {
   exit;
 }
 
-try {
-  $clustering = new KMeansClustering();
-  $kcluster = $clustering->cluster();
-  $clusters = $kcluster['clusters'];
-  $centroids = $kcluster['centroids'];
-
-  // Prepare data for chart
-  $chartData = array();
-  foreach ($clusters as $clusterId => $cluster) {
-    foreach ($cluster as $point) {
-      $chartData[] = array(
-        'student_id' => base64_encode($point['student_id']),
-        'subject_id' => $point['subject_id'],
-        'section_id' => $point['section_id'],
-        'day_number' => $point['day_number'],
-        'start_minutes' => $point['start_minutes'],
-        'end_minutes' => $point['end_minutes']
-      );
-    }
-  }
-} catch (Exception $e) {
-  echo "Error performing clustering: " . $e->getMessage();
-  exit();
+// Fetch historical enrollment data
+$sql = "
+    SELECT 
+        YEAR(created_at) AS year,
+        MONTH(created_at) AS month,
+        COUNT(*) AS enrollments
+    FROM sms3_enrollment_data
+    GROUP BY YEAR(created_at), MONTH(created_at)
+    ORDER BY YEAR(created_at), MONTH(created_at)
+";
+$result = $conn->query($sql);
+$historicalData = [];
+while ($row = $result->fetch_assoc()) {
+  $historicalData[] = [
+    'year' => $row['year'],
+    'month' => $row['month'],
+    'enrollments' => $row['enrollments']
+  ];
 }
+
+// Initialize the SARIMA model
+$model = new EnrollmentSARIMAModel($historicalData, 12, 2);
+$forecast = $model->forecast();
+
 ?>
 
 <!DOCTYPE html>
@@ -710,84 +710,73 @@ try {
     <section class="section dashboard">
       <div class="row">
 
-        <div class="card">
-          <div class="card-body">
-            <h5 class="card-title">Clustering Bubble Chart</h5>
-
-            <div id="chart" style="width: 100%; height: 600px;"></div>
-
-            <script>
-              // Initialize chart
-              const chart = echarts.init(document.getElementById('chart'));
-
-              // Prepare data
-              const data = <?= json_encode($chartData) ?>;
-
-              // Configure chart
-              chart.setOption({
-                title: {
-                  text: 'Student Enrollment Clustering'
-                },
-                tooltip: {
-                  formatter: function(param) {
-                    return `Student ID: ${atob(param.data.student_id)}<br>
-                           Subject ID: ${param.data.subject_id}<br>
-                           Section ID: ${param.data.section_id}<br>
-                           Day: ${['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][param.data.day_number - 1]}<br>
-                           Time: ${Math.floor(param.data.start_minutes / 60)}:${param.data.start_minutes % 60} - ${Math.floor(param.data.end_minutes / 60)}:${param.data.end_minutes % 60}`;
+        <!-- Forecasting -->
+        <div class="col-12">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">Enrollment Forecast</h5>
+        
+              <div id="enrollmentForecastChart" style="min-height: 400px;" class="echart"></div>
+        
+              <script>
+                document.addEventListener("DOMContentLoaded", () => {
+                  const historicalData = <?php echo json_encode($historicalData); ?>;
+                  const forecast = <?php echo json_encode($forecast); ?>;
+        
+                  if (historicalData.length === 0 || forecast.length === 0) {
+                    document.getElementById('enrollmentForecastChart').innerHTML = '<div style="text-align: center; padding: 20px;">No data available for forecasting.</div>';
+                    return;
                   }
-                },
-                grid: {
-                  left: '5%',
-                  right: '5%'
-                },
-                xAxis: {
-                  type: 'value',
-                  name: 'Start Time (minutes)',
-                  min: 0,
-                  max: 1440 // 24 hours in minutes
-                },
-                yAxis: {
-                  type: 'value',
-                  name: 'End Time (minutes)',
-                  min: 0,
-                  max: 1440
-                },
-                series: [{
-                  type: 'scatter',
-                  data: data,
-                  symbolSize: 10,
-                  itemStyle: {
-                    color: ['#FF6B6B', '#34C759', '#4F46E5'][Math.floor(Math.random() * 3)]
-                  },
-                  emphasis: {
-                    label: {
-                      show: true,
-                      formatter: function(param) {
-                        return `Student ID: ${atob(param.data.student_id)}`;
+        
+                  // Prepare data for chart
+                  const months = historicalData.map(item => `${item.year}-${String(item.month).padStart(2, '0')}`);
+                  const historicalValues = historicalData.map(item => item.enrollments);
+                  const forecastValues = forecast.map(item => item.predicted_enrollments);
+                  const forecastMonths = forecast.map(item => `${item.year}-${String(item.month).padStart(2, '0')}`);
+        
+                  // Initialize echarts instance
+                  const chart = echarts.init(document.querySelector("#enrollmentForecastChart"));
+        
+                  // Set chart options
+                  chart.setOption({
+                    tooltip: {
+                      trigger: 'item'
+                    },
+                    legend: {
+                      data: ['Historical', 'Forecast']
+                    },
+                    xAxis: {
+                      type: 'category',
+                      data: [...months, ...forecastMonths]
+                    },
+                    yAxis: {
+                      type: 'value'
+                    },
+                    series: [
+                      {
+                        name: 'Historical',
+                        type: 'line',
+                        smooth: true,
+                        data: historicalValues
                       },
-                      position: 'top'
-                    }
-                  }
-                }]
-              });
-
-              // Randomly assign colors to clusters
-              chart.on('mouseover', function(params) {
-                if (params.seriesIndex === 0) {
-                  chart.dispatchAction({
-                    type: 'highlight',
-                    seriesIndex: params.seriesIndex,
-                    dataIndex: params.dataIndex
+                      {
+                        name: 'Forecast',
+                        type: 'line',
+                        smooth: true,
+                        data: [...Array(months.length).fill(null), ...forecastValues]
+                      }
+                    ]
                   });
-                }
-              });
-            </script>
-            <!-- End Bubble Chart -->
-
+        
+                  // Handle window resize to maintain chart responsiveness
+                  window.addEventListener('resize', () => {
+                    chart.resize();
+                  });
+                });
+              </script>
+            </div>
           </div>
-        </div><!-- End Card -->
-
+        </div>
 
         <div class="card">
           <div class="card-body">
