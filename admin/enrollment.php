@@ -5,10 +5,6 @@ require_once 'audit_log_function.php';
 require '../models/clustering.php';
 checkAccess('Admin');
 
-// Initialize clustering
-$clustering = new Clustering($conn);
-$clustering->processBatches();
-
 $currentSemester = getCurrentActiveSemester($conn);
 
 // Fetch timetable details
@@ -414,6 +410,31 @@ if (isset($_GET['delete_timetable_from_enrollment'])) {
   $updateStmt->close();
   exit;
 }
+
+try {
+  $clustering = new KMeansClustering();
+  $kcluster = $clustering->cluster();
+  $clusters = $kcluster['clusters'];
+  $centroids = $kcluster['centroids'];
+
+  // Prepare data for chart
+  $chartData = array();
+  foreach ($clusters as $clusterId => $cluster) {
+    foreach ($cluster as $point) {
+      $chartData[] = array(
+        'student_id' => base64_encode($point['student_id']),
+        'subject_id' => $point['subject_id'],
+        'section_id' => $point['section_id'],
+        'day_number' => $point['day_number'],
+        'start_minutes' => $point['start_minutes'],
+        'end_minutes' => $point['end_minutes']
+      );
+    }
+  }
+} catch (Exception $e) {
+  echo "Error performing clustering: " . $e->getMessage();
+  exit();
+}
 ?>
 
 <!DOCTYPE html>
@@ -690,66 +711,79 @@ if (isset($_GET['delete_timetable_from_enrollment'])) {
 
         <div class="card">
           <div class="card-body">
-            <h5 class="card-title">Enrollment Clustering Results</h5>
-            <div id="clusterChart" class="chart-container">
-              <script src="https://cdn.jsdelivr.net/npm/echarts@5.3.2/dist/echarts.min.js"></script>
-              <script>
-                // Initialize chart
-                const chart = echarts.init(document.getElementById('clusterChart'));
+            <h5 class="card-title">Clustering Bubble Chart</h5>
 
-                // Example data - replace with actual cluster data
-                const clusters = [{
-                    name: 'Cluster 1',
-                    value: <?php echo array_sum($cluster_analysis[0]) ?>,
-                    itemStyle: {
-                      color: '#FF6B6B'
-                    }
+            <div id="bubbleChart" style="width: 100%; height: 600px;"></div>
+
+            <script>
+              // Initialize chart
+              const chart = echarts.init(document.getElementById('bubbleChart'));
+
+              // Prepare data
+              const data = <?= json_encode($chartData) ?>;
+
+              // Configure chart
+              chart.setOption({
+                title: {
+                  text: 'Student Enrollment Clustering'
+                },
+                tooltip: {
+                  formatter: function(param) {
+                    return `Student ID: ${atob(param.data.student_id)}<br>
+                           Subject ID: ${param.data.subject_id}<br>
+                           Section ID: ${param.data.section_id}<br>
+                           Day: ${['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][param.data.day_number - 1]}<br>
+                           Time: ${Math.floor(param.data.start_minutes / 60)}:${param.data.start_minutes % 60} - ${Math.floor(param.data.end_minutes / 60)}:${param.data.end_minutes % 60}`;
+                  }
+                },
+                grid: {
+                  left: '5%',
+                  right: '5%'
+                },
+                xAxis: {
+                  type: 'value',
+                  name: 'Start Time (minutes)',
+                  min: 0,
+                  max: 1440 // 24 hours in minutes
+                },
+                yAxis: {
+                  type: 'value',
+                  name: 'End Time (minutes)',
+                  min: 0,
+                  max: 1440
+                },
+                series: [{
+                  type: 'scatter',
+                  data: data,
+                  symbolSize: 10,
+                  itemStyle: {
+                    color: ['#FF6B6B', '#34C759', '#4F46E5'][Math.floor(Math.random() * 3)]
                   },
-                  {
-                    name: 'Cluster 2',
-                    value: <?php echo array_sum($cluster_analysis[1]) ?>,
-                    itemStyle: {
-                      color: '#4ECDC4'
-                    }
-                  },
-                  {
-                    name: 'Cluster 3',
-                    value: <?php echo array_sum($cluster_analysis[2]) ?>,
-                    itemStyle: {
-                      color: '#45B7D1'
+                  emphasis: {
+                    label: {
+                      show: true,
+                      formatter: function(param) {
+                        return `Student ID: ${atob(param.data.student_id)}`;
+                      },
+                      position: 'top'
                     }
                   }
-                ];
+                }]
+              });
 
-                // Create chart option
-                const option = {
-                  title: {
-                    text: 'Enrollment Clustering Analysis',
-                    left: 'center'
-                  },
-                  tooltip: {
-                    trigger: 'item',
-                    formatter: function(params) {
-                      return `${params.name}: ${params.value} students`;
-                    }
-                  },
-                  series: [{
-                    type: 'bubble',
-                    data: clusters,
-                    label: {
-                      normal: {
-                        show: true,
-                        position: 'inside',
-                        formatter: '{b}'
-                      }
-                    }
-                  }]
-                };
+              // Randomly assign colors to clusters
+              chart.on('mouseover', function(params) {
+                if (params.seriesIndex === 0) {
+                  chart.dispatchAction({
+                    type: 'highlight',
+                    seriesIndex: params.seriesIndex,
+                    dataIndex: params.dataIndex
+                  });
+                }
+              });
+            </script>
+            <!-- End Bubble Chart -->
 
-                // Display chart
-                chart.setOption(option);
-              </script>
-            </div>
           </div>
         </div><!-- End Card -->
 

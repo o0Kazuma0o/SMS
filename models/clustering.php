@@ -1,217 +1,215 @@
 <?php
-class Clustering
+
+class KMeansClustering
 {
-  private $db;
-  private $batchSize;
-  private $totalRecords;
-  private $totalBatches;
+  private $k;
+  private $max_iterations;
+  private $features;
 
-  public function __construct($db, $batchSize = 500)
+  public function __construct($k = 3, $max_iterations = 100)
   {
-    $this->db = $db;
-    $this->batchSize = $batchSize;
-    $this->calculateTotalRecords();
-    $this->totalBatches = ceil($this->totalRecords / $this->batchSize);
+    $this->k = $k;
+    $this->max_iterations = $max_iterations;
+    $this->features = array();
   }
 
-  private function calculateTotalRecords()
+  public function fetch_enrollment_data()
   {
-    $query = "SELECT COUNT(*) FROM sms3_enrollment_data WHERE receipt_status = 'Paid' AND status = 'Approved'";
-    $result = $this->db->query($query);
-    $this->totalRecords = $result->fetch_assoc()['COUNT(*)'];
-  }
-
-  public function processBatches()
-  {
-    for ($batch = 0; $batch < $this->totalBatches; $batch++) {
-      $offset = $batch * $this->batchSize;
-      $this->processBatch($offset);
-    }
-  }
-
-  private function processBatch($offset)
-  {
+    global $conn;
     $query = "
-            SELECT 
-                ed.id,
-                ed.student_id,
-                t1.subject_id as subj1,
-                t2.subject_id as subj2,
-                t3.subject_id as subj3,
-                t4.subject_id as subj4,
-                t5.subject_id as subj5,
-                t6.subject_id as subj6,
-                t7.subject_id as subj7,
-                t8.subject_id as subj8
-            FROM sms3_enrollment_data ed
-            LEFT JOIN sms3_timetable t1 ON ed.timetable_1 = t1.id
-            LEFT JOIN sms3_timetable t2 ON ed.timetable_2 = t2.id
-            LEFT JOIN sms3_timetable t3 ON ed.timetable_3 = t3.id
-            LEFT JOIN sms3_timetable t4 ON ed.timetable_4 = t4.id
-            LEFT JOIN sms3_timetable t5 ON ed.timetable_5 = t5.id
-            LEFT JOIN sms3_timetable t6 ON ed.timetable_6 = t6.id
-            LEFT JOIN sms3_timetable t7 ON ed.timetable_7 = t7.id
-            LEFT JOIN sms3_timetable t8 ON ed.timetable_8 = t8.id
-            WHERE ed.receipt_status = 'Paid' AND ed.status = 'Approved'
-            LIMIT {$this->batchSize} OFFSET {$offset}
-        ";
-
-    $result = $this->db->query($query, MYSQLI_USE_RESULT);
-    $data = array();
-    $subjects = array();
+          SELECT 
+              e.student_id,
+              t.subject_id,
+              t.section_id,
+              t.day_of_week,
+              t.start_time,
+              t.end_time
+          FROM 
+              sms3_pending_enrollment e
+          LEFT JOIN 
+              sms3_timetable t 
+              ON e.timetable_1 = t.id 
+              OR e.timetable_2 = t.id 
+              OR e.timetable_3 = t.id 
+              OR e.timetable_4 = t.id 
+              OR e.timetable_5 = t.id 
+              OR e.timetable_6 = t.id 
+              OR e.timetable_7 = t.id 
+              OR e.timetable_8 = t.id;
+      ";
+    $result = $conn->query($query);
+    if (!$result) {
+      throw new Exception("Query failed: " . $conn->error);
+    }
 
     while ($row = $result->fetch_assoc()) {
-      $student_data = array();
-      for ($i = 1; $i <= 8; $i++) {
-        $subject_id = $row['subj' . $i];
-        if (!in_array($subject_id, $subjects) && $subject_id !== null && $subject_id !== '') {
-          $subjects[] = $subject_id;
-        }
-        $student_data[] = $subject_id;
-      }
-      $data[] = $student_data;
+      $this->features[] = $row;
     }
-
-    $result->free();
-
-    $clusters = $this->kmeans_clustering($data, 3);
-    $this->analyze_clusters($clusters, $subjects);
   }
 
-  private function kmeans_clustering($vectors, $k = 3, $max_iterations = 100)
+  public function preprocess_data()
   {
-    $num_points = count($vectors);
-    if ($num_points == 0) return array('centroids' => array(), 'clusters' => array());
+    $preprocessed_features = array();
+    foreach ($this->features as $row) {
+      $startTime = strtotime($row['start_time']);
+      $startMinutes = $startTime % 86400;
 
-    $dimensions = count($vectors[0]);
-    $centroids = array();
-    for ($i = 0; $i < $k; $i++) {
-      $random_index = rand(0, $num_points - 1);
-      $centroids[] = $vectors[$random_index];
+      $endTime = strtotime($row['end_time']);
+      $endMinutes = $endTime % 86400;
+
+      $days = array('Monday' => 1, 'Tuesday' => 2, 'Wednesday' => 3, 'Thursday' => 4, 'Friday' => 5, 'Saturday' => 6);
+      $dayNumber = $days[$row['day_of_week']];
+
+      $preprocessed_features[] = array(
+        'student_id' => $row['student_id'],
+        'subject_id' => $row['subject_id'],
+        'section_id' => $row['section_id'],
+        'day_number' => $dayNumber,
+        'start_minutes' => $startMinutes,
+        'end_minutes' => $endMinutes
+      );
     }
 
-    for ($iteration = 0; $iteration < $max_iterations; $iteration++) {
-      $clusters = array_fill(0, $k, array());
-      foreach ($vectors as $point) {
-        $nearest_centroid = 0;
-        $min_distance = INF;
-        foreach ($centroids as $centroid_id => $centroid) {
-          if (is_null($centroid) || count($centroid) !== $dimensions) {
-            continue; // Skip invalid centroids
-          }
-          $distance = $this->calculate_distance($point, $centroid);
-          if ($distance < $min_distance) {
-            $min_distance = $distance;
-            $nearest_centroid = $centroid_id;
-          }
-        }
-        if (!is_null($nearest_centroid)) {
-          $clusters[$nearest_centroid][] = $point;
+    return $preprocessed_features;
+  }
+
+  // Calculate Euclidean distance between two points
+  private function calculate_distance($point1, $point2)
+  {
+    $distance = 0;
+    foreach ($point1 as $key => $value) {
+      $distance += pow($value - $point2[$key], 2);
+    }
+    return sqrt($distance);
+  }
+
+  // Initialize centroids
+  private function initialize_centroids($data)
+  {
+    shuffle($data);
+    return array_slice($data, 0, $this->k);
+  }
+
+  // Assign clusters to each data point
+  private function assign_clusters($data, $centroids)
+  {
+    $clusters = array_fill(0, count($centroids), array());
+    foreach ($data as $point) {
+      $min_distance = INF;
+      $cluster_index = 0;
+      foreach ($centroids as $i => $centroid) {
+        $distance = $this->calculate_distance($point, $centroid);
+        if ($distance < $min_distance) {
+          $min_distance = $distance;
+          $cluster_index = $i;
         }
       }
+      $clusters[$cluster_index][] = $point;
+    }
+    return $clusters;
+  }
 
-      $new_centroids = array();
-      foreach ($clusters as $cluster) {
-        if (empty($cluster)) {
-          $new_centroids[] = $centroids[$i];
-          continue;
-        }
-        $centroid = array_fill(0, $dimensions, 0);
-        foreach ($cluster as $point) {
-          foreach ($point as $dim => $value) {
-            if (!is_null($value)) {
-              $centroid[$dim] += $value;
-            }
-          }
-        }
-        $count = count($cluster);
-        foreach ($point as $dim => $value) {
-          if (!is_null($value)) {
-            $centroid[$dim] /= $count;
-          }
-        }
-        $new_centroids[] = $centroid;
+  // Update centroids
+  private function update_centroids($clusters)
+  {
+    $centroids = array();
+    foreach ($clusters as $cluster) {
+      if (empty($cluster)) {
+        continue;
       }
+      $centroid = array();
+      foreach ($cluster as $point) {
+        foreach ($point as $key => $value) {
+          if (!isset($centroid[$key])) {
+            $centroid[$key] = 0;
+          }
+          $centroid[$key] += $value;
+        }
+      }
+      foreach ($centroid as $key => $value) {
+        $centroid[$key] /= count($cluster);
+      }
+      $centroids[] = $centroid;
+    }
+    return $centroids;
+  }
 
-      if ($this->centroids_converged($centroids, $new_centroids)) {
+  // Run the K-means clustering algorithm
+  public function run_clustering($data)
+  {
+    $centroids = $this->initialize_centroids($data);
+    for ($i = 0; $i < $this->max_iterations; $i++) {
+      $clusters = $this->assign_clusters($data, $centroids);
+      $new_centroids = $this->update_centroids($clusters);
+      if ($centroids == $new_centroids) {
         break;
       }
       $centroids = $new_centroids;
     }
-
-    return array('centroids' => $centroids, 'clusters' => $clusters);
+    return array('clusters' => $clusters, 'centroids' => $centroids);
   }
 
-  private function calculate_distance($point1, $point2)
+  // Calculate silhouette coefficient
+  public function calculate_silhouette_coefficient($clusters, $data)
   {
-    $distance = 0;
-    foreach ($point1 as $dim => $value) {
-      if (!is_null($value) && !is_null($point2[$dim])) {
-        $distance += pow($value - $point2[$dim], 2);
+    $silhouette = 0;
+    $n = count($data);
+    foreach ($clusters as $cluster) {
+      $cluster_size = count($cluster);
+      if ($cluster_size <= 1) {
+        continue;
       }
-    }
-    return $distance;
-  }
-
-  private function centroids_converged($old_centroids, $new_centroids)
-  {
-    foreach ($old_centroids as $i => $old_centroid) {
-      foreach ($old_centroid as $dim => $value) {
-        if (abs($value - $new_centroids[$i][$dim]) > 0.001) {
-          return false;
+      foreach ($cluster as $point) {
+        $a = 0;
+        $b = INF;
+        // Calculate average distance to all points in the same cluster
+        foreach ($cluster as $other_point) {
+          $dist = $this->calculate_distance($point, $other_point);
+          $a += $dist;
         }
-      }
-    }
-    return true;
-  }
-
-  private function analyze_clusters($clusters, $subjects)
-  {
-    $cluster_analysis = array();
-    foreach ($clusters as $cluster_id => $cluster_points) {
-      $subject_counts = array_fill(0, count($subjects), 0);
-      foreach ($cluster_points as $point) {
-        foreach ($point as $dim => $value) {
-          if ($value !== null && $value !== '' && isset($subjects[$dim])) {
-            $subject_counts[$dim]++;
+        $a /= $cluster_size;
+        // Calculate average distance to points in next nearest cluster
+        foreach ($clusters as $other_cluster) {
+          if ($other_cluster === $cluster) {
+            continue;
+          }
+          foreach ($other_cluster as $other_point) {
+            $dist = $this->calculate_distance($point, $other_point);
+            $b = min($b, $dist);
           }
         }
+        $silhouette += ($b - $a) / max($a, $b);
       }
-      $cluster_analysis[$cluster_id] = $subject_counts;
     }
-    $this->store_cluster_analysis($cluster_analysis, $subjects);
+    return $silhouette / $n;
   }
 
-  private function store_cluster_analysis($cluster_analysis, $subjects)
+  // Elbow method to determine optimal number of clusters
+  public function elbow_method($data, $max_k)
   {
-    $cluster_summary = array();
-    foreach ($cluster_analysis as $cluster_id => $counts) {
-      $cluster_number = $cluster_id + 1;
-      arsort($counts);
-      $total_students = array_sum($counts);
-      $cluster_summary[$cluster_number] = array(
-        'value' => $total_students,
-        'subjects' => array_slice($counts, 0, 3)
-      );
+    $sum_squared_errors = array();
+    for ($k = 1; $k <= $max_k; $k++) {
+      $this->k = $k;
+      $result = $this->run_clustering($data);
+      $clusters = $result['clusters'];
+      $sse = 0;
+      foreach ($clusters as $cluster) {
+        foreach ($cluster as $point) {
+          $centroid = $result['centroids'][array_search($cluster, $clusters)];
+          $distance = $this->calculate_distance($point, $centroid);
+          $sse += $distance ** 2;
+        }
+      }
+      $sum_squared_errors[$k] = $sse;
     }
-    $this->display_cluster_summary($cluster_summary, $subjects);
+    return $sum_squared_errors;
   }
 
-  private function display_cluster_summary($cluster_summary, $subjects)
+  // Main function to perform clustering
+  public function cluster()
   {
-    echo "<div class='cluster-summary'>
-        <h3>Cluster Analysis</h3>";
-    foreach ($cluster_summary as $cluster_number => $data) {
-      echo "<div class='cluster'>
-            <h4>Cluster {$cluster_number}</h4>
-            <p>Total Students: {$data['value']}</p>
-            <p>Top Subjects: ";
-      foreach ($data['subjects'] as $subject_id => $count) {
-        echo $subjects[$subject_id] . " ({$count}) ";
-      }
-      echo "</p>
-        </div>";
-    }
-    echo "</div>";
+    $preprocessed_data = $this->preprocess_data();
+    $result = $this->run_clustering($preprocessed_data);
+    return $result;
   }
 }
