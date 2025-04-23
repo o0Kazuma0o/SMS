@@ -111,7 +111,7 @@ $html = "
     <li><strong>Total Not Enrolled Students:</strong> $not_enrolled_count</li>
 </ul>
 
-<h2>Students by Last School</h2>
+<h2>Student's Last School Attended</h2>
 <table>
     <thead>
         <tr>
