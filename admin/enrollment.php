@@ -464,6 +464,7 @@ try {
   <link href="../assets/vendor/quill/quill.bubble.css" rel="stylesheet">
   <link href="../assets/vendor/remixicon/remixicon.css" rel="stylesheet">
   <link href="../assets/vendor/simple-datatables/style.css" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.0/echarts.min.js"></script>
 
   <!-- Template Main CSS File -->
   <link href="../assets/css/style.css" rel="stylesheet">
@@ -713,11 +714,11 @@ try {
           <div class="card-body">
             <h5 class="card-title">Clustering Bubble Chart</h5>
 
-            <div id="bubbleChart" style="width: 100%; height: 600px;"></div>
+            <div id="chart" style="width: 100%; height: 600px;"></div>
 
             <script>
               // Initialize chart
-              const chart = echarts.init(document.getElementById('bubbleChart'));
+              const chart = echarts.init(document.getElementById('chart'));
 
               // Prepare data
               const data = <?= json_encode($chartData) ?>;
