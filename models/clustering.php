@@ -173,18 +173,44 @@ class Clustering
 
   private function store_cluster_analysis($cluster_analysis, $subjects)
   {
-    // Implement logic to store or log the cluster analysis
-    // For example, insert into a log table or file
-    // This is a placeholder, you should implement actual storage
-    echo "Cluster Analysis:\n";
+    // Create a unique file name with timestamp
+    $file_path = __DIR__ . '/cluster_analysis/';
+    $file_name = "cluster_analysis_" . date('Y-m-d_H-i-s') . ".csv";
+    $full_path = $file_path . $file_name;
+
+    // Create directory if it doesn't exist
+    if (!file_exists($file_path)) {
+      mkdir($file_path, 0755, true);
+    }
+
+    // Open the file for writing
+    $file = fopen($full_path, 'w');
+    if ($file === false) {
+      return "Error: Could not open file for writing.";
+    }
+
+    // Write CSV header
+    fputcsv($file, array('Cluster Number', 'Subject ID', 'Count'));
+
+    // Write cluster analysis to file
     foreach ($cluster_analysis as $cluster_id => $counts) {
       $cluster_number = $cluster_id + 1;
-      echo "Cluster {$cluster_number}:\n";
       arsort($counts);
       foreach ($counts as $subject_id => $count) {
-        echo "Subject " . $subjects[$subject_id] . ": $count\n";
+        if ($count > 0) {
+          fputcsv($file, array(
+            $cluster_number,
+            $subjects[$subject_id],
+            $count
+          ));
+        }
       }
-      echo "\n";
     }
+
+    // Close the file
+    fclose($file);
+
+    // Return success message
+    return "Cluster analysis stored in file: $full_path";
   }
 }
