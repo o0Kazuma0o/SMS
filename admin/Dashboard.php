@@ -503,7 +503,7 @@ if ($result_enrollment_status) {
                     </div>
                     <div class="ps-3">
                       <h6><?php echo $total_students; ?></h6>
-                      <span class="text-muted small pt-2 ps-1">Total Registered Students</span>
+                      <span class="text-muted small pt-2 ps-1">Total Students</span>
                     </div>
                   </div>
                 </div>
@@ -552,6 +552,15 @@ if ($result_enrollment_status) {
                       <span class="text-muted small pt-2 ps-1">Total Users Visited The Website</span>
                     </div>
                   </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-12">
+              <div class="card">
+                <div class="card-body">
+                  <h5 class="card-title">Generate Report</h5>
+                  <a href="generate_report.php" class="btn btn-primary">Download PDF Report</a>
                 </div>
               </div>
             </div>
