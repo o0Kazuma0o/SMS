@@ -184,48 +184,34 @@ class Clustering
 
   private function store_cluster_analysis($cluster_analysis, $subjects)
   {
-    // Create table if it doesn't exist
-    $this->create_cluster_analysis_table();
-
-    // Prepare and execute the insert query
-    $stmt = $this->db->prepare("
-        INSERT INTO sms3_cluster_analysis (
-            cluster_id,
-            subject_id,
-            subject_count,
-            analysis_date
-        ) VALUES (?, ?, ?, NOW())
-    ");
-
+    $cluster_summary = array();
     foreach ($cluster_analysis as $cluster_id => $counts) {
-      $cluster_number = (int)$cluster_id + 1;
+      $cluster_number = $cluster_id + 1;
       arsort($counts);
-      foreach ($counts as $subject_id => $count) {
-        if ($count > 0 && isset($subjects[$subject_id])) {
-          // Store the cluster analysis data
-          $stmt->bind_param("iis", $cluster_number, $subjects[$subject_id], $count);
-          $stmt->execute();
-        }
-      }
+      $total_students = array_sum($counts);
+      $cluster_summary[$cluster_number] = array(
+        'value' => $total_students,
+        'subjects' => array_slice($counts, 0, 3)
+      );
     }
-
-    $stmt->close();
-
-    echo "Cluster analysis has been stored in the database.\n";
+    $this->display_cluster_summary($cluster_summary, $subjects);
   }
 
-  private function create_cluster_analysis_table()
+  private function display_cluster_summary($cluster_summary, $subjects)
   {
-    $query = "
-        CREATE TABLE IF NOT EXISTS sms3_cluster_analysis (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            cluster_id INT NOT NULL,
-            subject_id VARCHAR(50) NOT NULL,
-            subject_count INT NOT NULL,
-            analysis_date DATETIME NOT NULL
-        )
-    ";
-
-    $this->db->query($query);
+    echo "<div class='cluster-summary'>
+        <h3>Cluster Analysis</h3>";
+    foreach ($cluster_summary as $cluster_number => $data) {
+      echo "<div class='cluster'>
+            <h4>Cluster {$cluster_number}</h4>
+            <p>Total Students: {$data['value']}</p>
+            <p>Top Subjects: ";
+      foreach ($data['subjects'] as $subject_id => $count) {
+        echo $subjects[$subject_id] . " ({$count}) ";
+      }
+      echo "</p>
+        </div>";
+    }
+    echo "</div>";
   }
 }
