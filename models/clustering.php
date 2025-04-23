@@ -194,7 +194,8 @@ class Clustering
 
     // Write cluster analysis to file
     foreach ($cluster_analysis as $cluster_id => $counts) {
-      $cluster_number = $cluster_id + 1;
+      // Explicitly cast $cluster_id to integer
+      $cluster_number = (int)$cluster_id + 1;
       arsort($counts);
       foreach ($counts as $subject_id => $count) {
         if ($count > 0) {
