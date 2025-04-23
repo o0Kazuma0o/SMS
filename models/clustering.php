@@ -173,72 +173,18 @@ class Clustering
 
   private function store_cluster_analysis($cluster_analysis, $subjects)
   {
-    echo "Cluster Analysis Data:";
-    print_r($cluster_analysis);
-    echo "\nSubjects:";
-    print_r($subjects);
-    
-    if (empty($cluster_analysis) || empty($subjects)) {
-      return "Error: No cluster analysis data or subjects provided.";
-    }
-
-    $file_path = __DIR__ . '/cluster_analysis/';
-    $base_name = "cluster_analysis";
-    $extension = ".csv";
-
-    // Check if file exists and rename if necessary
-    $file_name = $base_name . $extension;
-    $full_path = $file_path . $file_name;
-    $counter = 1;
-
-    while (file_exists($full_path)) {
-      $file_name = $base_name . "_" . $counter . $extension;
-      $full_path = $file_path . $file_name;
-      $counter++;
-    }
-
-    // Create directory if it doesn't exist
-    if (!file_exists($file_path)) {
-      mkdir($file_path, 0755, true);
-    }
-
-    // Open the file for writing
-    $file = fopen($full_path, 'w');
-    if ($file === false) {
-      return "Error: Could not open file for writing.";
-    }
-
-    try {
-      // Write CSV header
-      fputcsv($file, array('Cluster Number', 'Subject ID', 'Count'));
-
-      // Write cluster analysis to file
-      foreach ($cluster_analysis as $cluster_id => $counts) {
-        if (!is_array($counts)) {
-          continue;
-        }
-
-        $cluster_number = (int)$cluster_id + 1;
-        arsort($counts);
-
-        foreach ($counts as $subject_id => $count) {
-          if (!isset($subjects[$subject_id]) || $count <= 0) {
-            continue;
-          }
-
-          fputcsv($file, array(
-            $cluster_number,
-            $subjects[$subject_id],
-            $count
-          ));
-        }
+    // Implement logic to store or log the cluster analysis
+    // For example, insert into a log table or file
+    // This is a placeholder, you should implement actual storage
+    echo "Cluster Analysis:\n";
+    foreach ($cluster_analysis as $cluster_id => $counts) {
+      $cluster_number = $cluster_id + 1;
+      echo "Cluster {$cluster_number}:\n";
+      arsort($counts);
+      foreach ($counts as $subject_id => $count) {
+        echo "Subject " . $subjects[$subject_id] . ": $count\n";
       }
-
-      return "Cluster analysis stored in file: $full_path";
-    } catch (Exception $e) {
-      return "Error: " . $e->getMessage();
-    } finally {
-      fclose($file);
+      echo "\n";
     }
   }
 }
