@@ -178,13 +178,11 @@ class Clustering
     // This is a placeholder, you should implement actual storage
     echo "Cluster Analysis:\n";
     foreach ($cluster_analysis as $cluster_id => $counts) {
-      $cluster_number = $cluster_id + 1;
+      $cluster_number = (int)$cluster_id + 1; // Convert $cluster_id to integer before adding
       echo "Cluster {$cluster_number}:\n";
       arsort($counts);
       foreach ($counts as $subject_id => $count) {
-        if ($count > 0) { // Only display subjects with positive counts
-          echo "Subject " . $subjects[$subject_id] . ": $count\n";
-        }
+        echo "Subject " . $subjects[$subject_id] . ": $count\n";
       }
       echo "\n";
     }
