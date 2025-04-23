@@ -42,6 +42,45 @@ while ($row = $result_last_school->fetch_assoc()) {
     $last_school_data[] = $row;
 }
 
+// Frequency data for admission type
+$sql_admission_type = "
+    SELECT admission_type, COUNT(*) AS count
+    FROM sms3_students
+    GROUP BY admission_type
+    ORDER BY count DESC
+";
+$result_admission_type = $conn->query($sql_admission_type);
+$admission_type_data = [];
+while ($row = $result_admission_type->fetch_assoc()) {
+    $admission_type_data[] = $row;
+}
+
+// Frequency data for year level
+$sql_year_level = "
+    SELECT year_level, COUNT(*) AS count
+    FROM sms3_students
+    GROUP BY year_level
+    ORDER BY count DESC
+";
+$result_year_level = $conn->query($sql_year_level);
+$year_level_data = [];
+while ($row = $result_year_level->fetch_assoc()) {
+    $year_level_data[] = $row;
+}
+
+// Frequency data for sex
+$sql_sex = "
+    SELECT sex, COUNT(*) AS count
+    FROM sms3_students
+    GROUP BY sex
+    ORDER BY count DESC
+";
+$result_sex = $conn->query($sql_sex);
+$sex_data = [];
+while ($row = $result_sex->fetch_assoc()) {
+    $sex_data[] = $row;
+}
+
 // Generate the PDF
 $mpdf = new Mpdf();
 $mpdf->SetTitle('Dashboard Report');
@@ -131,6 +170,69 @@ $html .= "
     </tbody>
 </table>";
 
+$html .= "
+
+<h2>Frequency Comparative Analysis</h2>
+
+<h3>Admission Type</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Admission Type</th>
+            <th>Number of Students</th>
+        </tr>
+    </thead>
+    <tbody>";
+foreach ($admission_type_data as $type) {
+    $html .= "
+        <tr>
+            <td>" . htmlspecialchars($type['admission_type']) . "</td>
+            <td>" . $type['count'] . "</td>
+        </tr>";
+}
+$html .= "
+    </tbody>
+</table>
+
+<h3>Year Level</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Year Level</th>
+            <th>Number of Students</th>
+        </tr>
+    </thead>
+    <tbody>";
+foreach ($year_level_data as $level) {
+    $html .= "
+        <tr>
+            <td>" . htmlspecialchars($level['year_level']) . "</td>
+            <td>" . $level['count'] . "</td>
+        </tr>";
+}
+$html .= "
+    </tbody>
+</table>
+
+<h3>Sex</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Sex</th>
+            <th>Number of Students</th>
+        </tr>
+    </thead>
+    <tbody>";
+foreach ($sex_data as $sex) {
+    $html .= "
+        <tr>
+            <td>" . htmlspecialchars($sex['sex']) . "</td>
+            <td>" . $sex['count'] . "</td>
+        </tr>";
+}
+$html .= "
+    </tbody>
+</table>";
 // Write the HTML content to the PDF
 $mpdf->WriteHTML($html);
 
