@@ -1,155 +1,190 @@
 <?php
-// Debugging: Enable error reporting
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-ini_set('memory_limit', '256M'); // Set a reasonable memory limit
-
-require('../database.php');
-
-// Initialize response
-$response = [];
-
-// Fetch enrollment data in chunks
-$offset = 0;
-$limit = 1000; // Process 1000 rows at a time
-$k = 3; // Number of clusters
-
-// Initialize centroids from the first chunk
-$centroids = [];
-$first_chunk = [];
-
-// Fetch the first chunk to initialize centroids
-$query = "SELECT timetable_1, timetable_2, timetable_3, timetable_4, timetable_5, timetable_6, timetable_7, timetable_8 
-          FROM sms3_enrollment_data LIMIT $offset, $limit";
-$result = $conn->query($query);
-
-if (!$result) {
-  $response['error'] = 'Database query failed: ' . $conn->error;
-  header('Content-Type: application/json');
-  echo json_encode($response);
-  exit;
-}
-
-// Collect the first chunk for centroid initialization
-while ($row = $result->fetch_assoc()) {
-  $normalized_row = array_map(function ($value) {
-    return is_null($value) ? 0 : intval($value);
-  }, array_values($row));
-
-  $first_chunk[] = $normalized_row;
-}
-
-if (empty($first_chunk)) {
-  $response['error'] = 'No data available for clustering';
-  header('Content-Type: application/json');
-  echo json_encode($response);
-  exit;
-}
-
-// Initialize centroids from the first chunk
-shuffle($first_chunk);
-$centroids = array_slice($first_chunk, 0, $k);
-
-// Process remaining data in chunks
-$offset = $limit;
-
-// Debugging: Output the number of rows fetched in the first iteration
-error_log("Rows fetched in the first iteration: " . count($first_chunk));
-
-// K-Means Clustering function
-function calculate_distances($point, $centroids)
+class Clustering
 {
-  $distances = [];
-  foreach ($centroids as $centroid) {
-    $distance = 0;
-    foreach ($point as $feature => $value) {
-      $distance += pow($value - $centroid[$feature], 2);
-    }
-    $distances[] = sqrt($distance);
+  private $db;
+  private $batchSize;
+  private $totalRecords;
+  private $totalBatches;
+
+  public function __construct($db, $batchSize = 500)
+  {
+    $this->db = $db;
+    $this->batchSize = $batchSize;
+    $this->calculateTotalRecords();
+    $this->totalBatches = ceil($this->totalRecords / $this->batchSize);
   }
-  return $distances;
-}
 
-function update_centroids($clusters, $k)
-{
-  $centroids = [];
-  for ($i = 0; $i < $k; $i++) {
-    if (!empty($clusters[$i])) {
-      $transposed = array_map(null, ...$clusters[$i]);
-      $centroid = [];
-      foreach ($transposed as $dimension) {
-        $centroid[] = array_sum($dimension) / count($dimension);
+  private function calculateTotalRecords()
+  {
+    $query = "SELECT COUNT(*) FROM sms3_enrollment_data WHERE receipt_status = 'Paid' AND status = 'Approved'";
+    $result = $this->db->query($query);
+    $this->totalRecords = $result->fetch_assoc()['COUNT(*)'];
+  }
+
+  public function processBatches()
+  {
+    for ($batch = 0; $batch < $this->totalBatches; $batch++) {
+      $offset = $batch * $this->batchSize;
+      $this->processBatch($offset);
+    }
+  }
+
+  private function processBatch($offset)
+  {
+    $query = "
+            SELECT 
+                ed.id,
+                ed.student_id,
+                t1.subject_id as subj1,
+                t2.subject_id as subj2,
+                t3.subject_id as subj3,
+                t4.subject_id as subj4,
+                t5.subject_id as subj5,
+                t6.subject_id as subj6,
+                t7.subject_id as subj7,
+                t8.subject_id as subj8
+            FROM sms3_enrollment_data ed
+            LEFT JOIN sms3_timetable t1 ON ed.timetable_1 = t1.id
+            LEFT JOIN sms3_timetable t2 ON ed.timetable_2 = t2.id
+            LEFT JOIN sms3_timetable t3 ON ed.timetable_3 = t3.id
+            LEFT JOIN sms3_timetable t4 ON ed.timetable_4 = t4.id
+            LEFT JOIN sms3_timetable t5 ON ed.timetable_5 = t5.id
+            LEFT JOIN sms3_timetable t6 ON ed.timetable_6 = t6.id
+            LEFT JOIN sms3_timetable t7 ON ed.timetable_7 = t7.id
+            LEFT JOIN sms3_timetable t8 ON ed.timetable_8 = t8.id
+            WHERE ed.receipt_status = 'Paid' AND ed.status = 'Approved'
+            LIMIT {$this->batchSize} OFFSET {$offset}
+        ";
+
+    $result = $this->db->query($query, MYSQLI_USE_RESULT);
+    $data = array();
+    $subjects = array();
+
+    while ($row = $result->fetch_assoc()) {
+      $student_data = array();
+      for ($i = 1; $i <= 8; $i++) {
+        $subject_id = $row['subj' . $i];
+        if (!in_array($subject_id, $subjects)) {
+          $subjects[] = $subject_id;
+        }
+        $student_data[] = $subject_id;
       }
-      $centroids[] = $centroid;
-    } else {
-      // If a cluster is empty, keep the previous centroid
-      $centroids[] = $i < count($centroids) ? $centroids[$i] : [];
+      $data[] = $student_data;
+    }
+
+    $result->free();
+
+    $clusters = $this->kmeans_clustering($data, 3);
+    $this->analyze_clusters($clusters, $subjects);
+  }
+
+  private function kmeans_clustering($vectors, $k = 3, $max_iterations = 100)
+  {
+    $num_points = count($vectors);
+    if ($num_points == 0) return array('centroids' => array(), 'clusters' => array());
+
+    $dimensions = count($vectors[0]);
+    $centroids = array();
+    for ($i = 0; $i < $k; $i++) {
+      $random_index = rand(0, $num_points - 1);
+      $centroids[] = $vectors[$random_index];
+    }
+
+    for ($iteration = 0; $iteration < $max_iterations; $iteration++) {
+      $clusters = array_fill(0, $k, array());
+      foreach ($vectors as $point) {
+        $nearest_centroid = 0;
+        $min_distance = INF;
+        foreach ($centroids as $centroid_id => $centroid) {
+          $distance = $this->calculate_distance($point, $centroid);
+          if ($distance < $min_distance) {
+            $min_distance = $distance;
+            $nearest_centroid = $centroid_id;
+          }
+        }
+        $clusters[$nearest_centroid][] = $point;
+      }
+
+      $new_centroids = array();
+      foreach ($clusters as $cluster) {
+        if (empty($cluster)) {
+          $new_centroids[] = $centroids[$i];
+          continue;
+        }
+        $centroid = array_fill(0, $dimensions, 0);
+        foreach ($cluster as $point) {
+          foreach ($point as $dim => $value) {
+            $centroid[$dim] += $value;
+          }
+        }
+        $count = count($cluster);
+        foreach ($point as $dim => $value) {
+          $centroid[$dim] /= $count;
+        }
+        $new_centroids[] = $centroid;
+      }
+
+      if ($this->centroids_converged($centroids, $new_centroids)) {
+        break;
+      }
+      $centroids = $new_centroids;
+    }
+
+    return array('centroids' => $centroids, 'clusters' => $clusters);
+  }
+
+  private function calculate_distance($point1, $point2)
+  {
+    $distance = 0;
+    foreach ($point1 as $dim => $value) {
+      $distance += pow($value - $point2[$dim], 2);
+    }
+    return $distance;
+  }
+
+  private function centroids_converged($old_centroids, $new_centroids)
+  {
+    foreach ($old_centroids as $i => $old_centroid) {
+      foreach ($old_centroid as $dim => $value) {
+        if (abs($value - $new_centroids[$i][$dim]) > 0.001) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  private function analyze_clusters($clusters, $subjects)
+  {
+    $cluster_analysis = array();
+    foreach ($clusters as $cluster_id => $cluster_points) {
+      $subject_counts = array_fill(0, count($subjects), 0);
+      foreach ($cluster_points as $point) {
+        foreach ($point as $dim => $value) {
+          if ($value == 1) {
+            $subject_counts[$dim]++;
+          }
+        }
+      }
+      $cluster_analysis[$cluster_id] = $subject_counts;
+    }
+    $this->store_cluster_analysis($cluster_analysis, $subjects);
+  }
+
+  private function store_cluster_analysis($cluster_analysis, $subjects)
+  {
+    // Implement logic to store or log the cluster analysis
+    // For example, insert into a log table or file
+    // This is a placeholder, you should implement actual storage
+    echo "Cluster Analysis:\n";
+    foreach ($cluster_analysis as $cluster_id => $counts) {
+      $cluster_number = $cluster_id + 1;
+      echo "Cluster {$cluster_number}:\n";
+      arsort($counts);
+      foreach ($counts as $subject_id => $count) {
+        echo "Subject " . $subjects[$subject_id] . ": $count\n";
+      }
+      echo "\n";
     }
   }
-  return $centroids;
 }
-
-// Process remaining chunks
-do {
-  $query = "SELECT timetable_1, timetable_2, timetable_3, timetable_4, timetable_5, timetable_6, timetable_7, timetable_8 
-              FROM sms3_enrollment_data LIMIT $offset, $limit";
-  $result = $conn->query($query);
-
-  if (!$result) {
-    $response['error'] = 'Database query failed: ' . $conn->error;
-    header('Content-Type: application/json');
-    echo json_encode($response);
-    exit;
-  }
-
-  $clusters = array_fill(0, $k, []);
-  $row_count = 0;
-
-  while ($row = $result->fetch_assoc()) {
-    $normalized_row = array_map(function ($value) {
-      return is_null($value) ? 0 : intval($value);
-    }, array_values($row));
-
-    // Assign the point to the nearest cluster
-    $distances = calculate_distances($normalized_row, $centroids);
-    $cluster_index = array_search(min($distances), $distances);
-    $clusters[$cluster_index][] = $normalized_row;
-    $row_count++;
-  }
-
-  // Update centroids
-  $new_centroids = update_centroids($clusters, $k);
-
-  // Check for convergence
-  $centroids_changed = false;
-  foreach ($centroids as $index => $centroid) {
-    if ($centroid !== $new_centroids[$index]) {
-      $centroids_changed = true;
-      break;
-    }
-  }
-
-  if (!$centroids_changed) {
-    break; // Centroids have converged, exit early
-  }
-
-  $centroids = $new_centroids;
-  $offset += $limit;
-
-  // Debugging: Output the number of rows fetched in this iteration
-  error_log("Rows fetched in this iteration: $row_count");
-} while ($result->num_rows > 0);
-
-// Prepare data for eCharts
-$chart_data = [];
-foreach ($clusters as $index => $cluster) {
-  $chart_data[] = [
-    'name' => "Cluster " . ($index + 1),
-    'value' => count($cluster)
-  ];
-}
-
-// Send data to frontend
-header('Content-Type: application/json');
-echo json_encode($chart_data);
