@@ -272,39 +272,48 @@ $isEnrolled = $enrollmentCheck['pending_count'] > 0 || $enrollmentCheck['enrolle
         </div>
       </div>
 
-      <!-- Timetable -->
       <div class="card">
         <div class="card-body">
-          <h5 class="card-title">Timetable</h5>
-          <?php if (empty($timetables)): ?>
-            <p>No timetable data available.</p>
-          <?php else: ?>
-            <table class="table table-striped">
-              <thead>
-                <tr>
-                  <th>Section</th>
-                  <th>Subject Code</th>
-                  <th>Subject Name</th>
-                  <th>Day</th>
-                  <th>Start Time</th>
-                  <th>End Time</th>
-                  <th>Room</th>
-                </tr>
-              </thead>
-              <tbody>
-                <?php foreach ($timetables as $row): ?>
+          <h5 class="card-title">Enrollment Status</h5>
+          <?php if ($enrollmentCheck['pending_count'] > 0): ?>
+            <!-- Display message if there's a pending enrollment -->
+            <p class="text-warning">Waiting for Approval</p>
+          <?php elseif ($enrollmentCheck['enrolled_count'] > 0): ?>
+            <!-- Display the timetable if the student is already enrolled -->
+            <h5 class="card-title">Timetable</h5>
+            <?php if (empty($timetables)): ?>
+              <a href="upcoming_enrollment.php" class="btn btn-primary">Proceed to Enrollment</a>
+            <?php else: ?>
+              <table class="table table-striped">
+                <thead>
                   <tr>
-                    <td><?= htmlspecialchars($row['section_with_prefix']) ?></td>
-                    <td><?= htmlspecialchars($row['subject_code']) ?></td>
-                    <td><?= htmlspecialchars($row['subject_name']) ?></td>
-                    <td><?= htmlspecialchars($row['day_of_week']) ?></td>
-                    <td><?= htmlspecialchars($row['start_time']) ?></td>
-                    <td><?= htmlspecialchars($row['end_time']) ?></td>
-                    <td><?= htmlspecialchars($row['room_name']) ?></td>
+                    <th>Section</th>
+                    <th>Subject Code</th>
+                    <th>Subject Name</th>
+                    <th>Day</th>
+                    <th>Start Time</th>
+                    <th>End Time</th>
+                    <th>Room</th>
                   </tr>
-                <?php endforeach; ?>
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  <?php foreach ($timetables as $row): ?>
+                    <tr>
+                      <td><?= htmlspecialchars($row['section_with_prefix']) ?></td>
+                      <td><?= htmlspecialchars($row['subject_code']) ?></td>
+                      <td><?= htmlspecialchars($row['subject_name']) ?></td>
+                      <td><?= htmlspecialchars($row['day_of_week']) ?></td>
+                      <td><?= htmlspecialchars($row['start_time']) ?></td>
+                      <td><?= htmlspecialchars($row['end_time']) ?></td>
+                      <td><?= htmlspecialchars($row['room_name']) ?></td>
+                    </tr>
+                  <?php endforeach; ?>
+                </tbody>
+              </table>
+            <?php endif; ?>
+          <?php else: ?>
+            <!-- Display button if there's no pending enrollment -->
+            <a href="upcoming_enrollment.php" class="btn btn-primary">Proceed to Upcoming Enrollment</a>
           <?php endif; ?>
         </div>
       </div>

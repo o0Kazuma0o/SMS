@@ -29,6 +29,12 @@ $enrollmentCheckStmt->close();
 
 $isEnrolled = $enrollmentCheck['pending_count'] > 0 || $enrollmentCheck['enrolled_count'] > 0;
 
+// Redirect to the dashboard if the student is already enrolled or has a pending enrollment
+if ($isEnrolled) {
+  header("Location: Dashboard.php");
+  exit;
+}
+
 $query = "SELECT s.id, s.section_number, s.available, 
                  tt.id AS timetable_id, tt.day_of_week, tt.start_time, tt.end_time, 
                  subj.subject_name
@@ -61,6 +67,20 @@ function enrollInTimetables($studentId, $selectedTimetables)
 {
   global $conn;
 
+  // Check if the student already has a pending enrollment
+  $checkQuery = "SELECT COUNT(*) AS count FROM sms3_pending_enrollment WHERE student_id = ?";
+  $checkStmt = $conn->prepare($checkQuery);
+  $checkStmt->bind_param("i", $studentId);
+  $checkStmt->execute();
+  $checkResult = $checkStmt->get_result();
+  $checkData = $checkResult->fetch_assoc();
+  $checkStmt->close();
+
+  if ($checkData['count'] > 0) {
+    echo json_encode(['status' => 'error', 'message' => 'You already have a pending enrollment.']);
+    exit;
+  }
+
   // Prepare the INSERT statement with dynamic columns for timetables
   $timetablePlaceholders = implode(', ', array_map(fn($n) => "timetable_$n", range(1, count($selectedTimetables))));
 
@@ -76,6 +96,13 @@ function enrollInTimetables($studentId, $selectedTimetables)
   $stmt->bind_param(str_repeat('i', count($params)), ...$params);
 
   if ($stmt->execute()) {
+    // Reduce the available slots for the selected section
+    $updateQuery = "UPDATE sms3_sections SET available = available - 1 WHERE id = ?";
+    $updateStmt = $conn->prepare($updateQuery);
+    $updateStmt->bind_param("i", $selectedTimetables[0]); // Assuming the first timetable ID corresponds to the section
+    $updateStmt->execute();
+    $updateStmt->close();
+
     echo json_encode(['status' => 'success', 'message' => 'Enrollment successful!']);
   } else {
     echo json_encode(['status' => 'error', 'message' => 'Error: ' . $stmt->error]);
@@ -323,6 +350,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
   </main><!-- End #main -->
 
+  <!-- Confirmation Modal -->
+  <div id="confirmationModal" class="modal fade" tabindex="-1" aria-labelledby="confirmationModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="confirmationModalLabel">Confirm Enrollment</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p>Are you sure you want to enroll in this section?</p>
+        </div>
+        <div class="modal-footer">
+          <button id="confirmEnroll" class="btn btn-primary">Yes</button>
+          <button id="cancelEnroll" class="btn btn-secondary" data-bs-dismiss="modal">No</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
     const sectionsData = <?= json_encode($sections) ?>;
     const scheduleTable = document.getElementById('schedule-table');
@@ -414,34 +460,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         return;
       }
 
-      const selectedSections = [selectedSection];
-      const selectedTimetables = sectionsData[selectedSection].subjects.map(sub => sub.timetable_id);
+      const confirmationModal = new bootstrap.Modal(document.getElementById('confirmationModal'));
+      confirmationModal.show();
 
-      fetch('upcoming_enrollment.php', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            enroll: true,
-            sections: selectedSections,
-            timetables: selectedTimetables
+      document.getElementById('confirmEnroll').onclick = () => {
+        confirmationModal.hide();
+
+        const selectedSections = [selectedSection];
+        const selectedTimetables = sectionsData[selectedSection].subjects.map(sub => sub.timetable_id);
+
+        fetch('upcoming_enrollment.php', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              enroll: true,
+              sections: selectedSections,
+              timetables: selectedTimetables
+            })
           })
-        })
-        .then(response => response.json())
-        .then(data => {
-          if (data.status === 'success') {
-            alert(data.message);
-            location.reload();
-          } else {
-            console.error("Server error:", data.message);
-            alert(`Enrollment failed: ${data.message}`);
-          }
-        })
-        .catch(error => {
-          console.error("Error during enrollment:", error);
-          alert("An error occurred while enrolling. Please try again later.");
-        });
+          .then(response => response.json())
+          .then(data => {
+            if (data.status === 'success') {
+              alert(data.message);
+              window.location.href = 'Dashboard.php'; // Redirect to Dashboard
+            } else {
+              console.error("Server error:", data.message);
+              alert(`Enrollment failed: ${data.message}`);
+            }
+          })
+          .catch(error => {
+            console.error("Error during enrollment:", error);
+            alert("An error occurred while enrolling. Please try again later.");
+          });
+      };
+
+      document.getElementById('cancelEnroll').onclick = () => {
+        confirmationModal.hide();
+      };
     };
   </script>
 

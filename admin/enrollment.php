@@ -120,6 +120,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['enrollment_id'], $_PO
       $stmt->close();
 
       if ($enrollmentData) {
+
+        // Fetch section IDs associated with the timetables
+        $timetableIds = array_filter([
+          $enrollmentData['timetable_1'],
+          $enrollmentData['timetable_2'],
+          $enrollmentData['timetable_3'],
+          $enrollmentData['timetable_4'],
+          $enrollmentData['timetable_5'],
+          $enrollmentData['timetable_6'],
+          $enrollmentData['timetable_7'],
+          $enrollmentData['timetable_8']
+        ]);
+
+        $sectionIds = [];
+        if (!empty($timetableIds)) {
+          $placeholders = implode(',', array_fill(0, count($timetableIds), '?'));
+          $query = "SELECT DISTINCT section_id FROM sms3_timetable WHERE id IN ($placeholders)";
+          $stmt = $conn->prepare($query);
+          $stmt->bind_param(str_repeat('i', count($timetableIds)), ...$timetableIds);
+          $stmt->execute();
+          $result = $stmt->get_result();
+          while ($row = $result->fetch_assoc()) {
+            $sectionIds[] = $row['section_id'];
+          }
+          $stmt->close();
+        }
+
+        // Increment the available slots for each section
+        foreach ($sectionIds as $sectionId) {
+          $updateSlotQuery = "UPDATE sms3_sections SET available = available + 1 WHERE id = ?";
+          $updateSlotStmt = $conn->prepare($updateSlotQuery);
+          $updateSlotStmt->bind_param("i", $sectionId);
+          $updateSlotStmt->execute();
+          $updateSlotStmt->close();
+        }
+
         // Insert data into sms3_enrollment_data with status Rejected
         $stmt = $conn->prepare("INSERT INTO sms3_enrollment_data (
                 student_id, timetable_1, timetable_2, timetable_3, timetable_4, timetable_5, timetable_6, timetable_7, timetable_8, receipt_status, status
