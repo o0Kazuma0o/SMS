@@ -184,11 +184,54 @@ class EnrollmentPredictiveModel extends EnrollmentSARIMAModel
         $this->conn = $conn;
     }
 
+    private function getCachedForecast($department)
+    {
+        $cacheFile = __DIR__ . "/cache/{$department}_forecast.json";
+        if (file_exists($cacheFile) && time() - filemtime($cacheFile) < 3600) { // Cache valid for 1 hour
+            return json_decode(file_get_contents($cacheFile), true);
+        }
+        return null;
+    }
+
+    private function setCachedForecast($department, $forecast)
+    {
+        $cacheDir = __DIR__ . "/cache";
+        if (!is_dir($cacheDir)) {
+            mkdir($cacheDir, 0777, true); // Create cache directory if it doesn't exist
+        }
+
+        $cacheFile = "{$cacheDir}/{$department}_forecast.json";
+        file_put_contents($cacheFile, json_encode($forecast));
+    }
+
     public function forecastByDepartment()
     {
         $query = "
+        SELECT DISTINCT d.department_name
+        FROM sms3_departments d
+        JOIN sms3_sections sec ON sec.department_id = d.id
+        JOIN sms3_timetable t ON t.section_id = sec.id
+        JOIN sms3_enrollment_data ed ON ed.timetable_1 = t.id
+    ";
+
+        $result = $this->conn->query($query);
+        $departments = [];
+        while ($row = $result->fetch_assoc()) {
+            $departments[] = $row['department_name'];
+        }
+
+        $forecasts = [];
+        foreach ($departments as $department) {
+            // Check if forecast is cached
+            $cachedForecast = $this->getCachedForecast($department);
+            if ($cachedForecast) {
+                $forecasts[$department] = $cachedForecast;
+                continue;
+            }
+
+            // Fetch historical data for the department
+            $query = "
             SELECT 
-                d.department_name,
                 COUNT(ed.id) AS total_enrollments,
                 YEAR(ed.created_at) AS year,
                 MONTH(ed.created_at) AS month
@@ -199,26 +242,32 @@ class EnrollmentPredictiveModel extends EnrollmentSARIMAModel
             )
             JOIN sms3_sections sec ON t.section_id = sec.id
             JOIN sms3_departments d ON sec.department_id = d.id
-            GROUP BY d.department_name, YEAR(ed.created_at), MONTH(ed.created_at)
-            ORDER BY d.department_name, year, month
+            WHERE d.department_name = ?
+            GROUP BY YEAR(ed.created_at), MONTH(ed.created_at)
+            ORDER BY year, month
         ";
 
-        $result = $this->conn->query($query);
-        $data = [];
+            $stmt = $this->conn->prepare($query);
+            $stmt->bind_param("s", $department);
+            $stmt->execute();
+            $result = $stmt->get_result();
 
-        while ($row = $result->fetch_assoc()) {
-            $data[$row['department_name']][] = [
-                'year' => $row['year'],
-                'month' => $row['month'],
-                'enrollments' => $row['total_enrollments']
-            ];
-        }
+            $historicalData = [];
+            while ($row = $result->fetch_assoc()) {
+                $historicalData[] = [
+                    'year' => $row['year'],
+                    'month' => $row['month'],
+                    'enrollments' => $row['total_enrollments']
+                ];
+            }
 
-        $forecasts = [];
-        foreach ($data as $department => $historicalData) {
-            $this->historicalData = $historicalData; // Now accessible due to protected visibility
+            // Generate forecast
+            $this->historicalData = $historicalData;
             $forecast = $this->forecast();
             $forecasts[$department] = $forecast;
+
+            // Cache the forecast
+            $this->setCachedForecast($department, $forecast);
         }
 
         return $forecasts;
