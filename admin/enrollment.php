@@ -781,17 +781,16 @@ $forecasts = $model->forecastByDepartment(0, 10);
         </div>
 
         <div class="col-12">
-          <!-- Add the predictive chart above the table -->
           <div class="card">
             <div class="card-body">
-              <h5 class="card-title">Enrollment Forecast by Department</h5>
-              <div id="enrollmentForecastChart" style="min-height: 400px;" class="echart"></div>
+              <h5 class="card-title">Forecasting by Department</h5>
+              <div id="departmentForecastChart" style="min-height: 400px;" class="echart"></div>
               <script>
                 document.addEventListener("DOMContentLoaded", () => {
                   const departmentForecasts = <?php echo json_encode($departmentForecasts); ?>;
 
                   if (Object.keys(departmentForecasts).length === 0) {
-                    document.getElementById('enrollmentForecastChart').innerHTML = '<div style="text-align: center; padding: 20px;">No data available for forecasting.</div>';
+                    document.getElementById('departmentForecastChart').innerHTML = '<div style="text-align: center; padding: 20px;">No forecast data available.</div>';
                     return;
                   }
 
@@ -801,14 +800,15 @@ $forecasts = $model->forecastByDepartment(0, 10);
                     return {
                       name: department,
                       type: 'line',
+                      smooth: true,
                       data: departmentForecasts[department].map(item => item.predicted_enrollments)
                     };
                   });
 
-                  const months = departmentForecasts[departments[0]].map(item => `${item.year}-${item.month}`);
+                  const months = departmentForecasts[departments[0]].map(item => `${item.year}-${String(item.month).padStart(2, '0')}`);
 
-                  // Initialize eCharts instance
-                  const chart = echarts.init(document.querySelector("#enrollmentForecastChart"));
+                  // Initialize ECharts instance
+                  const chart = echarts.init(document.querySelector("#departmentForecastChart"));
 
                   // Set chart options
                   chart.setOption({
@@ -828,7 +828,7 @@ $forecasts = $model->forecastByDepartment(0, 10);
                     series: seriesData
                   });
 
-                  // Handle window resize
+                  // Handle window resize to maintain chart responsiveness
                   window.addEventListener('resize', () => {
                     chart.resize();
                   });
