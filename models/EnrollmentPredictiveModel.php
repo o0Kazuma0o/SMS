@@ -215,13 +215,11 @@ class EnrollmentPredictiveModel extends EnrollmentSARIMAModel
     ";
 
         $result = $this->conn->query($query);
-        $departments = [];
-        while ($row = $result->fetch_assoc()) {
-            $departments[] = $row['department_name'];
-        }
-
         $forecasts = [];
-        foreach ($departments as $department) {
+
+        while ($row = $result->fetch_assoc()) {
+            $department = $row['department_name'];
+
             // Check if forecast is cached
             $cachedForecast = $this->getCachedForecast($department);
             if ($cachedForecast) {
@@ -230,36 +228,7 @@ class EnrollmentPredictiveModel extends EnrollmentSARIMAModel
             }
 
             // Fetch historical data for the department
-            $query = "
-            SELECT 
-                COUNT(ed.id) AS total_enrollments,
-                YEAR(ed.created_at) AS year,
-                MONTH(ed.created_at) AS month
-            FROM sms3_enrollment_data ed
-            JOIN sms3_timetable t ON t.id IN (
-                ed.timetable_1, ed.timetable_2, ed.timetable_3, ed.timetable_4,
-                ed.timetable_5, ed.timetable_6, ed.timetable_7, ed.timetable_8
-            )
-            JOIN sms3_sections sec ON t.section_id = sec.id
-            JOIN sms3_departments d ON sec.department_id = d.id
-            WHERE d.department_name = ?
-            GROUP BY YEAR(ed.created_at), MONTH(ed.created_at)
-            ORDER BY year, month
-        ";
-
-            $stmt = $this->conn->prepare($query);
-            $stmt->bind_param("s", $department);
-            $stmt->execute();
-            $result = $stmt->get_result();
-
-            $historicalData = [];
-            while ($row = $result->fetch_assoc()) {
-                $historicalData[] = [
-                    'year' => $row['year'],
-                    'month' => $row['month'],
-                    'enrollments' => $row['total_enrollments']
-                ];
-            }
+            $historicalData = $this->getHistoricalDataByDepartment($department);
 
             // Generate forecast
             $this->historicalData = $historicalData;
@@ -271,5 +240,41 @@ class EnrollmentPredictiveModel extends EnrollmentSARIMAModel
         }
 
         return $forecasts;
+    }
+
+    private function getHistoricalDataByDepartment($department)
+    {
+        $query = "
+        SELECT 
+            COUNT(ed.id) AS total_enrollments,
+            YEAR(ed.created_at) AS year,
+            MONTH(ed.created_at) AS month
+        FROM sms3_enrollment_data ed
+        JOIN sms3_timetable t ON t.id IN (
+            ed.timetable_1, ed.timetable_2, ed.timetable_3, ed.timetable_4,
+            ed.timetable_5, ed.timetable_6, ed.timetable_7, ed.timetable_8
+        )
+        JOIN sms3_sections sec ON t.section_id = sec.id
+        JOIN sms3_departments d ON sec.department_id = d.id
+        WHERE d.department_name = ?
+        GROUP BY YEAR(ed.created_at), MONTH(ed.created_at)
+        ORDER BY year, month
+    ";
+
+        $stmt = $this->conn->prepare($query);
+        $stmt->bind_param("s", $department);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        $historicalData = [];
+        while ($row = $result->fetch_assoc()) {
+            $historicalData[] = [
+                'year' => $row['year'],
+                'month' => $row['month'],
+                'enrollments' => $row['total_enrollments']
+            ];
+        }
+
+        return $historicalData;
     }
 }
