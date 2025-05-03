@@ -796,12 +796,15 @@ $departmentForecasts = $model->forecastByDepartment(0, 10);
 
                   // Prepare data for the chart
                   const departments = Object.keys(departmentForecasts);
-                  const seriesData = departments.map(department => {
+                  const seriesData = departments.map((department, index) => {
                     return {
                       name: department,
                       type: 'line',
                       smooth: true,
-                      data: departmentForecasts[department].map(item => item.predicted_enrollments)
+                      data: departmentForecasts[department].map(item => item.predicted_enrollments),
+                      lineStyle: {
+                        color: index === 0 ? '#FF5733' : '#008000' // Assign a specific color to the first department (forecast)
+                      }
                     };
                   });
 
@@ -816,7 +819,9 @@ $departmentForecasts = $model->forecastByDepartment(0, 10);
                       trigger: 'axis'
                     },
                     legend: {
-                      data: departments
+                      data: departments,
+                      orient: 'horizontal', // Set legend orientation to horizontal
+                      bottom: '0' // Position the legend at the bottom
                     },
                     xAxis: {
                       type: 'category',
