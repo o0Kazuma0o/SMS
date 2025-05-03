@@ -204,7 +204,7 @@ class EnrollmentPredictiveModel extends EnrollmentSARIMAModel
         file_put_contents($cacheFile, json_encode($forecast));
     }
 
-    public function forecastByDepartment()
+    public function forecastByDepartment($offset = 0, $limit = 10)
     {
         $query = "
         SELECT DISTINCT d.department_name
