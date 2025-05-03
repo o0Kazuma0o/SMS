@@ -209,9 +209,7 @@ class EnrollmentPredictiveModel extends EnrollmentSARIMAModel
         $query = "
         SELECT DISTINCT d.department_name
         FROM sms3_departments d
-        JOIN sms3_sections sec ON sec.department_id = d.id
-        JOIN sms3_timetable t ON t.section_id = sec.id
-        JOIN sms3_enrollment_data ed ON ed.timetable_1 = t.id
+        LIMIT ?, ?
     ";
 
         $result = $this->conn->query($query);
