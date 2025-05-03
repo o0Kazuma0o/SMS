@@ -436,8 +436,8 @@ $model = new EnrollmentSARIMAModel($historicalData, 12, 2);
 $forecast = $model->forecast();
 
 // Initialize the predictive model
-$predictiveModel = new EnrollmentPredictiveModel($conn, $historicalData);
-$departmentForecasts = $predictiveModel->forecastByDepartment();
+$model = new EnrollmentPredictiveModel($conn, []);
+$forecasts = $model->forecastByDepartment(0, 10);
 ?>
 
 <!DOCTYPE html>

@@ -207,14 +207,22 @@ class EnrollmentPredictiveModel extends EnrollmentSARIMAModel
     public function forecastByDepartment($offset = 0, $limit = 10)
     {
         $query = "
-        SELECT DISTINCT d.department_name
-        FROM sms3_departments d
-        LIMIT ?, ?
-    ";
+            SELECT DISTINCT d.department_name
+            FROM sms3_departments d
+            LIMIT ?, ?
+        ";
 
-        $result = $this->conn->query($query);
+        // Use prepare and bind_param for the LIMIT clause
+        $stmt = $this->conn->prepare($query);
+        if (!$stmt) {
+            throw new Exception("Failed to prepare statement: " . $this->conn->error);
+        }
+
+        $stmt->bind_param("ii", $offset, $limit);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
         $forecasts = [];
-
         while ($row = $result->fetch_assoc()) {
             $department = $row['department_name'];
 
@@ -237,6 +245,7 @@ class EnrollmentPredictiveModel extends EnrollmentSARIMAModel
             $this->setCachedForecast($department, $forecast);
         }
 
+        $stmt->close();
         return $forecasts;
     }
 
