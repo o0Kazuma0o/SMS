@@ -437,7 +437,7 @@ $forecast = $model->forecast();
 
 // Initialize the predictive model
 $model = new EnrollmentPredictiveModel($conn, []);
-$forecasts = $model->forecastByDepartment(0, 10);
+$departmentForecasts = $model->forecastByDepartment(0, 10);
 ?>
 
 <!DOCTYPE html>
