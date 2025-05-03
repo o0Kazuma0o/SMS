@@ -784,59 +784,67 @@ $departmentForecasts = $model->forecastByDepartment(0, 10);
           <div class="card">
             <div class="card-body">
               <h5 class="card-title">Forecasting by Department</h5>
-              <div id="departmentForecastChart" style="min-height: 400px;" class="echart"></div>
+              <div id="departmentColumnChart" style="min-height: 400px;"></div>
               <script>
                 document.addEventListener("DOMContentLoaded", () => {
                   const departmentForecasts = <?php echo json_encode($departmentForecasts); ?>;
 
                   if (Object.keys(departmentForecasts).length === 0) {
-                    document.getElementById('departmentForecastChart').innerHTML = '<div style="text-align: center; padding: 20px;">No forecast data available.</div>';
+                    document.getElementById('departmentColumnChart').innerHTML = '<div style="text-align: center; padding: 20px;">No forecast data available.</div>';
                     return;
                   }
 
                   // Prepare data for the chart
                   const departments = Object.keys(departmentForecasts);
-                  const seriesData = departments.map((department, index) => {
+                  const months = departmentForecasts[departments[0]].map(item => `${item.year}-${String(item.month).padStart(2, '0')}`);
+                  const seriesData = departments.map(department => {
                     return {
                       name: department,
-                      type: 'line',
-                      smooth: true,
-                      data: departmentForecasts[department].map(item => item.predicted_enrollments),
-                      lineStyle: {
-                        color: index === 0 ? '#FF5733' : '#008000' // Assign a specific color to the first department (forecast)
-                      }
+                      data: departmentForecasts[department].map(item => item.predicted_enrollments)
                     };
                   });
 
-                  const months = departmentForecasts[departments[0]].map(item => `${item.year}-${String(item.month).padStart(2, '0')}`);
-
-                  // Initialize ECharts instance
-                  const chart = echarts.init(document.querySelector("#departmentForecastChart"));
-
-                  // Set chart options
-                  chart.setOption({
+                  // Initialize ApexCharts instance
+                  new ApexCharts(document.querySelector("#departmentColumnChart"), {
+                    series: seriesData,
+                    chart: {
+                      type: 'bar',
+                      height: 400
+                    },
+                    plotOptions: {
+                      bar: {
+                        horizontal: false,
+                        columnWidth: '55%',
+                        endingShape: 'rounded'
+                      }
+                    },
+                    dataLabels: {
+                      enabled: false
+                    },
+                    stroke: {
+                      show: true,
+                      width: 2,
+                      colors: ['transparent']
+                    },
+                    xaxis: {
+                      categories: months
+                    },
+                    yaxis: {
+                      title: {
+                        text: 'Enrollments'
+                      }
+                    },
+                    fill: {
+                      opacity: 1
+                    },
                     tooltip: {
-                      trigger: 'axis'
-                    },
-                    legend: {
-                      data: departments,
-                      orient: 'horizontal', // Set legend orientation to horizontal
-                      bottom: '0' // Position the legend at the bottom
-                    },
-                    xAxis: {
-                      type: 'category',
-                      data: months
-                    },
-                    yAxis: {
-                      type: 'value'
-                    },
-                    series: seriesData
-                  });
-
-                  // Handle window resize to maintain chart responsiveness
-                  window.addEventListener('resize', () => {
-                    chart.resize();
-                  });
+                      y: {
+                        formatter: function(val) {
+                          return val + " enrollments";
+                        }
+                      }
+                    }
+                  }).render();
                 });
               </script>
             </div>
