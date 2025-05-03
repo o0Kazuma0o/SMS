@@ -1,0 +1,1 @@
+{"version":1,"defects":{"AdmissionTest::testGenerateStudentNumber":8,"EnrollmentTest::testFetchSections":8},"times":{"ExampleTest::testHelloWorld":0.006,"AdmissionTest::testGenerateStudentNumber":4.1,"EnrollmentTest::testFetchSections":0.004}}

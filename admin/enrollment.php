@@ -435,6 +435,9 @@ while ($row = $result->fetch_assoc()) {
 $model = new EnrollmentSARIMAModel($historicalData, 12, 2);
 $forecast = $model->forecast();
 
+// Initialize the predictive model
+$predictiveModel = new EnrollmentPredictiveModel($conn, $historicalData);
+$departmentForecasts = $predictiveModel->forecastByDepartment();
 ?>
 
 <!DOCTYPE html>
@@ -715,28 +718,28 @@ $forecast = $model->forecast();
           <div class="card">
             <div class="card-body">
               <h5 class="card-title">Enrollment Forecast</h5>
-        
+
               <div id="enrollmentForecastChart" style="min-height: 400px;" class="echart"></div>
-        
+
               <script>
                 document.addEventListener("DOMContentLoaded", () => {
                   const historicalData = <?php echo json_encode($historicalData); ?>;
                   const forecast = <?php echo json_encode($forecast); ?>;
-        
+
                   if (historicalData.length === 0 || forecast.length === 0) {
                     document.getElementById('enrollmentForecastChart').innerHTML = '<div style="text-align: center; padding: 20px;">No data available for forecasting.</div>';
                     return;
                   }
-        
+
                   // Prepare data for chart
                   const months = historicalData.map(item => `${item.year}-${String(item.month).padStart(2, '0')}`);
                   const historicalValues = historicalData.map(item => item.enrollments);
                   const forecastValues = forecast.map(item => item.predicted_enrollments);
                   const forecastMonths = forecast.map(item => `${item.year}-${String(item.month).padStart(2, '0')}`);
-        
+
                   // Initialize echarts instance
                   const chart = echarts.init(document.querySelector("#enrollmentForecastChart"));
-        
+
                   // Set chart options
                   chart.setOption({
                     tooltip: {
@@ -752,8 +755,7 @@ $forecast = $model->forecast();
                     yAxis: {
                       type: 'value'
                     },
-                    series: [
-                      {
+                    series: [{
                         name: 'Historical',
                         type: 'line',
                         smooth: true,
@@ -767,8 +769,66 @@ $forecast = $model->forecast();
                       }
                     ]
                   });
-        
+
                   // Handle window resize to maintain chart responsiveness
+                  window.addEventListener('resize', () => {
+                    chart.resize();
+                  });
+                });
+              </script>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12">
+          <!-- Add the predictive chart above the table -->
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">Enrollment Forecast by Department</h5>
+              <div id="enrollmentForecastChart" style="min-height: 400px;" class="echart"></div>
+              <script>
+                document.addEventListener("DOMContentLoaded", () => {
+                  const departmentForecasts = <?php echo json_encode($departmentForecasts); ?>;
+
+                  if (Object.keys(departmentForecasts).length === 0) {
+                    document.getElementById('enrollmentForecastChart').innerHTML = '<div style="text-align: center; padding: 20px;">No data available for forecasting.</div>';
+                    return;
+                  }
+
+                  // Prepare data for the chart
+                  const departments = Object.keys(departmentForecasts);
+                  const seriesData = departments.map(department => {
+                    return {
+                      name: department,
+                      type: 'line',
+                      data: departmentForecasts[department].map(item => item.predicted_enrollments)
+                    };
+                  });
+
+                  const months = departmentForecasts[departments[0]].map(item => `${item.year}-${item.month}`);
+
+                  // Initialize eCharts instance
+                  const chart = echarts.init(document.querySelector("#enrollmentForecastChart"));
+
+                  // Set chart options
+                  chart.setOption({
+                    tooltip: {
+                      trigger: 'axis'
+                    },
+                    legend: {
+                      data: departments
+                    },
+                    xAxis: {
+                      type: 'category',
+                      data: months
+                    },
+                    yAxis: {
+                      type: 'value'
+                    },
+                    series: seriesData
+                  });
+
+                  // Handle window resize
                   window.addEventListener('resize', () => {
                     chart.resize();
                   });

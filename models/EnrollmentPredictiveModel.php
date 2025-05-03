@@ -1,16 +1,16 @@
 <?php
 class EnrollmentSARIMAModel
 {
-    private $historicalData;
-    private $seasonalPeriod;
-    private $forecastPeriods;
-    private $differencingOrder;
-    private $p; // Autoregressive (AR) terms
-    private $d; // Differencing
-    private $q; // Moving Average (MA) terms
-    private $P; // Seasonal AR terms
-    private $D; // Seasonal differencing
-    private $Q; // Seasonal MA terms
+    protected $historicalData; // Changed from private to protected
+    protected $seasonalPeriod;
+    protected $forecastPeriods;
+    protected $differencingOrder;
+    protected $p; // Autoregressive (AR) terms
+    protected $d; // Differencing
+    protected $q; // Moving Average (MA) terms
+    protected $P; // Seasonal AR terms
+    protected $D; // Seasonal differencing
+    protected $Q; // Seasonal MA terms
 
     public function __construct(
         $historicalData,
@@ -173,4 +173,54 @@ class EnrollmentSARIMAModel
         return $reintegratedForecast;
     }
 }
-?>
+
+class EnrollmentPredictiveModel extends EnrollmentSARIMAModel
+{
+    private $conn;
+
+    public function __construct($conn, $historicalData, $seasonalPeriod = 12, $forecastPeriods = 2)
+    {
+        parent::__construct($historicalData, $seasonalPeriod, $forecastPeriods);
+        $this->conn = $conn;
+    }
+
+    public function forecastByDepartment()
+    {
+        $query = "
+            SELECT 
+                d.department_name,
+                COUNT(ed.id) AS total_enrollments,
+                YEAR(ed.created_at) AS year,
+                MONTH(ed.created_at) AS month
+            FROM sms3_enrollment_data ed
+            JOIN sms3_timetable t ON t.id IN (
+                ed.timetable_1, ed.timetable_2, ed.timetable_3, ed.timetable_4,
+                ed.timetable_5, ed.timetable_6, ed.timetable_7, ed.timetable_8
+            )
+            JOIN sms3_sections sec ON t.section_id = sec.id
+            JOIN sms3_departments d ON sec.department_id = d.id
+            GROUP BY d.department_name, YEAR(ed.created_at), MONTH(ed.created_at)
+            ORDER BY d.department_name, year, month
+        ";
+
+        $result = $this->conn->query($query);
+        $data = [];
+
+        while ($row = $result->fetch_assoc()) {
+            $data[$row['department_name']][] = [
+                'year' => $row['year'],
+                'month' => $row['month'],
+                'enrollments' => $row['total_enrollments']
+            ];
+        }
+
+        $forecasts = [];
+        foreach ($data as $department => $historicalData) {
+            $this->historicalData = $historicalData; // Now accessible due to protected visibility
+            $forecast = $this->forecast();
+            $forecasts[$department] = $forecast;
+        }
+
+        return $forecasts;
+    }
+}

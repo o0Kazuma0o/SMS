@@ -1,5 +1,5 @@
 <?php
-require('../database.php');
+require_once __DIR__ . '/../database.php';
 require_once 'session.php';
 require_once 'audit_log_function.php';
 checkAccess('Admin'); // Ensure only users with the 'admin' role can access this page
