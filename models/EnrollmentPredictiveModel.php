@@ -243,21 +243,17 @@ class EnrollmentPredictiveModel extends EnrollmentSARIMAModel
     private function getHistoricalDataByDepartment($department)
     {
         $query = "
-        SELECT 
-            COUNT(ed.id) AS total_enrollments,
-            YEAR(ed.created_at) AS year,
-            MONTH(ed.created_at) AS month
-        FROM sms3_enrollment_data ed
-        JOIN sms3_timetable t ON t.id IN (
-            ed.timetable_1, ed.timetable_2, ed.timetable_3, ed.timetable_4,
-            ed.timetable_5, ed.timetable_6, ed.timetable_7, ed.timetable_8
-        )
-        JOIN sms3_sections sec ON t.section_id = sec.id
-        JOIN sms3_departments d ON sec.department_id = d.id
-        WHERE d.department_name = ?
-        GROUP BY YEAR(ed.created_at), MONTH(ed.created_at)
-        ORDER BY year, month
-    ";
+            SELECT 
+                COUNT(ed.id) AS total_enrollments,
+                YEAR(ed.created_at) AS year,
+                MONTH(ed.created_at) AS month
+            FROM sms3_enrollment_data ed
+            JOIN sms3_sections sec ON ed.timetable_1 = sec.id
+            JOIN sms3_departments d ON sec.department_id = d.id
+            WHERE d.department_name = ?
+            GROUP BY YEAR(ed.created_at), MONTH(ed.created_at)
+            ORDER BY year, month
+        ";
 
         $stmt = $this->conn->prepare($query);
         $stmt->bind_param("s", $department);
