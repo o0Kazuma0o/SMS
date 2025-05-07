@@ -457,9 +457,9 @@ $sql = "
     GROUP BY YEAR(created_at), MONTH(created_at)
     ORDER BY YEAR(created_at), MONTH(created_at)
 ";
-$result = $conn->query($sql);
+$result1 = $conn->query($sql);
 $historicalData = [];
-while ($row = $result->fetch_assoc()) {
+while ($row = $result1->fetch_assoc()) {
   $historicalData[] = [
     'year' => $row['year'],
     'month' => $row['month'],
@@ -816,6 +816,7 @@ $departmentForecasts = $model->forecastByDepartment(0, 10);
           </div>
         </div>
 
+        <!-- Department Forecasting -->
         <div class="col-12">
           <div class="card">
             <div class="card-body">

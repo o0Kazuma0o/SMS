@@ -2,6 +2,7 @@
 require('../database.php');
 require_once 'session.php';
 require_once 'audit_log_function.php';
+require '../models/EnrollmentPredictiveModel.php';
 $userId = $_SESSION['user_id'];
 checkAccess('Registrar');
 
@@ -497,6 +498,34 @@ if (isset($_GET['delete_timetable_from_enrollment'])) {
   $updateStmt->close();
   exit;
 }
+
+// Fetch historical enrollment data
+$sql = "
+    SELECT 
+        YEAR(created_at) AS year,
+        MONTH(created_at) AS month,
+        COUNT(*) AS enrollments
+    FROM sms3_enrollment_data
+    GROUP BY YEAR(created_at), MONTH(created_at)
+    ORDER BY YEAR(created_at), MONTH(created_at)
+";
+$result1 = $conn->query($sql);
+$historicalData = [];
+while ($row = $result1->fetch_assoc()) {
+  $historicalData[] = [
+    'year' => $row['year'],
+    'month' => $row['month'],
+    'enrollments' => $row['enrollments']
+  ];
+}
+
+// Initialize the SARIMA model
+$model = new EnrollmentSARIMAModel($historicalData, 12, 2);
+$forecast = $model->forecast();
+
+// Initialize the predictive model
+$model = new EnrollmentPredictiveModel($conn, []);
+$departmentForecasts = $model->forecastByDepartment(0, 10);
 ?>
 
 <!DOCTYPE html>
@@ -660,7 +689,7 @@ if (isset($_GET['delete_timetable_from_enrollment'])) {
           <span>Academic Structure</span>
         </a>
       </li>
- 
+
       <li class="nav-item">
         <a class="nav-link " href="manage_departments.php">
           <i class="bi bi-grid"></i>
@@ -713,6 +742,145 @@ if (isset($_GET['delete_timetable_from_enrollment'])) {
 
     <section class="section dashboard">
       <div class="row">
+
+        <!-- Forecasting -->
+        <div class="col-12">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">Enrollment Forecast</h5>
+
+              <div id="enrollmentForecastChart" style="min-height: 400px;" class="echart"></div>
+
+              <script>
+                document.addEventListener("DOMContentLoaded", () => {
+                  const historicalData = <?php echo json_encode($historicalData); ?>;
+                  const forecast = <?php echo json_encode($forecast); ?>;
+
+                  if (historicalData.length === 0 || forecast.length === 0) {
+                    document.getElementById('enrollmentForecastChart').innerHTML = '<div style="text-align: center; padding: 20px;">No data available for forecasting.</div>';
+                    return;
+                  }
+
+                  // Prepare data for chart
+                  const months = historicalData.map(item => `${item.year}-${String(item.month).padStart(2, '0')}`);
+                  const historicalValues = historicalData.map(item => item.enrollments);
+                  const forecastValues = forecast.map(item => item.predicted_enrollments);
+                  const forecastMonths = forecast.map(item => `${item.year}-${String(item.month).padStart(2, '0')}`);
+
+                  // Initialize echarts instance
+                  const chart = echarts.init(document.querySelector("#enrollmentForecastChart"));
+
+                  // Set chart options
+                  chart.setOption({
+                    tooltip: {
+                      trigger: 'item'
+                    },
+                    legend: {
+                      data: ['Historical', 'Forecast']
+                    },
+                    xAxis: {
+                      type: 'category',
+                      data: [...months, ...forecastMonths]
+                    },
+                    yAxis: {
+                      type: 'value'
+                    },
+                    series: [{
+                        name: 'Historical',
+                        type: 'line',
+                        smooth: true,
+                        data: historicalValues
+                      },
+                      {
+                        name: 'Forecast',
+                        type: 'line',
+                        smooth: true,
+                        data: [...Array(months.length).fill(null), ...forecastValues]
+                      }
+                    ]
+                  });
+
+                  // Handle window resize to maintain chart responsiveness
+                  window.addEventListener('resize', () => {
+                    chart.resize();
+                  });
+                });
+              </script>
+            </div>
+          </div>
+        </div>
+
+        <!-- Department Forecasting -->
+        <div class="col-12">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">Forecasting by Department</h5>
+              <div id="departmentColumnChart" style="min-height: 400px;"></div>
+              <script>
+                document.addEventListener("DOMContentLoaded", () => {
+                  const departmentForecasts = <?php echo json_encode($departmentForecasts); ?>;
+
+                  if (Object.keys(departmentForecasts).length === 0) {
+                    document.getElementById('departmentColumnChart').innerHTML = '<div style="text-align: center; padding: 20px;">No forecast data available.</div>';
+                    return;
+                  }
+
+                  // Prepare data for the chart
+                  const departments = Object.keys(departmentForecasts);
+                  const months = departmentForecasts[departments[0]].map(item => `${item.year}-${String(item.month).padStart(2, '0')}`);
+                  const seriesData = departments.map(department => {
+                    return {
+                      name: department,
+                      data: departmentForecasts[department].map(item => item.predicted_enrollments)
+                    };
+                  });
+
+                  // Initialize ApexCharts instance
+                  new ApexCharts(document.querySelector("#departmentColumnChart"), {
+                    series: seriesData,
+                    chart: {
+                      type: 'bar',
+                      height: 400
+                    },
+                    plotOptions: {
+                      bar: {
+                        horizontal: false,
+                        columnWidth: '55%',
+                        endingShape: 'rounded'
+                      }
+                    },
+                    dataLabels: {
+                      enabled: false
+                    },
+                    stroke: {
+                      show: true,
+                      width: 2,
+                      colors: ['transparent']
+                    },
+                    xaxis: {
+                      categories: months
+                    },
+                    yaxis: {
+                      title: {
+                        text: 'Enrollments'
+                      }
+                    },
+                    fill: {
+                      opacity: 1
+                    },
+                    tooltip: {
+                      y: {
+                        formatter: function(val) {
+                          return val + " enrollments";
+                        }
+                      }
+                    }
+                  }).render();
+                });
+              </script>
+            </div>
+          </div>
+        </div>
 
         <div class="card">
           <div class="card-body">

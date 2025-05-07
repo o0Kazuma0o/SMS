@@ -565,6 +565,15 @@ if ($result_enrollment_status) {
               </div>
             </div>
 
+            <div class="col-12">
+              <div class="card">
+                <div class="card-body">
+                  <h5 class="card-title">Backup Data</h5>
+                  <a href="backup_data.php" class="btn btn-warning">Backup Now</a>
+                </div>
+              </div>
+            </div>
+
             <!-- Forecasting -->
             <div class="col-12">
               <div class="card">
