@@ -25,8 +25,12 @@ $command = "mysqldump --host=$dbHost --user=$dbUser --password=$dbPass $dbName >
 exec($command, $output, $returnVar);
 
 if ($returnVar === 0) {
-    echo "Backup successful! File saved at: $backupFile";
+    $_SESSION['success_message'] = "Backup successful! File saved at: $backupFile";
 } else {
-    echo "Backup failed. Please check your configuration.";
+    $_SESSION['error_message'] = "Backup failed. Please check your configuration.";
 }
+
+// Redirect back to the dashboard
+header('Location: Dashboard.php');
+exit;
 ?>

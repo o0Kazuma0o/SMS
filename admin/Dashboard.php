@@ -742,7 +742,44 @@ if ($result_enrollment_status) {
 
   </main><!-- End #main -->
 
+  <script>
+    function showPopupMessage(message, type = 'success') {
+      const popup = document.createElement('div');
+      popup.className = `popup-message ${type}`;
+      popup.innerText = message;
 
+      popup.style.position = 'fixed';
+      popup.style.top = '20px';
+      popup.style.right = '20px';
+      popup.style.padding = '15px';
+      popup.style.zIndex = '1000';
+      popup.style.borderRadius = '5px';
+      popup.style.color = '#fff';
+      popup.style.fontSize = '16px';
+      popup.style.backgroundColor = type === 'success' ? 'green' : 'red';
+      popup.style.opacity = '1';
+      popup.style.transition = 'opacity 0.5s ease';
+
+      document.body.appendChild(popup);
+
+      setTimeout(() => {
+        popup.style.opacity = '0';
+        setTimeout(() => {
+          popup.remove();
+        }, 500);
+      }, 3000);
+    }
+
+    window.onload = function() {
+      <?php if (isset($_SESSION['error_message'])): ?>
+        showPopupMessage('<?= $_SESSION['error_message']; ?>', 'error');
+        <?php unset($_SESSION['error_message']); ?>
+      <?php elseif (isset($_SESSION['success_message'])): ?>
+        showPopupMessage('<?= $_SESSION['success_message']; ?>', 'success');
+        <?php unset($_SESSION['success_message']); ?>
+      <?php endif; ?>
+    };
+  </script>
 
   <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
 
