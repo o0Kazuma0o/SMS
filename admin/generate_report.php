@@ -1,6 +1,8 @@
 <?php
 require('../database.php');
-require_once __DIR__ . '/../vendor/autoload.php'; // Include mPDF library
+require_once __DIR__ . '/../vendor/autoload.php';
+require_once '../models/Predictivemodel.php';
+require_once '../models/EnrollmentPredictiveModel.php';
 
 use Mpdf\Mpdf;
 
@@ -26,6 +28,56 @@ function getGroupBy($report_type) {
         return "DATE_FORMAT(created_at, '%Y-%m')";
     }
     return null;
+}
+
+// --- ADMISSION FORECASTING ---
+$sql_forecast_adm = "
+    SELECT 
+        YEAR(created_at) AS year,
+        MONTH(created_at) AS month,
+        COUNT(*) AS admissions
+    FROM sms3_admissions_data
+    GROUP BY YEAR(created_at), MONTH(created_at)
+    ORDER BY YEAR(created_at), MONTH(created_at)
+";
+$result_forecast_adm = $conn->query($sql_forecast_adm);
+$historicalAdmissions = [];
+while ($row = $result_forecast_adm->fetch_assoc()) {
+    $historicalAdmissions[] = [
+        'year' => $row['year'],
+        'month' => $row['month'],
+        'admissions' => $row['admissions']
+    ];
+}
+$admissionForecast = [];
+if (count($historicalAdmissions) > 0 && class_exists('SARIMAModel')) {
+    $admModel = new SARIMAModel($historicalAdmissions, 3);
+    $admissionForecast = $admModel->forecast();
+}
+
+// --- ENROLLMENT FORECASTING ---
+$sql_forecast_enr = "
+    SELECT 
+        YEAR(created_at) AS year,
+        MONTH(created_at) AS month,
+        COUNT(*) AS enrollments
+    FROM sms3_enrollment_data
+    GROUP BY YEAR(created_at), MONTH(created_at)
+    ORDER BY YEAR(created_at), MONTH(created_at)
+";
+$result_forecast_enr = $conn->query($sql_forecast_enr);
+$historicalEnrollments = [];
+while ($row = $result_forecast_enr->fetch_assoc()) {
+    $historicalEnrollments[] = [
+        'year' => $row['year'],
+        'month' => $row['month'],
+        'enrollments' => $row['enrollments']
+    ];
+}
+$enrollmentForecast = [];
+if (count($historicalEnrollments) > 0 && class_exists('EnrollmentSARIMAModel')) {
+    $enrModel = new EnrollmentSARIMAModel($historicalEnrollments, 12, 2);
+    $enrollmentForecast = $enrModel->forecast();
 }
 
 // Summary queries (always for the selected range)
@@ -162,6 +214,45 @@ $mpdf->SetHTMLFooter('
     </div>
 ');
 
+// Prepare chart data for HTML (simple table, for PDF)
+function forecastTable($forecast, $type = 'admissions') {
+    if (!$forecast || count($forecast) === 0) return '<p>No forecast data available.</p>';
+    $html = '<table>
+        <thead>
+            <tr>
+                <th>Month</th>
+                <th>Predicted ' . ucfirst($type) . '</th>
+            </tr>
+        </thead>
+        <tbody>';
+    foreach ($forecast as $item) {
+        $html .= '<tr>
+            <td>' . htmlspecialchars(date('F Y', strtotime($item['year'] . '-' . $item['month'] . '-01'))) . '</td>
+            <td>' . (isset($item['predicted_' . $type]) ? $item['predicted_' . $type] : (isset($item['predicted']) ? $item['predicted'] : '')) . '</td>
+        </tr>';
+    }
+    $html .= '</tbody></table>';
+    return $html;
+}
+
+// Prepare chart data for HTML (ASCII bar chart for PDF, optional)
+function asciiBarChart($historical, $forecast, $type = 'admissions') {
+    $max = 0;
+    foreach ($historical as $h) $max = max($max, $h[$type]);
+    foreach ($forecast as $f) $max = max($max, $f['predicted_' . $type] ?? 0);
+    $html = '<pre style="font-size:10px;line-height:1.2;">';
+    foreach ($historical as $h) {
+        $bar = str_repeat('█', intval(($h[$type] / $max) * 40));
+        $html .= sprintf("%s-%02d | %s %d\n", $h['year'], $h['month'], $bar, $h[$type]);
+    }
+    foreach ($forecast as $f) {
+        $bar = str_repeat('░', intval((($f['predicted_' . $type] ?? 0) / $max) * 40));
+        $html .= sprintf("%s-%02d | %s %d (predicted)\n", $f['year'], $f['month'], $bar, $f['predicted_' . $type] ?? 0);
+    }
+    $html .= '</pre>';
+    return $html;
+}
+
 // Start HTML content for the PDF
 $html = "
 <style>
@@ -294,6 +385,20 @@ foreach ($last_school_data as $school) {
 $html .= "
     </tbody>
 </table>";
+
+// Add Admission Forecast Section
+$html .= "
+<h2>Admission Forecast</h2>
+" . forecastTable($admissionForecast, 'admissions') . "
+" . asciiBarChart($historicalAdmissions, $admissionForecast, 'admissions') . "
+";
+
+// Add Enrollment Forecast Section
+$html .= "
+<h2>Enrollment Forecast</h2>
+" . forecastTable($enrollmentForecast, 'enrollments') . "
+" . asciiBarChart($historicalEnrollments, $enrollmentForecast, 'enrollments') . "
+";
 
 $html .= "
 
