@@ -471,7 +471,8 @@ while ($row = $result1->fetch_assoc()) {
 $model = new EnrollmentSARIMAModel($historicalData, 12, 2);
 $forecast = $model->forecast();
 
-
+$currentYear = date('Y');
+$twoYearsAgo = $currentYear - 2;
 $sql1 = "
     SELECT 
         d.department_name,
@@ -490,6 +491,7 @@ $sql1 = "
         ed.timetable_8 = t.id
     INNER JOIN sms3_sections s ON t.section_id = s.id
     INNER JOIN sms3_departments d ON s.department_id = d.id
+    WHERE YEAR(ed.created_at) >= $twoYearsAgo
     GROUP BY d.department_name, month, year
     ORDER BY d.department_name, year, month
 ";

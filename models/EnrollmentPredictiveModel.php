@@ -251,31 +251,34 @@ class EnrollmentPredictiveModel extends EnrollmentSARIMAModel
 
     private function getHistoricalDataByDepartment($department)
     {
+        $currentYear = date('Y');
+        $twoYearsAgo = $currentYear - 2;
+
         $query = "
-            SELECT 
-                d.department_name,
-                MONTH(ed.created_at) AS month,
-                YEAR(ed.created_at) AS year,
-                COUNT(DISTINCT ed.student_id) AS total_enrollments
-            FROM sms3_enrollment_data ed
-            INNER JOIN sms3_timetable t ON 
-                ed.timetable_1 = t.id OR
-                ed.timetable_2 = t.id OR
-                ed.timetable_3 = t.id OR
-                ed.timetable_4 = t.id OR
-                ed.timetable_5 = t.id OR
-                ed.timetable_6 = t.id OR
-                ed.timetable_7 = t.id OR
-                ed.timetable_8 = t.id
-            INNER JOIN sms3_sections s ON t.section_id = s.id
-            INNER JOIN sms3_departments d ON s.department_id = d.id
-            WHERE d.department_name = ?
-            GROUP BY d.department_name, month, year
-            ORDER BY year, month
-        ";
+        SELECT 
+            d.department_name,
+            MONTH(ed.created_at) AS month,
+            YEAR(ed.created_at) AS year,
+            COUNT(DISTINCT ed.student_id) AS total_enrollments
+        FROM sms3_enrollment_data ed
+        INNER JOIN sms3_timetable t ON 
+            ed.timetable_1 = t.id OR
+            ed.timetable_2 = t.id OR
+            ed.timetable_3 = t.id OR
+            ed.timetable_4 = t.id OR
+            ed.timetable_5 = t.id OR
+            ed.timetable_6 = t.id OR
+            ed.timetable_7 = t.id OR
+            ed.timetable_8 = t.id
+        INNER JOIN sms3_sections s ON t.section_id = s.id
+        INNER JOIN sms3_departments d ON s.department_id = d.id
+        WHERE d.department_name = ? AND YEAR(ed.created_at) >= ?
+        GROUP BY d.department_name, month, year
+        ORDER BY year, month
+    ";
 
         $stmt = $this->conn->prepare($query);
-        $stmt->bind_param("s", $department);
+        $stmt->bind_param("si", $department, $twoYearsAgo);
         $stmt->execute();
         $result = $stmt->get_result();
 
