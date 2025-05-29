@@ -473,7 +473,7 @@ $forecast = $model->forecast();
 
 // Initialize the predictive model
 $model = new EnrollmentPredictiveModel($conn, []);
-$departmentForecasts = $model->forecastByDepartment(0, 10);
+$departmentForecasts = $model->forecastByDepartment(0, 12);
 ?>
 
 <!DOCTYPE html>
@@ -821,69 +821,35 @@ $departmentForecasts = $model->forecastByDepartment(0, 10);
           <div class="card">
             <div class="card-body">
               <h5 class="card-title">Forecasting by Department</h5>
-              <div id="departmentColumnChart" style="min-height: 400px;"></div>
-              <script>
-                document.addEventListener("DOMContentLoaded", () => {
-                  const departmentForecasts = <?php echo json_encode($departmentForecasts); ?>;
-
-                  if (Object.keys(departmentForecasts).length === 0) {
-                    document.getElementById('departmentColumnChart').innerHTML = '<div style="text-align: center; padding: 20px;">No forecast data available.</div>';
-                    return;
-                  }
-
-                  // Prepare data for the chart
-                  const departments = Object.keys(departmentForecasts);
-                  const months = departmentForecasts[departments[0]].map(item => `${item.year}-${String(item.month).padStart(2, '0')}`);
-                  const seriesData = departments.map(department => {
-                    return {
-                      name: department,
-                      data: departmentForecasts[department].map(item => item.predicted_enrollments)
-                    };
-                  });
-
-                  // Initialize ApexCharts instance
-                  new ApexCharts(document.querySelector("#departmentColumnChart"), {
-                    series: seriesData,
-                    chart: {
-                      type: 'bar',
-                      height: 400
-                    },
-                    plotOptions: {
-                      bar: {
-                        horizontal: false,
-                        columnWidth: '55%',
-                        endingShape: 'rounded'
-                      }
-                    },
-                    dataLabels: {
-                      enabled: false
-                    },
-                    stroke: {
-                      show: true,
-                      width: 2,
-                      colors: ['transparent']
-                    },
-                    xaxis: {
-                      categories: months
-                    },
-                    yaxis: {
-                      title: {
-                        text: 'Enrollments'
-                      }
-                    },
-                    fill: {
-                      opacity: 1
-                    },
-                    tooltip: {
-                      y: {
-                        formatter: function(val) {
-                          return val + " enrollments";
-                        }
-                      }
-                    }
-                  }).render();
-                });
-              </script>
+              <?php if (!empty($departmentForecasts)): ?>
+                <?php foreach ($departmentForecasts as $department => $forecastArr): ?>
+                  <h6><?= htmlspecialchars($department) ?></h6>
+                  <table class="table table-bordered">
+                    <thead>
+                      <tr>
+                        <th>Month</th>
+                        <th>Predicted Enrollments</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <?php if (isset($lastActuals[$department])): ?>
+                        <tr>
+                          <td><b><?= date('F Y', strtotime($lastActuals[$department]['year'] . '-' . $lastActuals[$department]['month'] . '-01')) ?> (Last Actual)</b></td>
+                          <td><b><?= $lastActuals[$department]['total_enrollments'] ?></b></td>
+                        </tr>
+                      <?php endif; ?>
+                      <?php foreach ($forecastArr as $item): ?>
+                        <tr>
+                          <td><?= htmlspecialchars(date('F Y', strtotime($item['year'] . '-' . $item['month'] . '-01'))) ?></td>
+                          <td><?= isset($item['predicted_enrollments']) ? $item['predicted_enrollments'] : (isset($item['predicted']) ? $item['predicted'] : '') ?></td>
+                        </tr>
+                      <?php endforeach; ?>
+                    </tbody>
+                  </table>
+                <?php endforeach; ?>
+              <?php else: ?>
+                <p>No forecast data available.</p>
+              <?php endif; ?>
             </div>
           </div>
         </div>
