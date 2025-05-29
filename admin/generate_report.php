@@ -4,10 +4,19 @@ require_once __DIR__ . '/../vendor/autoload.php'; // Include mPDF library
 
 use Mpdf\Mpdf;
 
-// Get date range and report type from GET or fallback to today
-$start_date = isset($_GET['start_date']) ? $_GET['start_date'] : date('Y-m-01');
-$end_date = isset($_GET['end_date']) ? $_GET['end_date'] : date('Y-m-d');
+// Get report type from GET or fallback to 'range'
 $report_type = isset($_GET['report_type']) ? $_GET['report_type'] : 'range';
+
+// Set date range based on report type
+if ($report_type === 'daily') {
+    $start_date = $end_date = date('Y-m-d');
+} elseif ($report_type === 'monthly') {
+    $start_date = date('Y-m-01');
+    $end_date = date('Y-m-t');
+} else {
+    $start_date = isset($_GET['start_date']) ? $_GET['start_date'] : date('Y-m-01');
+    $end_date = isset($_GET['end_date']) ? $_GET['end_date'] : date('Y-m-d');
+}
 
 // Helper for grouping
 function getGroupBy($report_type) {
@@ -192,9 +201,18 @@ $html = "
         color: #333;
     }
 </style>
-
+<br>
 <h1>Dashboard Report</h1>
-<p style='text-align: center;'>Date Range: " . htmlspecialchars($start_date) . " to " . htmlspecialchars($end_date) . "</p>
+<p style='text-align: center;'>
+    " . (
+        $report_type === 'daily'
+            ? "Date: " . htmlspecialchars($start_date)
+            : ($report_type === 'monthly'
+                ? "Month: " . date('F Y', strtotime($start_date))
+                : "Date Range: " . htmlspecialchars($start_date) . " to " . htmlspecialchars($end_date)
+            )
+    ) . "
+</p>
 <p style='text-align: center;'><b>Report Type:</b> " . ucfirst($report_type) . "</p>
 
 <h2>Summary</h2>

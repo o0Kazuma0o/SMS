@@ -556,16 +556,17 @@ if ($result_enrollment_status) {
               </div>
             </div>
 
+            <!-- Generate Report -->
             <div class="col-12">
               <div class="card">
                 <div class="card-body">
                   <h5 class="card-title">Generate Report</h5>
                   <form class="row g-3" method="get" action="generate_report.php" target="_blank" style="margin-bottom: 10px;">
-                    <div class="col-md-3">
+                    <div class="col-md-3" id="startDateGroup">
                       <label for="start_date" class="form-label">Start Date</label>
                       <input type="date" class="form-control" id="start_date" name="start_date" required value="<?php echo isset($_GET['start_date']) ? htmlspecialchars($_GET['start_date']) : date('Y-m-01'); ?>">
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-3" id="endDateGroup">
                       <label for="end_date" class="form-label">End Date</label>
                       <input type="date" class="form-control" id="end_date" name="end_date" required value="<?php echo isset($_GET['end_date']) ? htmlspecialchars($_GET['end_date']) : date('Y-m-d'); ?>">
                     </div>
@@ -581,6 +582,22 @@ if ($result_enrollment_status) {
                       <button type="submit" class="btn btn-primary w-100">Download PDF Report</button>
                     </div>
                   </form>
+                  <script>
+                    function toggleDatePickers() {
+                      const reportType = document.getElementById('report_type').value;
+                      const startDateGroup = document.getElementById('startDateGroup');
+                      const endDateGroup = document.getElementById('endDateGroup');
+                      if (reportType === 'daily' || reportType === 'monthly') {
+                        startDateGroup.style.display = 'none';
+                        endDateGroup.style.display = 'none';
+                      } else {
+                        startDateGroup.style.display = '';
+                        endDateGroup.style.display = '';
+                      }
+                    }
+                    document.getElementById('report_type').addEventListener('change', toggleDatePickers);
+                    window.addEventListener('DOMContentLoaded', toggleDatePickers);
+                  </script>
                 </div>
               </div>
             </div>
