@@ -253,14 +253,24 @@ class EnrollmentPredictiveModel extends EnrollmentSARIMAModel
     {
         $query = "
             SELECT 
-                COUNT(ed.id) AS total_enrollments,
+                d.department_name,
+                MONTH(ed.created_at) AS month,
                 YEAR(ed.created_at) AS year,
-                MONTH(ed.created_at) AS month
+                COUNT(DISTINCT ed.student_id) AS total_enrollments
             FROM sms3_enrollment_data ed
-            JOIN sms3_sections sec ON ed.timetable_1 = sec.id
-            JOIN sms3_departments d ON sec.department_id = d.id
+            INNER JOIN sms3_timetable t ON 
+                ed.timetable_1 = t.id OR
+                ed.timetable_2 = t.id OR
+                ed.timetable_3 = t.id OR
+                ed.timetable_4 = t.id OR
+                ed.timetable_5 = t.id OR
+                ed.timetable_6 = t.id OR
+                ed.timetable_7 = t.id OR
+                ed.timetable_8 = t.id
+            INNER JOIN sms3_sections s ON t.section_id = s.id
+            INNER JOIN sms3_departments d ON s.department_id = d.id
             WHERE d.department_name = ?
-            GROUP BY YEAR(ed.created_at), MONTH(ed.created_at)
+            GROUP BY d.department_name, month, year
             ORDER BY year, month
         ";
 
