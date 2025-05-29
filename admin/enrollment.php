@@ -884,7 +884,7 @@ $departmentForecasts = $model->forecastByDepartment(0, 12);
                     months.push(`${latestActuals[departments[0]].year}-${String(latestActuals[departments[0]].month).padStart(2, '0')} (Actual)`);
                     hasActual = true;
                   }
-                  forecastMonths.forEach(m => months.push(m + " (Predicted)"));
+                  forecastMonths.forEach(m => months.push(m + " (Forecast)"));
 
                   const seriesData = departments.map(department => {
                     let data = [];
