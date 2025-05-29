@@ -491,22 +491,24 @@ $sql_latest = "
         ed.timetable_8 = t.id
     INNER JOIN sms3_sections s ON t.section_id = s.id
     INNER JOIN sms3_departments d ON s.department_id = d.id
-    WHERE (YEAR(ed.created_at), MONTH(ed.created_at)) IN (
-        SELECT YEAR(created_at), MONTH(created_at)
-        FROM sms3_enrollment_data
-        ORDER BY YEAR(created_at) DESC, MONTH(created_at) DESC
-        LIMIT 1
-    )
     GROUP BY d.department_name, year, month
+    ORDER BY d.department_name, year DESC, month DESC
 ";
 $result_latest = $conn->query($sql_latest);
 while ($row = $result_latest->fetch_assoc()) {
   $dept = $row['department_name'];
-  $latestActuals[$dept] = [
-    'year' => $row['year'],
-    'month' => $row['month'],
-    'enrollments' => $row['total_enrollments']
-  ];
+  // Only keep the latest for each department
+  if (
+    !isset($latestActuals[$dept]) ||
+    ($row['year'] > $latestActuals[$dept]['year']) ||
+    ($row['year'] == $latestActuals[$dept]['year'] && $row['month'] > $latestActuals[$dept]['month'])
+  ) {
+    $latestActuals[$dept] = [
+      'year' => $row['year'],
+      'month' => $row['month'],
+      'enrollments' => $row['total_enrollments']
+    ];
+  }
 }
 
 // Initialize the predictive model
@@ -870,38 +872,34 @@ $departmentForecasts = $model->forecastByDepartment(0, 12);
                     return;
                   }
 
+                  // Prepare data for the chart
                   const departments = Object.keys(departmentForecasts);
+                  // Get months from forecast (assume all departments have same forecast months)
+                  const forecastMonths = departmentForecasts[departments[0]].map(item => `${item.year}-${String(item.month).padStart(2, '0')}`);
 
-                  // Prepare months (x-axis) and series data
+                  // Add latest actual month (if exists) as the first category
                   let months = [];
-                  let seriesData = [];
+                  let hasActual = false;
+                  if (latestActuals[departments[0]]) {
+                    months.push(`${latestActuals[departments[0]].year}-${String(latestActuals[departments[0]].month).padStart(2, '0')} (Actual)`);
+                    hasActual = true;
+                  }
+                  forecastMonths.forEach(m => months.push(m + " (Predicted)"));
 
-                  departments.forEach(department => {
-                    const forecastArr = departmentForecasts[department] || [];
-                    const latest = latestActuals[department];
-
+                  const seriesData = departments.map(department => {
                     let data = [];
-                    let categories = [];
-
-                    // Add latest actual if exists
-                    if (latest) {
-                      data.push(latest.enrollments);
-                      categories.push(`${latest.year}-${String(latest.month).padStart(2, '0')} (Actual)`);
+                    // Add latest actual value if exists
+                    if (hasActual && latestActuals[department]) {
+                      data.push(latestActuals[department].enrollments);
+                    } else if (hasActual) {
+                      data.push(null);
                     }
-
-                    // Add forecast data
-                    forecastArr.forEach(item => {
-                      data.push(item.predicted_enrollments);
-                      categories.push(`${item.year}-${String(item.month).padStart(2, '0')} (Predicted)`);
-                    });
-
-                    // Set months only once (assuming all departments have the same forecast months)
-                    if (months.length === 0) months = categories;
-
-                    seriesData.push({
+                    // Add forecasted values
+                    data = data.concat(departmentForecasts[department].map(item => item.predicted_enrollments));
+                    return {
                       name: department,
                       data: data
-                    });
+                    };
                   });
 
                   // Initialize ApexCharts instance
