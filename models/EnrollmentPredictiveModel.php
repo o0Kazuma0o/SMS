@@ -252,7 +252,7 @@ class EnrollmentPredictiveModel extends EnrollmentSARIMAModel
     private function getHistoricalDataByDepartment($department)
     {
         $currentYear = date('Y');
-        $twoYearsAgo = $currentYear - 2;
+        $twoYearsAgo = $currentYear - 1;
 
         $query = "
         SELECT 

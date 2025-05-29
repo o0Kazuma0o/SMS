@@ -447,6 +447,30 @@ if (isset($_GET['delete_timetable_from_enrollment'])) {
   exit;
 }
 
+// Fetch historical enrollment data
+$sql = "
+    SELECT 
+        YEAR(created_at) AS year,
+        MONTH(created_at) AS month,
+        COUNT(*) AS enrollments
+    FROM sms3_enrollment_data
+    GROUP BY YEAR(created_at), MONTH(created_at)
+    ORDER BY YEAR(created_at), MONTH(created_at)
+";
+$result1 = $conn->query($sql);
+$historicalData = [];
+while ($row = $result1->fetch_assoc()) {
+  $historicalData[] = [
+    'year' => $row['year'],
+    'month' => $row['month'],
+    'enrollments' => $row['enrollments']
+  ];
+}
+
+// Initialize the SARIMA model
+$model = new EnrollmentSARIMAModel($historicalData, 12, 2);
+$forecast = $model->forecast();
+
 // Initialize the predictive model
 $model = new EnrollmentPredictiveModel($conn, []);
 $departmentForecasts = $model->forecastByDepartment(0, 12);
@@ -725,6 +749,73 @@ $departmentForecasts = $model->forecastByDepartment(0, 12);
     <section class="section dashboard">
       <div class="row">
 
+        <!-- Forecasting -->
+        <div class="col-12">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">Enrollment Forecast</h5>
+
+              <div id="enrollmentForecastChart" style="min-height: 400px;" class="echart"></div>
+
+              <script>
+                document.addEventListener("DOMContentLoaded", () => {
+                  const historicalData = <?php echo json_encode($historicalData); ?>;
+                  const forecast = <?php echo json_encode($forecast); ?>;
+
+                  if (historicalData.length === 0 || forecast.length === 0) {
+                    document.getElementById('enrollmentForecastChart').innerHTML = '<div style="text-align: center; padding: 20px;">No data available for forecasting.</div>';
+                    return;
+                  }
+
+                  // Prepare data for chart
+                  const months = historicalData.map(item => `${item.year}-${String(item.month).padStart(2, '0')}`);
+                  const historicalValues = historicalData.map(item => item.enrollments);
+                  const forecastValues = forecast.map(item => item.predicted_enrollments);
+                  const forecastMonths = forecast.map(item => `${item.year}-${String(item.month).padStart(2, '0')}`);
+
+                  // Initialize echarts instance
+                  const chart = echarts.init(document.querySelector("#enrollmentForecastChart"));
+
+                  // Set chart options
+                  chart.setOption({
+                    tooltip: {
+                      trigger: 'item'
+                    },
+                    legend: {
+                      data: ['Historical', 'Forecast']
+                    },
+                    xAxis: {
+                      type: 'category',
+                      data: [...months, ...forecastMonths]
+                    },
+                    yAxis: {
+                      type: 'value'
+                    },
+                    series: [{
+                        name: 'Historical',
+                        type: 'line',
+                        smooth: true,
+                        data: historicalValues
+                      },
+                      {
+                        name: 'Forecast',
+                        type: 'line',
+                        smooth: true,
+                        data: [...Array(months.length).fill(null), ...forecastValues]
+                      }
+                    ]
+                  });
+
+                  // Handle window resize to maintain chart responsiveness
+                  window.addEventListener('resize', () => {
+                    chart.resize();
+                  });
+                });
+              </script>
+            </div>
+          </div>
+        </div>
+
         <!-- Department Forecasting -->
         <div class="col-12">
           <div class="card">
@@ -732,61 +823,25 @@ $departmentForecasts = $model->forecastByDepartment(0, 12);
               <h5 class="card-title">Forecasting by Department</h5>
               <div id="departmentColumnChart" style="min-height: 400px;"></div>
               <script>
-                const historicalDataByDepartment = <?php echo json_encode($historicalDataByDepartment); ?>;
-                const departmentForecasts = <?php echo json_encode($departmentForecasts); ?>;
-              </script>
-              <script>
                 document.addEventListener("DOMContentLoaded", () => {
-                  const historicalDataByDepartment = window.historicalDataByDepartment || {};
-                  const departmentForecasts = window.departmentForecasts || {};
+                  const departmentForecasts = <?php echo json_encode($departmentForecasts); ?>;
 
                   if (Object.keys(departmentForecasts).length === 0) {
                     document.getElementById('departmentColumnChart').innerHTML = '<div style="text-align: center; padding: 20px;">No forecast data available.</div>';
                     return;
                   }
 
+                  // Prepare data for the chart
                   const departments = Object.keys(departmentForecasts);
-
-                  // Collect all unique months from both historical and forecast data
-                  let allMonthsSet = new Set();
-                  departments.forEach(dept => {
-                    (historicalDataByDepartment[dept] || []).forEach(item => {
-                      allMonthsSet.add(`${item.year}-${String(item.month).padStart(2, '0')}`);
-                    });
-                    (departmentForecasts[dept] || []).forEach(item => {
-                      allMonthsSet.add(`${item.year}-${String(item.month).padStart(2, '0')}`);
-                    });
-                  });
-                  const allMonths = Array.from(allMonthsSet).sort();
-
-                  // Prepare series for each department (historical + forecast)
+                  const months = departmentForecasts[departments[0]].map(item => `${item.year}-${String(item.month).padStart(2, '0')}`);
                   const seriesData = departments.map(department => {
-                    const hist = historicalDataByDepartment[department] || [];
-                    const forecast = departmentForecasts[department] || [];
-                    // Map month string to value for quick lookup
-                    const histMap = {};
-                    hist.forEach(item => {
-                      histMap[`${item.year}-${String(item.month).padStart(2, '0')}`] = item.enrollments;
-                    });
-                    const forecastMap = {};
-                    forecast.forEach(item => {
-                      forecastMap[`${item.year}-${String(item.month).padStart(2, '0')}`] = item.predicted_enrollments;
-                    });
-
-                    // Combine: show historical if exists, else forecast if exists, else 0
-                    const data = allMonths.map(monthStr => {
-                      if (histMap[monthStr] !== undefined) return histMap[monthStr];
-                      if (forecastMap[monthStr] !== undefined) return forecastMap[monthStr];
-                      return 0;
-                    });
-
                     return {
                       name: department,
-                      data: data
+                      data: departmentForecasts[department].map(item => item.predicted_enrollments)
                     };
                   });
 
-                  // Now use allMonths as x-axis and seriesData as series
+                  // Initialize ApexCharts instance
                   new ApexCharts(document.querySelector("#departmentColumnChart"), {
                     series: seriesData,
                     chart: {
@@ -809,7 +864,7 @@ $departmentForecasts = $model->forecastByDepartment(0, 12);
                       colors: ['transparent']
                     },
                     xaxis: {
-                      categories: allMonths
+                      categories: months
                     },
                     yaxis: {
                       title: {
