@@ -4,39 +4,80 @@ require_once __DIR__ . '/../vendor/autoload.php'; // Include mPDF library
 
 use Mpdf\Mpdf;
 
-// Get date range from GET or fallback to today
+// Get date range and report type from GET or fallback to today
 $start_date = isset($_GET['start_date']) ? $_GET['start_date'] : date('Y-m-01');
 $end_date = isset($_GET['end_date']) ? $_GET['end_date'] : date('Y-m-d');
+$report_type = isset($_GET['report_type']) ? $_GET['report_type'] : 'range';
 
-// Pending admissions in range
+// Helper for grouping
+function getGroupBy($report_type) {
+    if ($report_type === 'daily') {
+        return "DATE(created_at)";
+    } elseif ($report_type === 'monthly') {
+        return "DATE_FORMAT(created_at, '%Y-%m')";
+    }
+    return null;
+}
+
+// Summary queries (always for the selected range)
 $sql_pending_admissions = "SELECT COUNT(*) AS count FROM sms3_pending_admission WHERE DATE(created_at) BETWEEN '$start_date' AND '$end_date'";
 $result_pending_admissions = $conn->query($sql_pending_admissions);
 $pending_admissions = $result_pending_admissions->fetch_assoc()['count'];
 
-// Pending enrollments in range
 $sql_pending_enrollments = "SELECT COUNT(*) AS count FROM sms3_pending_enrollment WHERE DATE(created_at) BETWEEN '$start_date' AND '$end_date'";
 $result_pending_enrollments = $conn->query($sql_pending_enrollments);
 $pending_enrollments = $result_pending_enrollments->fetch_assoc()['count'];
 
-// Admissions accepted in range
 $sql_accepted_admissions = "SELECT COUNT(*) AS count FROM sms3_admissions_data WHERE status = 'Accepted' AND DATE(created_at) BETWEEN '$start_date' AND '$end_date'";
 $result_accepted_admissions = $conn->query($sql_accepted_admissions);
 $accepted_admissions = $result_accepted_admissions->fetch_assoc()['count'];
 
-// Admissions enrolled in range
 $sql_enrolled_admissions = "SELECT COUNT(*) AS count FROM sms3_admissions_data WHERE status = 'Enrolled' AND DATE(created_at) BETWEEN '$start_date' AND '$end_date'";
 $result_enrolled_admissions = $conn->query($sql_enrolled_admissions);
 $enrolled_admissions = $result_enrolled_admissions->fetch_assoc()['count'];
 
-// Students enrolled in range
 $sql_students_enrolled = "SELECT COUNT(*) AS count FROM sms3_students WHERE status = 'Enrolled' AND DATE(created_at) BETWEEN '$start_date' AND '$end_date'";
 $result_students_enrolled = $conn->query($sql_students_enrolled);
 $students_enrolled = $result_students_enrolled->fetch_assoc()['count'];
 
-// Students not enrolled in range
 $sql_students_not_enrolled = "SELECT COUNT(*) AS count FROM sms3_students WHERE status = 'Not Enrolled' AND DATE(created_at) BETWEEN '$start_date' AND '$end_date'";
 $result_students_not_enrolled = $conn->query($sql_students_not_enrolled);
 $students_not_enrolled = $result_students_not_enrolled->fetch_assoc()['count'];
+
+// Grouped report if daily or monthly
+$group_by = getGroupBy($report_type);
+$grouped_data = [];
+if ($group_by) {
+    // Admissions grouped
+    $sql_grouped_admissions = "
+        SELECT $group_by AS period, 
+            SUM(status = 'Accepted') AS accepted, 
+            SUM(status = 'Enrolled') AS enrolled
+        FROM sms3_admissions_data
+        WHERE DATE(created_at) BETWEEN '$start_date' AND '$end_date'
+        GROUP BY period
+        ORDER BY period ASC
+    ";
+    $result_grouped_admissions = $conn->query($sql_grouped_admissions);
+    while ($row = $result_grouped_admissions->fetch_assoc()) {
+        $grouped_data['admissions'][] = $row;
+    }
+
+    // Students grouped
+    $sql_grouped_students = "
+        SELECT $group_by AS period, 
+            SUM(status = 'Enrolled') AS enrolled, 
+            SUM(status = 'Not Enrolled') AS not_enrolled
+        FROM sms3_students
+        WHERE DATE(created_at) BETWEEN '$start_date' AND '$end_date'
+        GROUP BY period
+        ORDER BY period ASC
+    ";
+    $result_grouped_students = $conn->query($sql_grouped_students);
+    while ($row = $result_grouped_students->fetch_assoc()) {
+        $grouped_data['students'][] = $row;
+    }
+}
 
 // Frequency data for last school in range
 $sql_last_school = "
@@ -154,6 +195,7 @@ $html = "
 
 <h1>Dashboard Report</h1>
 <p style='text-align: center;'>Date Range: " . htmlspecialchars($start_date) . " to " . htmlspecialchars($end_date) . "</p>
+<p style='text-align: center;'><b>Report Type:</b> " . ucfirst($report_type) . "</p>
 
 <h2>Summary</h2>
 <ul>
@@ -164,6 +206,56 @@ $html = "
     <li><strong>Students Enrolled in Range:</strong> $students_enrolled</li>
     <li><strong>Students Not Enrolled in Range:</strong> $students_not_enrolled</li>
 </ul>
+";
+
+// If daily/monthly, show grouped table
+if ($group_by && !empty($grouped_data)) {
+    $html .= "<h2>Grouped Report (" . ucfirst($report_type) . ")</h2>";
+    // Admissions
+    if (!empty($grouped_data['admissions'])) {
+        $html .= "<h3>Admissions</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>" . ($report_type === 'daily' ? 'Date' : 'Month') . "</th>
+                    <th>Accepted</th>
+                    <th>Enrolled</th>
+                </tr>
+            </thead>
+            <tbody>";
+        foreach ($grouped_data['admissions'] as $row) {
+            $html .= "<tr>
+                <td>" . htmlspecialchars($row['period']) . "</td>
+                <td>" . $row['accepted'] . "</td>
+                <td>" . $row['enrolled'] . "</td>
+            </tr>";
+        }
+        $html .= "</tbody></table>";
+    }
+    // Students
+    if (!empty($grouped_data['students'])) {
+        $html .= "<h3>Students</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>" . ($report_type === 'daily' ? 'Date' : 'Month') . "</th>
+                    <th>Enrolled</th>
+                    <th>Not Enrolled</th>
+                </tr>
+            </thead>
+            <tbody>";
+        foreach ($grouped_data['students'] as $row) {
+            $html .= "<tr>
+                <td>" . htmlspecialchars($row['period']) . "</td>
+                <td>" . $row['enrolled'] . "</td>
+                <td>" . $row['not_enrolled'] . "</td>
+            </tr>";
+        }
+        $html .= "</tbody></table>";
+    }
+}
+
+$html .= "
 
 <h2>Student's Last School Attended</h2>
 <table>

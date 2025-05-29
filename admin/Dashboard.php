@@ -561,15 +561,23 @@ if ($result_enrollment_status) {
                 <div class="card-body">
                   <h5 class="card-title">Generate Report</h5>
                   <form class="row g-3" method="get" action="generate_report.php" target="_blank" style="margin-bottom: 10px;">
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                       <label for="start_date" class="form-label">Start Date</label>
                       <input type="date" class="form-control" id="start_date" name="start_date" required value="<?php echo isset($_GET['start_date']) ? htmlspecialchars($_GET['start_date']) : date('Y-m-01'); ?>">
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                       <label for="end_date" class="form-label">End Date</label>
                       <input type="date" class="form-control" id="end_date" name="end_date" required value="<?php echo isset($_GET['end_date']) ? htmlspecialchars($_GET['end_date']) : date('Y-m-d'); ?>">
                     </div>
-                    <div class="col-md-4 d-flex align-items-end">
+                    <div class="col-md-3">
+                      <label for="report_type" class="form-label">Report Type</label>
+                      <select class="form-select" id="report_type" name="report_type" required>
+                        <option value="range" <?php if (!isset($_GET['report_type']) || $_GET['report_type'] == 'range') echo 'selected'; ?>>Custom Range</option>
+                        <option value="daily" <?php if (isset($_GET['report_type']) && $_GET['report_type'] == 'daily') echo 'selected'; ?>>Daily Report</option>
+                        <option value="monthly" <?php if (isset($_GET['report_type']) && $_GET['report_type'] == 'monthly') echo 'selected'; ?>>Monthly Report</option>
+                      </select>
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
                       <button type="submit" class="btn btn-primary w-100">Download PDF Report</button>
                     </div>
                   </form>
