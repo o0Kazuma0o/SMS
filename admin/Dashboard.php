@@ -570,6 +570,10 @@ if ($result_enrollment_status) {
                       <label for="end_date" class="form-label">End Date</label>
                       <input type="date" class="form-control" id="end_date" name="end_date" required value="<?php echo isset($_GET['end_date']) ? htmlspecialchars($_GET['end_date']) : date('Y-m-d'); ?>">
                     </div>
+                    <div class="col-md-3" id="monthGroup" style="display:none;">
+                      <label for="month" class="form-label">Select Month</label>
+                      <input type="month" class="form-control" id="month" name="month" value="<?php echo isset($_GET['month']) ? htmlspecialchars($_GET['month']) : date('Y-m'); ?>">
+                    </div>
                     <div class="col-md-3">
                       <label for="report_type" class="form-label">Report Type</label>
                       <select class="form-select" id="report_type" name="report_type" required>
@@ -587,12 +591,19 @@ if ($result_enrollment_status) {
                       const reportType = document.getElementById('report_type').value;
                       const startDateGroup = document.getElementById('startDateGroup');
                       const endDateGroup = document.getElementById('endDateGroup');
-                      if (reportType === 'daily' || reportType === 'monthly') {
+                      const monthGroup = document.getElementById('monthGroup');
+                      if (reportType === 'daily') {
                         startDateGroup.style.display = 'none';
                         endDateGroup.style.display = 'none';
+                        monthGroup.style.display = 'none';
+                      } else if (reportType === 'monthly') {
+                        startDateGroup.style.display = 'none';
+                        endDateGroup.style.display = 'none';
+                        monthGroup.style.display = '';
                       } else {
                         startDateGroup.style.display = '';
                         endDateGroup.style.display = '';
+                        monthGroup.style.display = 'none';
                       }
                     }
                     document.getElementById('report_type').addEventListener('change', toggleDatePickers);

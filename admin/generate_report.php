@@ -13,15 +13,21 @@ $report_type = isset($_GET['report_type']) ? $_GET['report_type'] : 'range';
 if ($report_type === 'daily') {
     $start_date = $end_date = date('Y-m-d');
 } elseif ($report_type === 'monthly') {
-    $start_date = date('Y-m-01');
-    $end_date = date('Y-m-t');
+    if (isset($_GET['month']) && preg_match('/^\d{4}-\d{2}$/', $_GET['month'])) {
+        $start_date = $_GET['month'] . '-01';
+        $end_date = date('Y-m-t', strtotime($start_date));
+    } else {
+        $start_date = date('Y-m-01');
+        $end_date = date('Y-m-t');
+    }
 } else {
     $start_date = isset($_GET['start_date']) ? $_GET['start_date'] : date('Y-m-01');
     $end_date = isset($_GET['end_date']) ? $_GET['end_date'] : date('Y-m-d');
 }
 
 // Helper for grouping
-function getGroupBy($report_type) {
+function getGroupBy($report_type)
+{
     if ($report_type === 'daily') {
         return "DATE(created_at)";
     } elseif ($report_type === 'monthly') {
@@ -55,29 +61,34 @@ if (count($historicalAdmissions) > 0 && class_exists('SARIMAModel')) {
     $admissionForecast = $admModel->forecast();
 }
 
-// --- ENROLLMENT FORECASTING ---
-$sql_forecast_enr = "
-    SELECT 
-        YEAR(created_at) AS year,
-        MONTH(created_at) AS month,
-        COUNT(*) AS enrollments
-    FROM sms3_enrollment_data
-    GROUP BY YEAR(created_at), MONTH(created_at)
-    ORDER BY YEAR(created_at), MONTH(created_at)
-";
-$result_forecast_enr = $conn->query($sql_forecast_enr);
-$historicalEnrollments = [];
-while ($row = $result_forecast_enr->fetch_assoc()) {
-    $historicalEnrollments[] = [
-        'year' => $row['year'],
-        'month' => $row['month'],
-        'enrollments' => $row['enrollments']
-    ];
-}
-$enrollmentForecast = [];
-if (count($historicalEnrollments) > 0 && class_exists('EnrollmentSARIMAModel')) {
-    $enrModel = new EnrollmentSARIMAModel($historicalEnrollments, 12, 2);
-    $enrollmentForecast = $enrModel->forecast();
+// --- ENROLLMENT FORECASTING BY DEPARTMENT ---
+$model = new EnrollmentPredictiveModel($conn, []);
+$departmentForecasts = $model->forecastByDepartment(0, 10);
+
+// Enrollment Forecast Table by Department
+function enrollmentDepartmentForecastTable($departmentForecasts)
+{
+    if (!$departmentForecasts || count($departmentForecasts) === 0) return '<p>No forecast data available.</p>';
+    $html = '';
+    foreach ($departmentForecasts as $department => $forecastArr) {
+        $html .= "<h3>Department: " . htmlspecialchars($department) . "</h3>";
+        $html .= '<table>
+            <thead>
+                <tr>
+                    <th>Month</th>
+                    <th>Predicted Enrollments</th>
+                </tr>
+            </thead>
+            <tbody>';
+        foreach ($forecastArr as $item) {
+            $html .= '<tr>
+                <td>' . htmlspecialchars(date('F Y', strtotime($item['year'] . '-' . $item['month'] . '-01'))) . '</td>
+                <td>' . (isset($item['predicted_enrollments']) ? $item['predicted_enrollments'] : (isset($item['predicted']) ? $item['predicted'] : '')) . '</td>
+            </tr>';
+        }
+        $html .= '</tbody></table>';
+    }
+    return $html;
 }
 
 // Summary queries (always for the selected range)
@@ -214,8 +225,9 @@ $mpdf->SetHTMLFooter('
     </div>
 ');
 
-// Prepare chart data for HTML (simple table, for PDF)
-function forecastTable($forecast, $type = 'admissions') {
+// Prepare forecast table for admissions
+function forecastTable($forecast, $type = 'admissions')
+{
     if (!$forecast || count($forecast) === 0) return '<p>No forecast data available.</p>';
     $html = '<table>
         <thead>
@@ -235,21 +247,25 @@ function forecastTable($forecast, $type = 'admissions') {
     return $html;
 }
 
-// Prepare chart data for HTML (ASCII bar chart for PDF, optional)
-function asciiBarChart($historical, $forecast, $type = 'admissions') {
-    $max = 0;
-    foreach ($historical as $h) $max = max($max, $h[$type]);
-    foreach ($forecast as $f) $max = max($max, $f['predicted_' . $type] ?? 0);
-    $html = '<pre style="font-size:10px;line-height:1.2;">';
-    foreach ($historical as $h) {
-        $bar = str_repeat('█', intval(($h[$type] / $max) * 40));
-        $html .= sprintf("%s-%02d | %s %d\n", $h['year'], $h['month'], $bar, $h[$type]);
+// Prepare forecast table for enrollments (like in enrollment.php)
+function enrollmentForecastTable($forecast)
+{
+    if (!$forecast || count($forecast) === 0) return '<p>No forecast data available.</p>';
+    $html = '<table>
+        <thead>
+            <tr>
+                <th>Month</th>
+                <th>Predicted Enrollments</th>
+            </tr>
+        </thead>
+        <tbody>';
+    foreach ($forecast as $item) {
+        $html .= '<tr>
+            <td>' . htmlspecialchars(date('F Y', strtotime($item['year'] . '-' . $item['month'] . '-01'))) . '</td>
+            <td>' . (isset($item['predicted_enrollments']) ? $item['predicted_enrollments'] : (isset($item['predicted']) ? $item['predicted'] : '')) . '</td>
+        </tr>';
     }
-    foreach ($forecast as $f) {
-        $bar = str_repeat('░', intval((($f['predicted_' . $type] ?? 0) / $max) * 40));
-        $html .= sprintf("%s-%02d | %s %d (predicted)\n", $f['year'], $f['month'], $bar, $f['predicted_' . $type] ?? 0);
-    }
-    $html .= '</pre>';
+    $html .= '</tbody></table>';
     return $html;
 }
 
@@ -296,13 +312,13 @@ $html = "
 <h1>Dashboard Report</h1>
 <p style='text-align: center;'>
     " . (
-        $report_type === 'daily'
-            ? "Date: " . htmlspecialchars($start_date)
-            : ($report_type === 'monthly'
-                ? "Month: " . date('F Y', strtotime($start_date))
-                : "Date Range: " . htmlspecialchars($start_date) . " to " . htmlspecialchars($end_date)
-            )
-    ) . "
+    $report_type === 'daily'
+    ? "Date: " . htmlspecialchars($start_date)
+    : ($report_type === 'monthly'
+        ? "Month: " . date('F Y', strtotime($start_date))
+        : "Date Range: " . htmlspecialchars($start_date) . " to " . htmlspecialchars($end_date)
+    )
+) . "
 </p>
 <p style='text-align: center;'><b>Report Type:</b> " . ucfirst($report_type) . "</p>
 
@@ -386,18 +402,15 @@ $html .= "
     </tbody>
 </table>";
 
-// Add Admission Forecast Section
 $html .= "
 <h2>Admission Forecast</h2>
 " . forecastTable($admissionForecast, 'admissions') . "
-" . asciiBarChart($historicalAdmissions, $admissionForecast, 'admissions') . "
 ";
 
-// Add Enrollment Forecast Section
+// Add Enrollment Forecast Section (table only)
 $html .= "
-<h2>Enrollment Forecast</h2>
-" . forecastTable($enrollmentForecast, 'enrollments') . "
-" . asciiBarChart($historicalEnrollments, $enrollmentForecast, 'enrollments') . "
+<h2>Enrollment Forecast by Department</h2>
+" . enrollmentDepartmentForecastTable($departmentForecasts) . "
 ";
 
 $html .= "
