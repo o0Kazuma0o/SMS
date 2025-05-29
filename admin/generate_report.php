@@ -4,35 +4,45 @@ require_once __DIR__ . '/../vendor/autoload.php'; // Include mPDF library
 
 use Mpdf\Mpdf;
 
-// Fetch data for the report
-$dateToday = date('Y-m-d');
+// Get date range from GET or fallback to today
+$start_date = isset($_GET['start_date']) ? $_GET['start_date'] : date('Y-m-01');
+$end_date = isset($_GET['end_date']) ? $_GET['end_date'] : date('Y-m-d');
 
-// Pending admissions added today
-$sql_pending_admissions_today = "SELECT COUNT(*) AS count FROM sms3_pending_admission WHERE DATE(created_at) = '$dateToday'";
-$result_pending_admissions_today = $conn->query($sql_pending_admissions_today);
-$pending_admissions_today = $result_pending_admissions_today->fetch_assoc()['count'];
+// Pending admissions in range
+$sql_pending_admissions = "SELECT COUNT(*) AS count FROM sms3_pending_admission WHERE DATE(created_at) BETWEEN '$start_date' AND '$end_date'";
+$result_pending_admissions = $conn->query($sql_pending_admissions);
+$pending_admissions = $result_pending_admissions->fetch_assoc()['count'];
 
-// Pending enrollments added today
-$sql_pending_enrollments_today = "SELECT COUNT(*) AS count FROM sms3_pending_enrollment WHERE DATE(created_at) = '$dateToday'";
-$result_pending_enrollments_today = $conn->query($sql_pending_enrollments_today);
-$pending_enrollments_today = $result_pending_enrollments_today->fetch_assoc()['count'];
+// Pending enrollments in range
+$sql_pending_enrollments = "SELECT COUNT(*) AS count FROM sms3_pending_enrollment WHERE DATE(created_at) BETWEEN '$start_date' AND '$end_date'";
+$result_pending_enrollments = $conn->query($sql_pending_enrollments);
+$pending_enrollments = $result_pending_enrollments->fetch_assoc()['count'];
 
-// Total enrolled and not enrolled students
-$sql_enrollment_status = "
-    SELECT 
-        COUNT(CASE WHEN status = 'Enrolled' THEN 1 END) AS enrolled_count,
-        COUNT(CASE WHEN status = 'Not Enrolled' THEN 1 END) AS not_enrolled_count
-    FROM sms3_students
-";
-$result_enrollment_status = $conn->query($sql_enrollment_status);
-$row_enrollment_status = $result_enrollment_status->fetch_assoc();
-$enrolled_count = $row_enrollment_status['enrolled_count'];
-$not_enrolled_count = $row_enrollment_status['not_enrolled_count'];
+// Admissions accepted in range
+$sql_accepted_admissions = "SELECT COUNT(*) AS count FROM sms3_admissions_data WHERE status = 'Accepted' AND DATE(created_at) BETWEEN '$start_date' AND '$end_date'";
+$result_accepted_admissions = $conn->query($sql_accepted_admissions);
+$accepted_admissions = $result_accepted_admissions->fetch_assoc()['count'];
 
-// Students grouped by last school
+// Admissions enrolled in range
+$sql_enrolled_admissions = "SELECT COUNT(*) AS count FROM sms3_admissions_data WHERE status = 'Enrolled' AND DATE(created_at) BETWEEN '$start_date' AND '$end_date'";
+$result_enrolled_admissions = $conn->query($sql_enrolled_admissions);
+$enrolled_admissions = $result_enrolled_admissions->fetch_assoc()['count'];
+
+// Students enrolled in range
+$sql_students_enrolled = "SELECT COUNT(*) AS count FROM sms3_students WHERE status = 'Enrolled' AND DATE(created_at) BETWEEN '$start_date' AND '$end_date'";
+$result_students_enrolled = $conn->query($sql_students_enrolled);
+$students_enrolled = $result_students_enrolled->fetch_assoc()['count'];
+
+// Students not enrolled in range
+$sql_students_not_enrolled = "SELECT COUNT(*) AS count FROM sms3_students WHERE status = 'Not Enrolled' AND DATE(created_at) BETWEEN '$start_date' AND '$end_date'";
+$result_students_not_enrolled = $conn->query($sql_students_not_enrolled);
+$students_not_enrolled = $result_students_not_enrolled->fetch_assoc()['count'];
+
+// Frequency data for last school in range
 $sql_last_school = "
     SELECT last_school, COUNT(*) AS count 
     FROM sms3_students 
+    WHERE DATE(created_at) BETWEEN '$start_date' AND '$end_date'
     GROUP BY last_school 
     ORDER BY count DESC
 ";
@@ -42,10 +52,11 @@ while ($row = $result_last_school->fetch_assoc()) {
     $last_school_data[] = $row;
 }
 
-// Frequency data for admission type
+// Frequency data for admission type in range
 $sql_admission_type = "
     SELECT admission_type, COUNT(*) AS count
     FROM sms3_students
+    WHERE DATE(created_at) BETWEEN '$start_date' AND '$end_date'
     GROUP BY admission_type
     ORDER BY count DESC
 ";
@@ -55,10 +66,11 @@ while ($row = $result_admission_type->fetch_assoc()) {
     $admission_type_data[] = $row;
 }
 
-// Frequency data for year level
+// Frequency data for year level in range
 $sql_year_level = "
     SELECT year_level, COUNT(*) AS count
     FROM sms3_students
+    WHERE DATE(created_at) BETWEEN '$start_date' AND '$end_date'
     GROUP BY year_level
     ORDER BY count DESC
 ";
@@ -68,10 +80,11 @@ while ($row = $result_year_level->fetch_assoc()) {
     $year_level_data[] = $row;
 }
 
-// Frequency data for sex
+// Frequency data for sex in range
 $sql_sex = "
     SELECT sex, COUNT(*) AS count
     FROM sms3_students
+    WHERE DATE(created_at) BETWEEN '$start_date' AND '$end_date'
     GROUP BY sex
     ORDER BY count DESC
 ";
@@ -140,14 +153,16 @@ $html = "
 </style>
 
 <h1>Dashboard Report</h1>
-<p style='text-align: center;'>Date: " . date('F j, Y') . "</p>
+<p style='text-align: center;'>Date Range: " . htmlspecialchars($start_date) . " to " . htmlspecialchars($end_date) . "</p>
 
 <h2>Summary</h2>
 <ul>
-    <li><strong>Pending Admissions Today:</strong> $pending_admissions_today</li>
-    <li><strong>Pending Enrollments Today:</strong> $pending_enrollments_today</li>
-    <li><strong>Total Enrolled Students:</strong> $enrolled_count</li>
-    <li><strong>Total Not Enrolled Students:</strong> $not_enrolled_count</li>
+    <li><strong>Pending Admissions in Range:</strong> $pending_admissions</li>
+    <li><strong>Pending Enrollments in Range:</strong> $pending_enrollments</li>
+    <li><strong>Admissions Accepted in Range:</strong> $accepted_admissions</li>
+    <li><strong>Admissions Enrolled in Range:</strong> $enrolled_admissions</li>
+    <li><strong>Students Enrolled in Range:</strong> $students_enrolled</li>
+    <li><strong>Students Not Enrolled in Range:</strong> $students_not_enrolled</li>
 </ul>
 
 <h2>Student's Last School Attended</h2>
@@ -233,6 +248,7 @@ foreach ($sex_data as $sex) {
 $html .= "
     </tbody>
 </table>";
+
 // Write the HTML content to the PDF
 $mpdf->WriteHTML($html);
 

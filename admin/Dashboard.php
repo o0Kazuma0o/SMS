@@ -560,7 +560,19 @@ if ($result_enrollment_status) {
               <div class="card">
                 <div class="card-body">
                   <h5 class="card-title">Generate Report</h5>
-                  <a href="generate_report.php" class="btn btn-primary">Download PDF Report</a>
+                  <form class="row g-3" method="get" action="generate_report.php" target="_blank" style="margin-bottom: 10px;">
+                    <div class="col-md-4">
+                      <label for="start_date" class="form-label">Start Date</label>
+                      <input type="date" class="form-control" id="start_date" name="start_date" required value="<?php echo isset($_GET['start_date']) ? htmlspecialchars($_GET['start_date']) : date('Y-m-01'); ?>">
+                    </div>
+                    <div class="col-md-4">
+                      <label for="end_date" class="form-label">End Date</label>
+                      <input type="date" class="form-control" id="end_date" name="end_date" required value="<?php echo isset($_GET['end_date']) ? htmlspecialchars($_GET['end_date']) : date('Y-m-d'); ?>">
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                      <button type="submit" class="btn btn-primary w-100">Download PDF Report</button>
+                    </div>
+                  </form>
                 </div>
               </div>
             </div>
