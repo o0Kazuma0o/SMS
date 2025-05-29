@@ -471,6 +471,44 @@ while ($row = $result1->fetch_assoc()) {
 $model = new EnrollmentSARIMAModel($historicalData, 12, 2);
 $forecast = $model->forecast();
 
+// Get the latest actual value for each department
+$latestActuals = [];
+$sql_latest = "
+    SELECT 
+        d.department_name,
+        YEAR(ed.created_at) AS year,
+        MONTH(ed.created_at) AS month,
+        COUNT(DISTINCT ed.student_id) AS total_enrollments
+    FROM sms3_enrollment_data ed
+    INNER JOIN sms3_timetable t ON 
+        ed.timetable_1 = t.id OR
+        ed.timetable_2 = t.id OR
+        ed.timetable_3 = t.id OR
+        ed.timetable_4 = t.id OR
+        ed.timetable_5 = t.id OR
+        ed.timetable_6 = t.id OR
+        ed.timetable_7 = t.id OR
+        ed.timetable_8 = t.id
+    INNER JOIN sms3_sections s ON t.section_id = s.id
+    INNER JOIN sms3_departments d ON s.department_id = d.id
+    WHERE (YEAR(ed.created_at), MONTH(ed.created_at)) IN (
+        SELECT YEAR(created_at), MONTH(created_at)
+        FROM sms3_enrollment_data
+        ORDER BY YEAR(created_at) DESC, MONTH(created_at) DESC
+        LIMIT 1
+    )
+    GROUP BY d.department_name, year, month
+";
+$result_latest = $conn->query($sql_latest);
+while ($row = $result_latest->fetch_assoc()) {
+  $dept = $row['department_name'];
+  $latestActuals[$dept] = [
+    'year' => $row['year'],
+    'month' => $row['month'],
+    'enrollments' => $row['total_enrollments']
+  ];
+}
+
 // Initialize the predictive model
 $model = new EnrollmentPredictiveModel($conn, []);
 $departmentForecasts = $model->forecastByDepartment(0, 12);
@@ -825,20 +863,45 @@ $departmentForecasts = $model->forecastByDepartment(0, 12);
               <script>
                 document.addEventListener("DOMContentLoaded", () => {
                   const departmentForecasts = <?php echo json_encode($departmentForecasts); ?>;
+                  const latestActuals = <?php echo json_encode($latestActuals); ?>;
 
                   if (Object.keys(departmentForecasts).length === 0) {
                     document.getElementById('departmentColumnChart').innerHTML = '<div style="text-align: center; padding: 20px;">No forecast data available.</div>';
                     return;
                   }
 
-                  // Prepare data for the chart
                   const departments = Object.keys(departmentForecasts);
-                  const months = departmentForecasts[departments[0]].map(item => `${item.year}-${String(item.month).padStart(2, '0')}`);
-                  const seriesData = departments.map(department => {
-                    return {
+
+                  // Prepare months (x-axis) and series data
+                  let months = [];
+                  let seriesData = [];
+
+                  departments.forEach(department => {
+                    const forecastArr = departmentForecasts[department] || [];
+                    const latest = latestActuals[department];
+
+                    let data = [];
+                    let categories = [];
+
+                    // Add latest actual if exists
+                    if (latest) {
+                      data.push(latest.enrollments);
+                      categories.push(`${latest.year}-${String(latest.month).padStart(2, '0')} (Actual)`);
+                    }
+
+                    // Add forecast data
+                    forecastArr.forEach(item => {
+                      data.push(item.predicted_enrollments);
+                      categories.push(`${item.year}-${String(item.month).padStart(2, '0')} (Predicted)`);
+                    });
+
+                    // Set months only once (assuming all departments have the same forecast months)
+                    if (months.length === 0) months = categories;
+
+                    seriesData.push({
                       name: department,
-                      data: departmentForecasts[department].map(item => item.predicted_enrollments)
-                    };
+                      data: data
+                    });
                   });
 
                   // Initialize ApexCharts instance
